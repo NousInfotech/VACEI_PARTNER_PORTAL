@@ -78,7 +78,7 @@ export const EmployeeCompliance: React.FC = () => {
               <stat.icon className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-dark/44">{stat.label}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-dark/44">{stat.label}</p>
               <h3 className="text-xl text-primary mt-0.5">{stat.value}</h3>
             </div>
           </ShadowCard>
@@ -89,10 +89,10 @@ export const EmployeeCompliance: React.FC = () => {
         <div className="p-6 border-b border-primary/5 bg-primary/5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <ShieldCheck className="h-5 w-5 text-primary/60" />
-            <h2 className="text-lg text-primary tracking-tight">Compliance Tracking</h2>
+            <h2 className="text-2xl text-primary tracking-tight font-medium">Compliance Tracking</h2>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" className="text-xs h-8 rounded-lg border-primary/10 text-primary/60">
+            <Button variant="default">
               Filter by Status
             </Button>
           </div>

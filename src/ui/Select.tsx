@@ -153,7 +153,7 @@ export const Select = ({
   };
 
   return (
-    <div className={cn("relative inline-block text-left z-20 hover:z-[100] focus-within:z-[100]", className)} ref={dropdownRef}>
+    <div className={cn("relative inline-block text-left z-20 hover:z-100 focus-within:z-100", className)} ref={dropdownRef}>
       {/* Trigger */}
       <div onClick={() => setIsOpen(!isOpen)} className="cursor-pointer">
         {trigger ? (
@@ -178,7 +178,7 @@ export const Select = ({
       {/* Dropdown menu */}
       <div
         className={cn(
-          "absolute z-[999] origin-top rounded-2xl bg-white/95 backdrop-blur-md p-1.5 shadow-2xl ring-1 ring-black/5 focus:outline-none transition-all duration-300 ease-in-out",
+          "absolute z-999 origin-top rounded-2xl bg-white/95 p-1.5 shadow-2xl ring-1 ring-black/5 focus:outline-none transition-all duration-300 ease-in-out",
           fullWidth ? "w-full" : "w-64",
           alignmentClasses[calculatedAlign],
           sideClasses[calculatedSide],
@@ -208,7 +208,7 @@ export const Select = ({
             <div 
                 onClick={() => closeOnClick && setIsOpen(false)}
                 style={{ maxHeight: `${maxHeight}px`, overflowY: 'auto' }}
-                className="custom-scrollbar z-[999]"
+                className="custom-scrollbar z-999"
             >
                 {children}
             </div>
