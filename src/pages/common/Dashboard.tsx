@@ -4,7 +4,11 @@ import { RoleEnum } from "../../data/mockUserData";
 import AdminDashboard from "../org-admin/AdminDashboard";
 import EmployeeDashboard from "../org-employee/EmployeeDashboard";
 
-export default function Dashboard() {
+interface DashboardProps {
+  activeSection?: string;
+}
+
+export default function Dashboard({ activeSection = "Dashboard" }: DashboardProps) {
   const navigate = useNavigate();
   const [role, setRole] = useState<string | null>(null);
 
@@ -24,7 +28,7 @@ export default function Dashboard() {
   }
 
   if (role === RoleEnum.ORG_EMPLOYEE) {
-    return <EmployeeDashboard />;
+    return <EmployeeDashboard activeSection={activeSection} />;
   }
 
   return (

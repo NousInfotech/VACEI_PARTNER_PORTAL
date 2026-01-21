@@ -32,7 +32,7 @@ export default function SideBar({
     const location = useLocation();
     const pathname = location.pathname;
     const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
-    const { user } = useAuth();
+    const { user, organizationMember } = useAuth();
 
     const branding = {
         sidebar_background_color: "15, 23, 41",
@@ -40,7 +40,7 @@ export default function SideBar({
         sidebar_text_color: "220 14% 96%"
     };
 
-    const orgName = "Vacei";
+    const orgName = organizationMember?.organization?.name || "Vacei";
     const orgSubname = "ORGANIZATION PORTAL";
 
     const toggleItem = (slug: string) => {

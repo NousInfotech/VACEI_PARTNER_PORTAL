@@ -1,12 +1,10 @@
 import { 
   DashboardSquare02Icon, 
   Book02Icon, 
-  TaxesIcon, 
   GitPullRequestIcon, 
   DocumentValidationIcon, 
   InstallingUpdates02Icon,
   Building01Icon, 
-  CashbackPoundIcon
 } from '@hugeicons/core-free-icons';
 import type { MenuItem } from '../types/menu';
 
@@ -17,61 +15,39 @@ export const menuData: MenuItem[] = [
         label: "Dashboard",
         href: "/dashboard",
         section: "primary",
-        description: "Company overview & status",
+        description: "Service Overview",
     },
     {
-        slug: "company",
+        slug: "companies",
         icon: Building01Icon,
-        label: "Company",
-        href: "/dashboard/company",
+        label: "Companies",
+        href: "/dashboard/companies",
         section: "primary",
-        description: "Company details & documents",
+        description: "Manage client companies",
     },
     {
-        slug: "documents",
+        slug: "engagements",
+        icon: Book02Icon,
+        label: "Engagements",
+        href: "/dashboard/engagements",
+        section: "primary",
+        description: "Active projects & tasks",
+    },
+    {
+        slug: "compliance",
         icon: DocumentValidationIcon,
-        label: "Documents",
-        href: "/dashboard/documents",
+        label: "Compliance",
+        href: "/dashboard/compliance",
         section: "primary",
-        description: "Store and access documents",
+        description: "Regulatory status",
     },
     {
-        slug: "services-root",
+        slug: "templates",
         icon: GitPullRequestIcon,
-        label: "Services",
-        href: "/dashboard/services",
+        label: "Document Request Templates",
+        href: "/dashboard/templates",
         section: "primary",
-        description: "Accounting, audit & corporate services",
-        children: [
-            {
-                slug: "accounting-bookkeeping",
-                icon: Book02Icon,
-                label: "Accounting & Bookkeeping",
-                href: "/dashboard/services/bookkeeping",
-                isActive: true,
-            },
-            {
-                slug: "vat-tax",
-                icon: TaxesIcon,
-                label: "VAT & Tax",
-                href: "/dashboard/services/vat",
-                isActive: true,
-            },
-            {
-                slug: "payroll",
-                icon: CashbackPoundIcon,
-                label: "Payroll",
-                href: "/dashboard/services/payroll",
-                isActive: true,
-            },
-            {
-                slug: "audit",
-                icon: DocumentValidationIcon,
-                label: "Audit",
-                href: "/dashboard/services/audit",
-                isActive: true,
-            }
-        ]
+        description: "Manage templates",
     },
     {
         slug: "settings",

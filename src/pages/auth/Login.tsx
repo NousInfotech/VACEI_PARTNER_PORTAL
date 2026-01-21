@@ -8,7 +8,7 @@ import { useAuth } from "../../context/AuthContext";
 export default function Login() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const { loginMock } = useAuth();
+    const { login } = useAuth();
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -45,7 +45,7 @@ export default function Login() {
         setAlertMessage(null);
 
         try {
-            const response = await loginMock(email, password);
+            const response = await login(email, password);
             
             if (response.success) {
                 setAlertMessage({ message: response.message || "Login successful! Redirecting...", variant: "success" });

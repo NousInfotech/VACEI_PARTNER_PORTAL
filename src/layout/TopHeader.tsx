@@ -1,7 +1,9 @@
 import { useNavigate } from "react-router-dom";
+import { useMemo } from "react";
 import { PanelLeft, PanelLeftClose, Search, Bell, LogOut, Settings } from "lucide-react";
 import { Button } from "../ui/Button";
 import { useAuth } from "../context/AuthContext";
+import { Select } from "../ui/Select";
 
 interface TopHeaderProps {
     onSidebarToggle: () => void;
@@ -17,12 +19,20 @@ export default function TopHeader({
     role
 }: TopHeaderProps) {
     const navigate = useNavigate();
-    const { logout } = useAuth();
+    const { logout, organizationMember, selectedService, setSelectedService } = useAuth();
 
     const handleLogout = () => {
         logout();
         navigate("/login");
     };
+
+    const services = useMemo(() => {
+        return (organizationMember?.allowedServices || []).map(service => ({
+            id: service,
+            label: service.replace(/_/g, " "),
+            onClick: () => setSelectedService(service)
+        }));
+    }, [organizationMember?.allowedServices, setSelectedService]);
 
     return (
         <header 
@@ -54,6 +64,20 @@ export default function TopHeader({
                         </Button>
                     </div>
                 </div>
+
+                {organizationMember && (
+                    <div className="flex items-center gap-2 ml-4">
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest whitespace-nowrap">Service:</p>
+                        <div className="relative group">
+                            <Select 
+                                label={selectedService?.replace(/_/g, " ") || "Select Service"}
+                                items={services}
+                                className="w-auto"
+                                contentClassName="w-64"
+                            />
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className="flex items-center gap-3">

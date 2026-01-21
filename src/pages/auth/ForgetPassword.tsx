@@ -3,11 +3,10 @@ import { Link } from "react-router-dom";
 import { Mail, ArrowLeft } from "lucide-react";
 import AlertMessage from "../common/AlertMessage";
 import { Button } from "../../ui/Button";
-import axios from "axios";
+import { apiPost } from "../../config/base";
+import { endPoints } from "../../config/endPoint";
 
 export default function ForgetPassword() {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
   const [email, setEmail] = useState("");
   const [errors, setErrors] = useState<{ email?: string }>({});
   const [loading, setLoading] = useState(false);
@@ -32,16 +31,16 @@ export default function ForgetPassword() {
     setAlertMessage(null);
 
     try {
-      const response = await axios.post(`${backendUrl}auth/forgot-password`, {
+      const response = await apiPost<any>(endPoints.AUTH.FORGOT_PASSWORD, {
         email,
       });
 
-      setAlertMessage(response.data.data?.message || "If an account with that email exists, a password reset OTP has been sent to your inbox.");
+      setAlertMessage(response.data?.message || "If an account with that email exists, a password reset OTP has been sent to your inbox.");
       setMessageVariant("success");
       setEmail("");
       setErrors({});
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || "An unknown error occurred. Please try again.";
+      const errorMessage = err.message || "An unknown error occurred. Please try again.";
       setAlertMessage(errorMessage);
       setMessageVariant("danger");
     } finally {
