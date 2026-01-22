@@ -20,7 +20,7 @@ import { Button } from "../../../ui/Button";
 // import BackButton from "../common/BackButton";
 import PillTab from "../../common/PillTab";
 import { useTabQuery } from "../../../hooks/useTabQuery";
-import { useAuth } from "../../../context/AuthContext";
+import { useAuth } from "../../../context/auth-context-core";
 import { cn } from "../../../lib/utils";
 // import { PageHeader } from "../common/PageHeader";
 

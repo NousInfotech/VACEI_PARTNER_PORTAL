@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useMemo } from "react";
 import { PanelLeft, PanelLeftClose, Search, Bell, LogOut, Settings } from "lucide-react";
 import { Button } from "../ui/Button";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth-context-core";
 import { Select } from "../ui/Select";
 
 interface TopHeaderProps {

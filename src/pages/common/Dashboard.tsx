@@ -15,16 +15,13 @@ interface DashboardProps {
 
 export default function Dashboard({ activeSection = "Dashboard" }: DashboardProps) {
   const navigate = useNavigate();
-  const [role, setRole] = useState<string | null>(null);
+  const [role] = useState<string | null>(() => localStorage.getItem("userRole"));
 
   useEffect(() => {
-    const userRole = localStorage.getItem("userRole");
-    if (!userRole) {
+    if (!role) {
       navigate("/login");
-    } else {
-      setRole(userRole);
     }
-  }, [navigate]);
+  }, [role, navigate]);
 
   if (!role) return null;
 

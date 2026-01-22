@@ -12,7 +12,7 @@ import {
 } from "../ui/tooltip";
 
 import logourl from "../assets/logo/logo2.png";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth-context-core";
 
 interface SidebarProps {
     menu: MenuItem[];

@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, CheckCircle, Users } from "lucide-react";
 import AlertMessage from "../common/AlertMessage";
 import { Button } from "../../ui/Button";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/auth-context-core";
 
 export default function Login() {
     const navigate = useNavigate();
@@ -58,9 +58,9 @@ export default function Login() {
                 setErrors({ email: errorMessage, password: "" });
                 setAlertMessage({ message: errorMessage, variant: "error" });
             }
-        } catch (error: any) {
+        } catch (error) {
             console.error("Login error:", error);
-            const errorMessage = error.message || "Invalid email or password";
+            const errorMessage = (error as Error).message || "Invalid email or password";
             setErrors({ email: errorMessage, password: "" });
             setAlertMessage({ message: errorMessage, variant: "error" });
         } finally {

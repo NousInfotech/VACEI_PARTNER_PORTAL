@@ -31,16 +31,16 @@ export default function ForgetPassword() {
     setAlertMessage(null);
 
     try {
-      const response = await apiPost<any>(endPoints.AUTH.FORGOT_PASSWORD, {
+      const response = await apiPost<{ data?: { message?: string } }>(endPoints.AUTH.FORGOT_PASSWORD, {
         email,
-      });
+      } as Record<string, unknown>);
 
       setAlertMessage(response.data?.message || "If an account with that email exists, a password reset OTP has been sent to your inbox.");
       setMessageVariant("success");
       setEmail("");
       setErrors({});
-    } catch (err: any) {
-      const errorMessage = err.message || "An unknown error occurred. Please try again.";
+    } catch (err) {
+      const errorMessage = (err as Error).message || "An unknown error occurred. Please try again.";
       setAlertMessage(errorMessage);
       setMessageVariant("danger");
     } finally {

@@ -1,47 +1,8 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { useState, useEffect, useCallback, type ReactNode } from "react";
 import { apiPost, apiGet } from "../config/base";
 import { endPoints } from "../config/endPoint";
-
-interface Organization {
-    id: string;
-    name: string;
-    type: string;
-    status: string;
-    availableServices: string[];
-}
-
-interface OrganizationMember {
-    id: string;
-    userId: string;
-    organizationId: string;
-    role: string;
-    allowedServices: string[];
-    organization: Organization;
-}
-
-interface User {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string | null;
-    phone: string | null;
-    role: string;
-    status: string;
-}
-
-interface AuthContextType {
-    user: User | null;
-    organizationMember: OrganizationMember | null;
-    selectedService: string | null;
-    setSelectedService: (service: string) => void;
-    isAuthenticated: boolean;
-    login: (email: string, password: string) => Promise<{ success: boolean; message: string; user?: User; token?: string }>;
-    logout: () => void;
-    isLoading: boolean;
-    checkAuth: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { type User, type OrganizationMember, type AuthMeResponse, type LoginResponse } from "../lib/types";
+import { AuthContext } from "./auth-context-core";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
@@ -49,12 +10,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [selectedService, setSelectedServiceState] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    const setSelectedService = (service: string) => {
+    const setSelectedService = useCallback((service: string) => {
         setSelectedServiceState(service);
         localStorage.setItem("selectedService", service);
-    };
+    }, []);
 
-    const checkAuth = async () => {
+    const handleLogoutState = useCallback(() => {
+        setUser(null);
+        setOrganizationMember(null);
+        setSelectedServiceState(null);
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        localStorage.removeItem("userRole");
+        localStorage.removeItem("organizationMember");
+        localStorage.removeItem("selectedService");
+    }, []);
+
+    const checkAuth = useCallback(async () => {
         const token = localStorage.getItem("token");
         if (!token) {
             setIsLoading(false);
@@ -62,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         try {
-            const response = await apiGet<any>(endPoints.AUTH.ME);
+            const response = await apiGet<AuthMeResponse>(endPoints.AUTH.ME);
             if (response.data) {
                 const userData = response.data.user;
                 const memberData = response.data.organizationMember;
@@ -87,26 +59,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [handleLogoutState, setSelectedService]);
 
     useEffect(() => {
         checkAuth();
-    }, []);
-
-    const handleLogoutState = () => {
-        setUser(null);
-        setOrganizationMember(null);
-        setSelectedServiceState(null);
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
-        localStorage.removeItem("userRole");
-        localStorage.removeItem("organizationMember");
-        localStorage.removeItem("selectedService");
-    };
+    }, [checkAuth]);
 
     const login = async (email: string, password: string) => {
         try {
-            const response = await apiPost<any>(endPoints.AUTH.LOGIN, { email, password });
+            const response = await apiPost<LoginResponse>(endPoints.AUTH.LOGIN, { email, password } as Record<string, unknown>);
             
             if (response.data) {
                 const userData = response.data.user;
@@ -136,11 +97,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
             
             return { success: false, message: response.message || "Login failed" };
-        } catch (error: any) {
+        } catch (error) {
             console.error("Login failed:", error);
+            const errorMessage = (error as Error).message || "Invalid email or password";
             return { 
                 success: false, 
-                message: error.message || "Invalid email or password" 
+                message: errorMessage 
             };
         }
     };
@@ -172,10 +134,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 }
 
-export function useAuth() {
-    const context = useContext(AuthContext);
-    if (context === undefined) {
-        throw new Error("useAuth must be used within an AuthProvider");
-    }
-    return context;
-}
+

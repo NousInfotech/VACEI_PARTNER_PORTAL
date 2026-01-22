@@ -13,7 +13,7 @@ import { Button } from "../../ui/Button";
 import { ShadowCard } from "../../ui/ShadowCard";
 import { Select } from "../../ui/Select";
 import { PageHeader } from "../common/PageHeader";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/auth-context-core";
 import { cn } from "../../lib/utils";
 import EmployeeCompliance from "./EmployeeCompliance";
 import Engagement from "./EmployeeEngagement/Engagement";

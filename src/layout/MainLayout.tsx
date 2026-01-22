@@ -4,7 +4,7 @@ import SideBar from "./SideBar";
 import TopHeader from "./TopHeader";
 import { menuData } from "../lib/menuData";
 import { cn } from "../lib/utils";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth-context-core";
 
 export default function MainLayout() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);

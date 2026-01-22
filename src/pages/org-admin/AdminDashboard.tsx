@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../ui/Button";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/auth-context-core";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();

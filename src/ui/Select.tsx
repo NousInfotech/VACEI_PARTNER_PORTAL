@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import { cn } from "../lib/utils";
 import { ChevronDown, Search } from "lucide-react";
 
@@ -52,7 +52,7 @@ export const Select = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  React.useLayoutEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
@@ -76,10 +76,9 @@ export const Select = ({
         const preferredSide: "top" | "bottom" =
           spaceBelow < minSpaceForBottom ? "top" : "bottom";
 
-        if (autoPosition) {
-          setCalculatedSide(preferredSide);
-        } else {
-          setCalculatedSide(side);
+        const newSide = autoPosition ? preferredSide : side;
+        if (calculatedSide !== newSide) {
+          setCalculatedSide(newSide);
         }
         
         // Horizontal positioning
@@ -88,35 +87,38 @@ export const Select = ({
         const spaceRight = window.innerWidth - rect.left - buffer;
         const spaceLeftRelativeToBoundary = rect.right - boundaryLeft - buffer;
 
+        let newAlign = align;
         if (!fullWidth) {
           if (align === "right" && spaceLeftRelativeToBoundary < dropdownWidth && spaceRight > spaceLeftRelativeToBoundary) {
-            setCalculatedAlign("left");
+            newAlign = "left";
           } 
           else if (align === "left" && spaceRight < dropdownWidth && spaceLeftRelativeToBoundary > spaceRight) {
-            setCalculatedAlign("right");
+            newAlign = "right";
           } 
-          else {
-            setCalculatedAlign(align);
-          }
-        } else {
-          setCalculatedAlign(align);
+        }
+        
+        if (calculatedAlign !== newAlign) {
+          setCalculatedAlign(newAlign);
         }
         
         const finalSide = autoPosition ? preferredSide : side;
         const availableHeight = finalSide === "top" ? spaceAbove : spaceBelow;
         const contentMaxHeight = searchable ? availableHeight - 50 : availableHeight;
-        setMaxHeight(Math.max(160, Math.min(contentMaxHeight, children ? availableHeight : 320)));
+        const newMaxHeight = Math.max(160, Math.min(contentMaxHeight, children ? availableHeight : 320));
+        if (maxHeight !== newMaxHeight) {
+          setMaxHeight(newMaxHeight);
+        }
       }
     } else {
       setSearchQuery(""); 
-      setCalculatedSide(side); 
-      setCalculatedAlign(align);
+      if (calculatedSide !== side) setCalculatedSide(side); 
+      if (calculatedAlign !== align) setCalculatedAlign(align);
     }
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isOpen, searchable, align, side, fullWidth]);
+  }, [isOpen, searchable, align, side, fullWidth, autoPosition, children, calculatedSide, calculatedAlign, maxHeight]);
 
   const filteredItems = useMemo(() => {
     if (!searchable || !searchQuery) return items;
