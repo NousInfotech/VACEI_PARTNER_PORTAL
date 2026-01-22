@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "../lib/utils";
-import type { MenuItem, MenuSection } from "../types/menu";
+import type { MenuItem, MenuSection } from "../lib/types";
 import {
     Tooltip,
     TooltipContent,

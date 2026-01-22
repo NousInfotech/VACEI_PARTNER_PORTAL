@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Outlet, Navigate } from "react-router-dom";
 import SideBar from "./SideBar";
 import TopHeader from "./TopHeader";
-import { menuData } from "../data/menuData";
+import { menuData } from "../lib/menuData";
 import { cn } from "../lib/utils";
 import { useAuth } from "../context/AuthContext";
 
@@ -27,12 +27,16 @@ export default function MainLayout() {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
 
+    const filteredMenu = menuData.filter(item => 
+        !item.roles || (user && item.roles.includes(user.role))
+    );
+
     return (
         <div className="flex h-screen bg-[#f5f7ff] relative overflow-hidden">
             {/* Sidebar for desktop */}
             <div className="hidden lg:block h-full">
                 <SideBar 
-                    menu={menuData} 
+                    menu={filteredMenu} 
                     isCollapsed={isSidebarCollapsed} 
                     isOpen={true}
                     onExpand={() => setIsSidebarCollapsed(false)}
@@ -53,7 +57,7 @@ export default function MainLayout() {
                 isSidebarOpen ? "translate-x-0" : "-translate-x-full"
             )}>
                 <SideBar 
-                    menu={menuData} 
+                    menu={filteredMenu} 
                     isCollapsed={false} 
                     isOpen={isSidebarOpen}
                     onClose={() => setIsSidebarOpen(false)}

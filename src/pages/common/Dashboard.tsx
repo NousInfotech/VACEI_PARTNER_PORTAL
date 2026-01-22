@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { RoleEnum } from "../../data/mockUserData";
 import AdminDashboard from "../org-admin/AdminDashboard";
 import EmployeeDashboard from "../org-employee/EmployeeDashboard";
 
+export const RoleEnum = {
+  ORG_ADMIN: 'ORG_ADMIN',
+  ORG_EMPLOYEE: 'ORG_EMPLOYEE',
+} as const;
+
+export type RoleEnum = typeof RoleEnum[keyof typeof RoleEnum];
 interface DashboardProps {
   activeSection?: string;
 }

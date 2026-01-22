@@ -6,7 +6,7 @@ import {
   InstallingUpdates02Icon,
   Building01Icon, 
 } from '@hugeicons/core-free-icons';
-import type { MenuItem } from '../types/menu';
+import type { MenuItem } from './types';
 
 export const menuData: MenuItem[] = [
     {
@@ -16,14 +16,16 @@ export const menuData: MenuItem[] = [
         href: "/dashboard",
         section: "primary",
         description: "Service Overview",
+        roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
     },
     {
-        slug: "companies",
+        slug: "clients",
         icon: Building01Icon,
-        label: "Companies",
-        href: "/dashboard/companies",
+        label: "Clients",
+        href: "/dashboard/clients",
         section: "primary",
         description: "Manage client companies",
+        roles: ["ORG_ADMIN"]
     },
     {
         slug: "engagements",
@@ -32,6 +34,7 @@ export const menuData: MenuItem[] = [
         href: "/dashboard/engagements",
         section: "primary",
         description: "Active projects & tasks",
+        roles: ["ORG_EMPLOYEE"]
     },
     {
         slug: "compliance",
@@ -40,6 +43,7 @@ export const menuData: MenuItem[] = [
         href: "/dashboard/compliance",
         section: "primary",
         description: "Regulatory status",
+        roles: ["ORG_EMPLOYEE"]
     },
     {
         slug: "templates",
@@ -48,6 +52,16 @@ export const menuData: MenuItem[] = [
         href: "/dashboard/templates",
         section: "primary",
         description: "Manage templates",
+        roles: ["ORG_EMPLOYEE"]
+    },
+    {
+        slug: "organization",
+        icon: Building01Icon,
+        label: "Organization",
+        href: "/dashboard/organization",
+        section: "primary",
+        description: "Manage organization details",
+        roles: ["ORG_ADMIN"]
     },
     {
         slug: "settings",
@@ -56,5 +70,7 @@ export const menuData: MenuItem[] = [
         href: "/dashboard/settings",
         section: "settings",
         description: "Configure preferences",
-    }
+        roles: ["ORG_EMPLOYEE", "ORG_ADMIN"]
+    },
+
 ];
