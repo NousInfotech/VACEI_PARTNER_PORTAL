@@ -6,17 +6,51 @@ import { menuData } from "../lib/menuData";
 import { cn } from "../lib/utils";
 import { useAuth } from "../context/auth-context-core";
 
+// Skeleton Dashboard for loading state
+const LoadingSkeleton = () => (
+    <div className="flex h-screen bg-[#f5f7ff] overflow-hidden">
+        {/* Sidebar Skeleton */}
+        <div className="hidden lg:block w-72 bg-white border-r border-gray-100 p-6 space-y-8 h-full shrink-0">
+            <div className="h-10 w-32 bg-gray-100 rounded-xl animate-pulse" />
+            <div className="space-y-4">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div key={i} className="h-12 w-full bg-gray-50 rounded-xl animate-pulse" />
+                ))}
+            </div>
+        </div>
+        
+        {/* Main Content Skeleton */}
+        <div className="flex-1 flex flex-col min-w-0 pr-2 overflow-hidden">
+            {/* Header Skeleton */}
+            <div className="h-20 w-full bg-white border-b border-gray-50 px-8 flex items-center justify-between mb-8">
+                <div className="h-10 w-48 bg-gray-50 rounded-xl animate-pulse" />
+                <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 bg-gray-50 rounded-full animate-pulse" />
+                    <div className="h-10 w-32 bg-gray-50 rounded-xl animate-pulse" />
+                </div>
+            </div>
+            
+            {/* Content Area Skeleton */}
+            <div className="flex-1 p-6 lg:p-8 space-y-8 overflow-hidden">
+                <div className="h-12 w-64 bg-gray-100 rounded-xl animate-pulse" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {[1, 2, 3].map((i) => (
+                        <div key={i} className="h-32 w-full bg-white rounded-2xl shadow-sm border border-gray-50 animate-pulse" />
+                    ))}
+                </div>
+                <div className="h-96 w-full bg-white rounded-3xl shadow-sm border border-gray-50 animate-pulse" />
+            </div>
+        </div>
+    </div>
+);
+
 export default function MainLayout() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
     const { user, isAuthenticated, isLoading } = useAuth();
 
-    if (isLoading) {
-        return (
-            <div className="flex h-screen items-center justify-center bg-[#f5f7ff]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            </div>
-        );
+    if (isLoading && !user) {
+        return <LoadingSkeleton />;
     }
 
     if (!isAuthenticated) {

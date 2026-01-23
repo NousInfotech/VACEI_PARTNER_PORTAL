@@ -5,6 +5,7 @@ import Dashboard from './pages/common/Dashboard'
 import MainLayout from './layout/MainLayout'
 import NotFound from './pages/common/NotFound'
 import { AuthProvider } from './context/AuthContext'
+import EngagementFullView from './pages/org-employee/EmployeeEngagement/EngagementFullView'
 
 const App = () => {
   return (
@@ -24,6 +25,7 @@ const App = () => {
           <Route path="/dashboard/settings" element={<Dashboard activeSection="Settings" />} />
           <Route path="*" element={<NotFound />} />
         </Route>
+        <Route path="/engagement-view/:id" element={<EngagementFullView />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>

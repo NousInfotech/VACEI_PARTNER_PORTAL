@@ -5,9 +5,29 @@ import { type User, type OrganizationMember, type AuthMeResponse, type LoginResp
 import { AuthContext } from "./auth-context-core";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<User | null>(null);
-    const [organizationMember, setOrganizationMember] = useState<OrganizationMember | null>(null);
-    const [selectedService, setSelectedServiceState] = useState<string | null>(null);
+    const [user, setUser] = useState<User | null>(() => {
+        try {
+            const saved = localStorage.getItem("user");
+            if (!saved || saved === "undefined" || saved === "null") return null;
+            return JSON.parse(saved);
+        } catch (e) {
+            console.error("Failed to parse user from localStorage:", e);
+            return null;
+        }
+    });
+    const [organizationMember, setOrganizationMember] = useState<OrganizationMember | null>(() => {
+        try {
+            const saved = localStorage.getItem("organizationMember");
+            if (!saved || saved === "undefined" || saved === "null") return null;
+            return JSON.parse(saved);
+        } catch (e) {
+            console.error("Failed to parse organizationMember from localStorage:", e);
+            return null;
+        }
+    });
+    const [selectedService, setSelectedServiceState] = useState<string | null>(() => {
+        return localStorage.getItem("selectedService");
+    });
     const [isLoading, setIsLoading] = useState(true);
 
     const setSelectedService = useCallback((service: string) => {
