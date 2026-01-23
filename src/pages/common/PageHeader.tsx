@@ -45,7 +45,7 @@ export const PageHeader = ({
               </div>
             )}
             <div className="space-y-1">
-              <h1 className="text-3xl font-semibold text-white tracking-tight">
+              <h1 className="md:text-3xl text-2xl font-semibold text-white tracking-tight">
                 {title}
               </h1>
               {subtitle && <p className="text-white/60 font-medium">{subtitle}</p>}
