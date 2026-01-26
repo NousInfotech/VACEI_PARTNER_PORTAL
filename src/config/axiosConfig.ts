@@ -29,17 +29,7 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response) {
-      // Handle 401 Unauthorized
-      if (error.response.status === 401) {
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('token');
-          // Optional: redirect to login or show a toast
-        }
-      }
-      return Promise.reject(error.response.data);
-    }
-    return Promise.reject({ message: 'Network error or server down' });
+    return Promise.reject(error);
   }
 );
 

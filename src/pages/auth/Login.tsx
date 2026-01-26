@@ -53,15 +53,16 @@ export default function Login() {
                 setTimeout(() => {
                     navigate("/dashboard");
                 }, 1500);
-            } else {
+            } 
+            else {
                 const errorMessage = response.message || "Invalid email or password";
-                setErrors({ email: errorMessage, password: "" });
+                setErrors({});
                 setAlertMessage({ message: errorMessage, variant: "error" });
             }
         } catch (error) {
             console.error("Login error:", error);
             const errorMessage = (error as Error).message || "Invalid email or password";
-            setErrors({ email: errorMessage, password: "" });
+            setErrors({});
             setAlertMessage({ message: errorMessage, variant: "error" });
         } finally {
             setLoading(false);
@@ -132,6 +133,9 @@ export default function Login() {
                             message={alertMessage.message}
                             variant={alertMessage.variant === "error" ? "danger" : alertMessage.variant}
                             onClose={() => setAlertMessage(null)}
+                            fixed={false}
+                            className="max-w-full"
+                            duration={0}
                         />
                     )}
 
@@ -157,11 +161,6 @@ export default function Login() {
                     {/* Form */}
                     <div className="border border-gray-200 rounded-2xl shadow-lg p-8 bg-white">
                         <form onSubmit={handleSubmit} className="space-y-6">
-                            {errors.email && !errors.password && (
-                                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                                    <p className="text-red-800 font-medium">{errors.email}</p>
-                                </div>
-                            )}
 
                             <div className="space-y-3">
                                 <label htmlFor="email" className="text-sm font-medium text-dark">Email Address</label>
