@@ -1,4 +1,17 @@
-export const financialMockData = [
+export interface ExtendedTBRow {
+    id: number;
+    code: string;
+    accountName: string;
+    currentYear: number;
+    reClassification: number;
+    adjustments: number;
+    finalBalance: number;
+    priorYear: number;
+    classification: string;
+    actions: string[];
+}
+
+export const financialMockData: ExtendedTBRow[] = [
     {
         id: 1,
         code: "1",
@@ -9,7 +22,7 @@ export const financialMockData = [
         finalBalance: 265769,
         priorYear: 217685,
         classification: "Assets > Non-current > Intangible assets > Intangible assets - Cost",
-        level: null,
+
         actions: []
     },
     {
@@ -22,7 +35,7 @@ export const financialMockData = [
         finalBalance: -5285,
         priorYear: -4285,
         classification: "Equity > Equity > Share capital",
-        level: "Level 1",
+
         actions: ["Add Level"]
     },
     {
@@ -35,7 +48,7 @@ export const financialMockData = [
         finalBalance: -14740,
         priorYear: -12852,
         classification: "Equity",
-        level: "Level 1",
+
         actions: ["Add Level"]
     },
     {
@@ -48,7 +61,7 @@ export const financialMockData = [
         finalBalance: -453816,
         priorYear: -407575,
         classification: "Equity",
-        level: "Level 1",
+
         actions: ["Add Level"]
     },
     {
@@ -61,7 +74,7 @@ export const financialMockData = [
         finalBalance: -8671,
         priorYear: -8671,
         classification: "Equity",
-        level: "Level 1",
+
         actions: ["Add Level"]
     },
     {
@@ -74,7 +87,7 @@ export const financialMockData = [
         finalBalance: 216983,
         priorYear: 215938,
         classification: "Equity",
-        level: "Level 1",
+
         actions: ["Add Level"]
     },
     {
@@ -87,7 +100,7 @@ export const financialMockData = [
         finalBalance: -240,
         priorYear: -240,
         classification: "Equity",
-        level: "Level 1",
+
         actions: ["Add Level"]
     },
     {
@@ -100,7 +113,7 @@ export const financialMockData = [
         finalBalance: -60000,
         priorYear: 0,
         classification: "Income",
-        level: "Level 1",
+
         actions: ["Add Level"]
     },
     {
@@ -113,7 +126,7 @@ export const financialMockData = [
         finalBalance: 0,
         priorYear: 0,
         classification: "Expenses",
-        level: "Level 1",
+
         actions: ["Add Level"]
     },
     {
@@ -126,7 +139,7 @@ export const financialMockData = [
         finalBalance: 385,
         priorYear: 385,
         classification: "Expenses",
-        level: "Level 1",
+
         actions: ["Add Level"]
     },
     {
@@ -139,7 +152,7 @@ export const financialMockData = [
         finalBalance: 100,
         priorYear: 100,
         classification: "Expenses",
-        level: "Level 1",
+
         actions: ["Add Level"]
     },
     {
@@ -152,7 +165,7 @@ export const financialMockData = [
         finalBalance: 1100,
         priorYear: 1100,
         classification: "Expenses",
-        level: "Level 1",
+
         actions: ["Add Level"]
     },
     {
@@ -165,7 +178,7 @@ export const financialMockData = [
         finalBalance: 64962,
         priorYear: 64151,
         classification: "Expenses",
-        level: "Level 1",
+
         actions: ["Add Level"]
     },
     {
@@ -178,7 +191,7 @@ export const financialMockData = [
         finalBalance: -4917,
         priorYear: -4073,
         classification: "Income",
-        level: "Level 1",
+
         actions: ["Add Level"]
     }
 ];

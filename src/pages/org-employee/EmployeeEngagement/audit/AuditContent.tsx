@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FileSpreadsheet, Layers } from 'lucide-react';
 import PillTab from '../../../common/PillTab';
-import ExtendedTB from './ExtendedTB';
+import ExtendedTB from './extended-tb/ExtendedTB';
 import Sections from './Sections';
 
 const AUDIT_TABS = [
