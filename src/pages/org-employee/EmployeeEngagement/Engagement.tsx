@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { 
   ArrowRight,
 } from "lucide-react";
@@ -25,14 +25,13 @@ const MOCK_ENGAGEMENTS = [
 ];
 
 export default function Engagement() {
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, []);
+  const { isLoading: loading } = useQuery({
+    queryKey: ['employee-engagements'],
+    queryFn: async () => {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      return MOCK_ENGAGEMENTS;
+    }
+  });
 
   const handleViewDetails = (id: string) => {
     window.open(`/engagement-view/${id}`, '_blank');

@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
 import { type LibraryItem, mockLibraryData, formatFileSize } from '../lib/libraryData';
 
@@ -59,22 +60,15 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [sortConfig, setSortConfig] = useState<SortConfig>({ field: 'name', order: 'asc' });
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [filterType, setFilterType] = useState('all');
-  const [isLoading, setIsLoading] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-  // Simulated Loading Effect
-  useEffect(() => {
-    const showTimer = setTimeout(() => {
-      setIsLoading(true);
-    }, 0);
-    const hideTimer = setTimeout(() => {
-      setIsLoading(false);
-    }, 600);
-    return () => {
-      clearTimeout(showTimer);
-      clearTimeout(hideTimer);
-    };
-  }, [currentFolderId, filterType]);
+  const { isLoading } = useQuery({
+    queryKey: ['library-items', currentFolderId, filterType],
+    queryFn: async () => {
+      await new Promise(resolve => setTimeout(resolve, 600));
+      return true;
+    }
+  });
 
   const closeContextMenu = () => setContextMenu(null);
 

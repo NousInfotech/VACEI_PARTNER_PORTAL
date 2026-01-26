@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { 
   LayoutDashboard, 
   FileText, 
@@ -52,22 +52,16 @@ const MOCK_STATUS = {
 
 export default function EngagementFullView() {
   const [activeTab, setActiveTab] = useTabQuery('dashboard');
-  const [loading, setLoading] = useState(true);
-  const [prevTab, setPrevTab] = useState(activeTab);
   const { selectedService } = useAuth();
   const serviceName = selectedService?.replace(/_/g, " ") || 'Engagement';
 
-  if (prevTab !== activeTab) {
-    setPrevTab(activeTab);
-    setLoading(true);
-  }
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [activeTab]);
+  const { isLoading: loading } = useQuery({
+    queryKey: ['engagement-view', activeTab],
+    queryFn: async () => {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return true;
+    }
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8 animate-in fade-in duration-500">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { 
   BarChart3, 
   Users, 
@@ -20,7 +20,7 @@ import { cn } from "../../lib/utils";
 import EmployeeCompliance from "./EmployeeCompliance";
 import Engagement from "./EmployeeEngagement/Engagement";
  
-
+ 
 const MOCK_CLIENTS = [
   { id: 1, name: "Acme Corp", lastMessage: "Can we review the Q4 audit?", status: "online", sector: "Technology" },
   { id: 2, name: "Global Logistics", lastMessage: "Documents uploaded for VAT", status: "offline", sector: "Shipping" },
@@ -34,20 +34,14 @@ interface EmployeeDashboardProps {
 
 export default function EmployeeDashboard({ activeSection = "Dashboard" }: EmployeeDashboardProps) {
   const { selectedService } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [prevKey, setPrevKey] = useState(`${activeSection}-${selectedService}`);
-
-  if (prevKey !== `${activeSection}-${selectedService}`) {
-    setPrevKey(`${activeSection}-${selectedService}`);
-    setLoading(true);
-  }
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [activeSection, selectedService]);
+  
+  const { isLoading: loading } = useQuery({
+    queryKey: ['employee-dashboard', activeSection, selectedService],
+    queryFn: async () => {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return true;
+    }
+  });
 
   return (
     <div className="mx-auto space-y-8">

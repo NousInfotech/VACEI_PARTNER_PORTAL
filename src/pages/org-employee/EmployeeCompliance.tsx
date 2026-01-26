@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { 
   ShieldCheck, 
   AlertCircle, 
@@ -14,14 +14,13 @@ import { cn } from "../../lib/utils";
 import { MOCK_COMPLIANCE } from "../../lib/compliance";
 
 export const EmployeeCompliance: React.FC = () => {
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
+  const { isLoading: loading } = useQuery({
+    queryKey: ['employee-compliance'],
+    queryFn: async () => {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return MOCK_COMPLIANCE;
+    }
+  });
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
