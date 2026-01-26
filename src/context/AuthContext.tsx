@@ -57,6 +57,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const response = await apiGet<AuthMeResponse>(endPoints.AUTH.ME);
             if (response.data) {
                 const userData = response.data.user;
+
+                if (userData.role !== "ORG_ADMIN" && userData.role !== "ORG_EMPLOYEE") {
+                    handleLogoutState();
+                    return;
+                }
+
                 const memberData = response.data.organizationMember;
                 
                 setUser(userData);
@@ -75,7 +81,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
         } catch (error) {
             console.error("Failed to fetch user profile:", error);
-            handleLogoutState();
+            const status = (error as { response?: { status?: number } }).response?.status;
+            if (status === 401) {
+                handleLogoutState();
+            }
         } finally {
             setIsLoading(false);
         }
@@ -91,6 +100,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             
             if (response.data) {
                 const userData = response.data.user;
+
+                // Restrict login to specific roles
+                if (userData.role !== 'ORG_ADMIN' && userData.role !== 'ORG_EMPLOYEE') {
+                    return { 
+                        success: false, 
+                        message: "Access Denied: You do not have permission to access this portal." 
+                    };
+                }
+
                 const memberData = response.data.organizationMember;
                 const token = response.data.token;
                 

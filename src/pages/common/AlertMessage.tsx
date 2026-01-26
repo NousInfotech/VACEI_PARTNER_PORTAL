@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { cn } from "../../lib/utils";
 
 export type AlertVariant = "success" | "danger" | "warning" | "info";
 
@@ -7,6 +8,8 @@ export type AlertProps = {
   variant?: AlertVariant;
   duration?: number;
   onClose?: () => void;
+  className?: string;
+  fixed?: boolean;
 };
 
 const variantStyles: Record<AlertVariant, string> = {
@@ -21,22 +24,33 @@ const AlertMessage: React.FC<AlertProps> = ({
   variant = "success",
   duration = 6000,
   onClose,
+  className = "",
+  fixed = true,
 }) => {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setVisible(false);
-      if (onClose) onClose();
-    }, duration);
-    return () => clearTimeout(timer);
+    if (duration > 0) {
+      const timer = setTimeout(() => {
+        setVisible(false);
+        if (onClose) onClose();
+      }, duration);
+      return () => clearTimeout(timer);
+    }
   }, [duration, onClose]);
 
   if (!visible) return null;
 
+  const positionClasses = fixed ? "fixed top-4 right-4 z-50" : "relative w-full mb-4";
+
   return (
     <div
-      className={`fixed top-4 right-4 z-50 max-w-sm rounded px-4 py-3 text-sm shadow-md border flex justify-between items-center mb-4 ${variantStyles[variant]}`}
+      className={cn(
+        positionClasses,
+        "max-w-sm rounded px-4 py-3 text-sm shadow-md border flex justify-between items-center",
+        variantStyles[variant],
+        className
+      )}
       role="alert"
     >
       <span>{message}</span>
