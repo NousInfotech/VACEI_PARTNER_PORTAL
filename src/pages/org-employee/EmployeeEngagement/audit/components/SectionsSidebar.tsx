@@ -22,7 +22,6 @@ interface SectionsSidebarProps {
 }
 
 export default function SectionsSidebar({ activeSection, onSectionChange }: SectionsSidebarProps) {
-    // Custom color from request: rgb(253, 230, 138)
     const activeColor = 'rgb(253, 230, 138)';
 
     return (
@@ -42,7 +41,7 @@ export default function SectionsSidebar({ activeSection, onSectionChange }: Sect
                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 border group`}
                             style={{
                                 borderColor: isActive ? activeColor : 'transparent',
-                                color: isActive ? 'white' : '#4B5563', // gray-600
+                                color: isActive ? 'white' : '#4B5563',
                                 backgroundColor: isActive ? activeColor : 'transparent',
                             }}
                             onMouseEnter={(e) => {

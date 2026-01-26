@@ -59,7 +59,6 @@ export default function ClassificationBuilder({ value, onChange }: Classificatio
                             {LEVEL_2_OPTIONS.map(opt => (
                                 <option key={opt} value={opt}>{opt}</option>
                             ))}
-                            {/* Allow custom if not in list? For now just options + whatever is already there if not matching */}
                             {!LEVEL_2_OPTIONS.includes(level) && level && (
                                 <option value={level}>{level}</option>
                             )}
