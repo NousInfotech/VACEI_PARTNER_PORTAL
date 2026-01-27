@@ -41,13 +41,13 @@ export default function SectionsSidebar({ activeSection, onSectionChange }: Sect
                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 border group`}
                             style={{
                                 borderColor: isActive ? activeColor : 'transparent',
-                                color: isActive ? 'white' : '#4B5563',
+                                color: isActive ? 'black' : '#4B5563',
                                 backgroundColor: isActive ? activeColor : 'transparent',
                             }}
                             onMouseEnter={(e) => {
                                 if (!isActive) {
                                     e.currentTarget.style.backgroundColor = activeColor;
-                                    e.currentTarget.style.color = 'white';
+                                    e.currentTarget.style.color = 'black';
                                     e.currentTarget.style.borderColor = activeColor;
                                 }
                             }}
