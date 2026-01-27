@@ -3,6 +3,7 @@ import ExtendedTB from './extended-tb/ExtendedTB';
 import SectionsSidebar from './components/SectionsSidebar';
 import Adjustments from './adjustments/Adjustments';
 import Reclassifications from './reclassifications/Reclassifications';
+import IncomeStatement from './income-statement/IncomeStatement';
 
 const SECTIONS = [
     { id: 'extended-tb', label: 'Extended Trial Balance' },
@@ -24,6 +25,8 @@ export default function Sections() {
                 return <Adjustments />;
             case 'reclassifications':
                 return <Reclassifications />;
+            case 'income-statement':
+                return <IncomeStatement />;
             default:
                 return (
                     <div className="flex items-center justify-center h-full text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
