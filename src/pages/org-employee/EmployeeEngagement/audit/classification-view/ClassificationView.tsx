@@ -4,6 +4,7 @@ import ClassificationTabs from "./components/ClassificationTabs";
 import ClassificationSummary from "./components/ClassificationSummary";
 import ClassificationTable, { type TableRow } from "./components/ClassificationTable";
 import ClassificationEvidence from "./components/ClassificationEvidence";
+import ClassificationProcedures from "./components/ClassificationProcedures";
 
 interface ClassificationViewProps {
     title: string;
@@ -96,8 +97,12 @@ export default function ClassificationView({ title }: ClassificationViewProps) {
                 <ClassificationEvidence />
             )}
 
+            {activeTab === 'Procedures' && (
+                <ClassificationProcedures title={title} />
+            )}
+
             {/* Placeholders for other tabs */}
-            {(activeTab === 'Procedures' || activeTab === 'WorkBook') && (
+            {activeTab === 'WorkBook' && (
                 <div className="flex-1 bg-white border border-dashed border-gray-300 rounded-xl flex items-center justify-center p-12 text-center">
                     <p className="text-gray-500">{activeTab} content coming soon...</p>
                 </div>
