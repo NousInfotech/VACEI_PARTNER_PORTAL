@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import ExtendedTB from './extended-tb/ExtendedTB';
 import SectionsSidebar from './components/SectionsSidebar';
+import Adjustments from './adjustments/Adjustments';
+import Reclassifications from './reclassifications/Reclassifications';
 
 const SECTIONS = [
     { id: 'extended-tb', label: 'Extended Trial Balance' },
@@ -18,6 +20,10 @@ export default function Sections() {
         switch (activeSection) {
             case 'extended-tb':
                 return <ExtendedTB isSectionsView={true} />;
+            case 'adjustments':
+                return <Adjustments />;
+            case 'reclassifications':
+                return <Reclassifications />;
             default:
                 return (
                     <div className="flex items-center justify-center h-full text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
