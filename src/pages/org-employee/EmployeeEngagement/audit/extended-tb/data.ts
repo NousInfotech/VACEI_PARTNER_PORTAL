@@ -9,6 +9,7 @@ export interface ExtendedTBRow {
     priorYear: number;
     classification: string;
     actions: string[];
+    linkedFiles?: string[];
 }
 
 export const financialMockData: ExtendedTBRow[] = [
@@ -23,7 +24,8 @@ export const financialMockData: ExtendedTBRow[] = [
         priorYear: 217685,
         classification: "Assets > Non-current > Intangible assets > Intangible assets - Cost",
 
-        actions: []
+        actions: [],
+        linkedFiles: ["invoice_123.pdf", "receipt_456.png"]
     },
     {
         id: 2,

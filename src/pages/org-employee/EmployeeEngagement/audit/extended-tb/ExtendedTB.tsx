@@ -7,7 +7,7 @@ import ExtendedTBTable from "./ExtendedTBTable";
 import { financialMockData } from "./data";
 import type { ExtendedTBRow } from "./data";
 
-export default function ExtendedTB() {
+export default function ExtendedTB({ isSectionsView = false }: { isSectionsView?: boolean }) {
     const [data, setData] = useState<ExtendedTBRow[]>(financialMockData);
 
     const handleAddRow = () => {
@@ -21,7 +21,8 @@ export default function ExtendedTB() {
             finalBalance: 0,
             priorYear: 0,
             classification: "",
-            actions: []
+            actions: [],
+            linkedFiles: []
         };
         setData([...data, newRow]);
     };
@@ -43,18 +44,21 @@ export default function ExtendedTB() {
                     <h2 className="text-xl font-bold text-gray-900">Extended Trial Balance</h2>
                     <p className="text-sm text-gray-500">Manage your financial data and adjustments</p>
                 </div>
-                <div className="flex gap-2">
-                    <Button size="sm" className="gap-2" onClick={handleAddRow}>
-                        <Plus size={16} />
-                        Add Row
-                    </Button>
-                </div>
+                {!isSectionsView && (
+                    <div className="flex gap-2">
+                        <Button size="sm" className="gap-2" onClick={handleAddRow}>
+                            <Plus size={16} />
+                            Add Row
+                        </Button>
+                    </div>
+                )}
             </div>
 
             <ExtendedTBTable
                 data={data}
                 onUpdateRow={handleUpdateRow}
                 onDeleteRow={handleDeleteRow}
+                isSectionsView={isSectionsView}
             />
         </div>
     );

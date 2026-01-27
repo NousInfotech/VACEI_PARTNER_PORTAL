@@ -17,7 +17,7 @@ export default function Sections() {
     const renderContent = () => {
         switch (activeSection) {
             case 'extended-tb':
-                return <ExtendedTB />;
+                return <ExtendedTB isSectionsView={true} />;
             default:
                 return (
                     <div className="flex items-center justify-center h-full text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
