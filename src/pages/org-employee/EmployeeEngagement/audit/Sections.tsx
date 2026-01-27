@@ -6,6 +6,7 @@ import Reclassifications from './reclassifications/Reclassifications';
 import IncomeStatement from './income-statement/IncomeStatement';
 import BalanceSheet from './balance-sheet/BalanceSheet';
 import Exports from './exports/Exports';
+import ClassificationView from './classification-view/ClassificationView';
 
 const SECTIONS = [
     { id: 'extended-tb', label: 'Extended Trial Balance' },
@@ -33,6 +34,13 @@ export default function Sections() {
                 return <BalanceSheet />;
             case 'exports':
                 return <Exports />;
+
+            // Dynamic Classification Pages
+            case 'intangible-assets':
+                return <ClassificationView title="Intangible Assets" subtitle="Analysis of intangible assets, amortization, and impairment." />;
+            case 'share-capital':
+                return <ClassificationView title="Share Capital" subtitle="Analysis of equity structure, shares issued, and capital reserves." />;
+
             default:
                 return (
                     <div className="flex items-center justify-center h-full text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
