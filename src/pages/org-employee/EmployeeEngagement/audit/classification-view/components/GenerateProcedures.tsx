@@ -31,8 +31,9 @@ export default function GenerateProcedures({ onProceed }: GenerateProceduresProp
                         </div>
                         <input
                             type="number"
-                            className="block w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                            className="block w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             placeholder="Enter materiality amount"
+                            onWheel={(e) => e.currentTarget.blur()}
                         />
                     </div>
                 </div>
