@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus, Search, Mail, User, Edit, Loader2, CheckCircle } from "lucide-react";
 import { Button } from "@/ui/Button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/ui/Dialog";
@@ -44,7 +44,7 @@ export default function EmployeeManagement() {
         message: ""
     });
 
-    const fetchEmployees = async () => {
+    const fetchEmployees = useCallback(async () => {
         try {
             setLoading(true);
             const response = await axiosInstance.get(endPoints.ORGANIZATION.GET_MEMBERS, {
@@ -72,7 +72,7 @@ export default function EmployeeManagement() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [searchQuery]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -80,7 +80,7 @@ export default function EmployeeManagement() {
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [searchQuery]);
+    }, [fetchEmployees]);
 
     const handleCreateSuccess = () => {
         fetchEmployees();
