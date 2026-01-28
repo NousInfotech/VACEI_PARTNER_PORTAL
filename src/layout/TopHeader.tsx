@@ -12,8 +12,8 @@ interface TopHeaderProps {
     role: string;
 }
 
-export default function TopHeader({ 
-    onSidebarToggle, 
+export default function TopHeader({
+    onSidebarToggle,
     isSidebarCollapsed,
     username,
     role
@@ -35,7 +35,7 @@ export default function TopHeader({
     }, [organizationMember?.allowedServices, setSelectedService]);
 
     return (
-        <header 
+        <header
             className="h-16 backdrop-blur-xl border flex items-center justify-between px-6 sticky top-0 z-40 rounded-4xl m-2 mb-0 bg-white/80 shadow-lg border-gray-200"
         >
             <div className="flex items-center gap-4">
@@ -65,11 +65,11 @@ export default function TopHeader({
                     </div>
                 </div>
 
-                {organizationMember && (
+                {organizationMember && role !== 'Admin' && (
                     <div className="flex items-center gap-2 ml-4">
                         <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest whitespace-nowrap">Service:</p>
                         <div className="relative group">
-                            <Select 
+                            <Select
                                 label={selectedService?.replace(/_/g, " ") || "Select Service"}
                                 items={services}
                                 className="w-auto"

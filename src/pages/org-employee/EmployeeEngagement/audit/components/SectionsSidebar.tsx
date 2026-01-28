@@ -37,6 +37,12 @@ const CLASSIFICATION_SECTIONS: SidebarItem[] = [
     { id: 'share-capital', label: 'Share capital', type: 'item' },
 ];
 
+const PLANNING_SECTIONS: SidebarItem[] = [
+    { id: 'header-planning', label: 'PLANNING PROCEDURES', type: 'header' },
+    { id: 'generate-procedures', label: 'Generate Procedures', icon: Sliders, type: 'item' },
+    { id: 'view-procedures', label: 'View Procedures', icon: FileText, type: 'item' },
+];
+
 interface SectionsSidebarProps {
     activeSection: string;
     onSectionChange: (sectionId: string) => void;
@@ -93,6 +99,11 @@ export default function SectionsSidebar({ activeSection, onSectionChange }: Sect
                 <p className="text-xs text-gray-500 mt-1">Quick views and classifications</p>
             </div>
             <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+                {/* Planning Procedures */}
+                <div className="space-y-1 mb-6">
+                    {PLANNING_SECTIONS.map(renderItem)}
+                </div>
+
                 {/* General Tools */}
                 <div className="space-y-1 mb-6">
                     {GENERAL_SECTIONS.map(renderItem)}

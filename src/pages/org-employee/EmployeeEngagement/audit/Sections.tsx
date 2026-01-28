@@ -7,6 +7,8 @@ import IncomeStatement from './income-statement/IncomeStatement';
 import BalanceSheet from './balance-sheet/BalanceSheet';
 import Exports from './exports/Exports';
 import ClassificationView from './classification-view/ClassificationView';
+import GenerateProcedures from './classification-view/components/GenerateProcedures';
+import ViewProcedures from './classification-view/components/ViewProcedures';
 
 const SECTIONS = [
     { id: 'extended-tb', label: 'Extended Trial Balance' },
@@ -15,10 +17,12 @@ const SECTIONS = [
     { id: 'income-statement', label: 'Income Statement' },
     { id: 'balance-sheet', label: 'Balance Sheet' },
     { id: 'exports', label: 'Exports' },
+    { id: 'generate-procedures', label: 'Generate Procedures' },
+    { id: 'view-procedures', label: 'View Procedures' },
 ];
 
 export default function Sections() {
-    const [activeSection, setActiveSection] = useState('extended-tb');
+    const [activeSection, setActiveSection] = useState('generate-procedures');
 
     const renderContent = () => {
         switch (activeSection) {
@@ -34,6 +38,20 @@ export default function Sections() {
                 return <BalanceSheet />;
             case 'exports':
                 return <Exports />;
+
+            // Planning Procedures
+            case 'generate-procedures':
+                return (
+                    <div className="p-8">
+                        <GenerateProcedures onProceed={() => setActiveSection('view-procedures')} />
+                    </div>
+                );
+            case 'view-procedures':
+                return (
+                    <div className="p-8">
+                        <ViewProcedures title="Audit Procedures" />
+                    </div>
+                );
 
             // Dynamic Classification Pages
             case 'intangible-assets':
@@ -51,14 +69,14 @@ export default function Sections() {
     };
 
     return (
-        <div className="flex bg-white rounded-2xl overflow-hidden min-h-[600px]">
+        <div className="flex bg-white rounded-2xl overflow-hidden min-h-[600px] h-[calc(100vh-140px)]">
             <SectionsSidebar
                 activeSection={activeSection}
                 onSectionChange={setActiveSection}
             />
 
             {/* Main Content */}
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 bg-white">
                 <div className="h-full overflow-y-auto">
                     {renderContent()}
                 </div>

@@ -7,4 +7,8 @@ export const endPoints = {
     CHANGE_PASSWORD: '/auth/change-password',
     ME: '/auth/me',
   },
+  ORGANIZATION: {
+    CREATE_MEMBER: '/organization-members',
+    GET_MEMBERS: '/organization-members',
+  },
 };

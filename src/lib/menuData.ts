@@ -1,10 +1,10 @@
-import { 
-  DashboardSquare02Icon, 
-  Book02Icon, 
-  GitPullRequestIcon, 
-  DocumentValidationIcon, 
-  InstallingUpdates02Icon,
-  Building01Icon, 
+import {
+    DashboardSquare02Icon,
+    Book02Icon,
+    GitPullRequestIcon,
+    DocumentValidationIcon,
+    InstallingUpdates02Icon,
+    Building01Icon,
 } from '@hugeicons/core-free-icons';
 import type { MenuItem } from './types';
 
@@ -18,13 +18,22 @@ export const menuData: MenuItem[] = [
         description: "Service Overview",
         roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
     },
+    // {
+    //     slug: "clients",
+    //     icon: Building01Icon,
+    //     label: "Clients",
+    //     href: "/dashboard/clients",
+    //     section: "primary",
+    //     description: "Manage client companies",
+    //     roles: ["ORG_ADMIN"]
+    // },
     {
-        slug: "clients",
-        icon: Building01Icon,
-        label: "Clients",
-        href: "/dashboard/clients",
+        slug: "employees",
+        icon: Building01Icon, // Using similar icon for now
+        label: "Employees",
+        href: "/dashboard/employees",
         section: "primary",
-        description: "Manage client companies",
+        description: "Manage organization employees",
         roles: ["ORG_ADMIN"]
     },
     {
@@ -54,15 +63,15 @@ export const menuData: MenuItem[] = [
         description: "Manage templates",
         roles: ["ORG_EMPLOYEE"]
     },
-    {
-        slug: "organization",
-        icon: Building01Icon,
-        label: "Organization",
-        href: "/dashboard/organization",
-        section: "primary",
-        description: "Manage organization details",
-        roles: ["ORG_ADMIN"]
-    },
+    // {
+    //     slug: "organization",
+    //     icon: Building01Icon,
+    //     label: "Organization",
+    //     href: "/dashboard/organization",
+    //     section: "primary",
+    //     description: "Manage organization details",
+    //     roles: ["ORG_ADMIN"]
+    // },
     {
         slug: "settings",
         icon: InstallingUpdates02Icon,

@@ -1,28 +1,24 @@
-import { useNavigate } from "react-router-dom";
-import { Button } from "../../ui/Button";
-import { useAuth } from "../../context/auth-context-core";
+import EmployeeManagement from "./employee-management/EmployeeManagement";
 
-export default function AdminDashboard() {
-  const navigate = useNavigate();
-  const { logout } = useAuth();
+interface AdminDashboardProps {
+  activeSection?: string;
+}
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
+export default function AdminDashboard({ activeSection }: AdminDashboardProps) {
 
+  if (activeSection === "Employees") {
+    return <EmployeeManagement />;
+  }
+
+  // Default Admin Dashboard (or redirect to Employees if it's the main view)
   return (
     <div className="min-h-screen flex flex-col items-center justify-center">
       <div className="text-center space-y-6">
         <h1 className="text-6xl font-bold text-primary">Welcome Admin</h1>
         <p className="text-gray-500 text-xl">Manage your organization efficiently.</p>
-        <Button 
-          onClick={handleLogout}
-          variant="outline"
-          className="mt-4"
-        >
-          Logout
-        </Button>
+        <div className="p-4 bg-yellow-50 text-yellow-800 rounded-lg">
+          Select "Employees" from the sidebar to manage your team.
+        </div>
       </div>
     </div>
   );
