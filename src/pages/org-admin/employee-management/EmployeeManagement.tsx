@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Search, Mail, User } from "lucide-react";
+import { Plus, Search, Mail, User, Edit, Loader2, CheckCircle } from "lucide-react";
 import { Button } from "@/ui/Button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/ui/Dialog";
 import CreateEmployee from "./CreateEmployee";
@@ -11,9 +11,9 @@ interface Employee {
     id: string;
     firstName: string;
     lastName: string;
+    services: string[];
     email: string;
     role: string;
-    services: string[];
 }
 
 interface OrganizationMemberResponse {
@@ -28,12 +28,21 @@ interface OrganizationMemberResponse {
     };
 }
 
+
 export default function EmployeeManagement() {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
     const [isAssignServicesOpen, setIsAssignServicesOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+
+    // Success Dialog State
+    const [successDialog, setSuccessDialog] = useState<{ open: boolean; title: string; message: string }>({
+        open: false,
+        title: "",
+        message: ""
+    });
 
     const fetchEmployees = async () => {
         try {
@@ -42,7 +51,8 @@ export default function EmployeeManagement() {
                 params: {
                     page: 1,
                     limit: 10,
-                    order: 'desc'
+                    order: 'desc',
+                    search: searchQuery
                 }
             });
 
@@ -65,12 +75,31 @@ export default function EmployeeManagement() {
     };
 
     useEffect(() => {
-        fetchEmployees();
-    }, []);
+        const timer = setTimeout(() => {
+            fetchEmployees();
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
 
     const handleCreateSuccess = () => {
         fetchEmployees();
         setIsCreateOpen(false);
+        setSuccessDialog({
+            open: true,
+            title: "Employee Added",
+            message: "The new employee has been successfully added to your organization."
+        });
+    };
+
+    const handleAssignServicesSuccess = () => {
+        fetchEmployees();
+        setIsAssignServicesOpen(false);
+        setSuccessDialog({
+            open: true,
+            title: "Services Updated",
+            message: "The services for this employee have been successfully updated."
+        });
     };
 
     const handleAssignServices = (employee: Employee) => {
@@ -100,19 +129,24 @@ export default function EmployeeManagement() {
                             type="text"
                             placeholder="Search employees..."
                             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
                 </div>
 
                 {loading ? (
-                    <div className="p-8 text-center text-gray-500">Loading employees...</div>
+                    <div className="p-12 flex flex-col items-center justify-center text-gray-500 gap-3">
+                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                        <span className="text-sm font-medium">Loading employees...</span>
+                    </div>
                 ) : (
                     <table className="w-full">
                         <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             <tr>
                                 <th className="px-6 py-4">Employee</th>
-                                <th className="px-6 py-4">Role</th>
-                                <th className="px-6 py-4">Assigned Services</th>
+                                <th className="px-6 py-4 text-center">Role</th>
+                                <th className="px-6 py-4 text-center">Assigned Services</th>
                                 <th className="px-6 py-4 text-right">Actions</th>
                             </tr>
                         </thead>
@@ -134,14 +168,14 @@ export default function EmployeeManagement() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-4 text-center">
                                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
                                                 <User size={12} />
                                                 {emp.role}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-wrap gap-2">
+                                        <td className="px-6 py-4 text-center">
+                                            <div className="flex flex-wrap gap-2 justify-center">
                                                 {emp.services && emp.services.length > 0 ? (
                                                     emp.services.map((service, i) => (
                                                         <span key={i} className="px-2 py-1 rounded border border-gray-200 text-xs font-medium text-gray-600 bg-white">
@@ -155,11 +189,12 @@ export default function EmployeeManagement() {
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <Button
-                                                variant="ghost"
+                                                variant="outline"
                                                 size="sm"
                                                 onClick={() => handleAssignServices(emp)}
-                                                className="text-primary hover:text-primary/80 hover:bg-primary/5"
+                                                className="text-primary hover:text-primary/80 hover:bg-primary/5 gap-2"
                                             >
+                                                <Edit size={14} />
                                                 Assign Services
                                             </Button>
                                         </td>
@@ -196,13 +231,31 @@ export default function EmployeeManagement() {
                     {selectedEmployee && (
                         <AssignServices
                             employee={selectedEmployee}
-                            onSuccess={() => {
-                                setIsAssignServicesOpen(false);
-                                fetchEmployees();
-                            }}
+                            onSuccess={handleAssignServicesSuccess}
                             onCancel={() => setIsAssignServicesOpen(false)}
                         />
                     )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Success Dialog */}
+            <Dialog open={successDialog.open} onOpenChange={(open) => setSuccessDialog(prev => ({ ...prev, open }))}>
+                <DialogContent className="sm:max-w-md text-center">
+                    <div className="flex flex-col items-center justify-center space-y-4 py-4">
+                        <div className="p-3 bg-green-100 rounded-full text-green-600">
+                            <CheckCircle size={48} />
+                        </div>
+                        <div className="space-y-2">
+                            <h3 className="text-xl font-semibold text-gray-900">{successDialog.title}</h3>
+                            <p className="text-gray-500">{successDialog.message}</p>
+                        </div>
+                        <Button
+                            className="w-full mt-4"
+                            onClick={() => setSuccessDialog(prev => ({ ...prev, open: false }))}
+                        >
+                            Got it, thanks!
+                        </Button>
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>
