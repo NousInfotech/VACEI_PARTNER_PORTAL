@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { Button } from "../../../ui/Button";
+import { Button } from "@/ui/Button";
+import axiosInstance from "@/config/axiosConfig";
+import { endPoints } from "@/config/endPoint";
+import { AVAILABLE_SERVICES } from "@/lib/types";
 
 interface Employee {
     id: string;
@@ -14,15 +17,9 @@ interface AssignServicesProps {
     onCancel: () => void;
 }
 
-const AVAILABLE_SERVICES = [
-    { id: "Audit", label: "Audit & Assurance" },
-    { id: "Tax", label: "Tax Services" },
-    { id: "Advisory", label: "Advisory" },
-    { id: "Compliance", label: "Compliance" }
-];
-
 export default function AssignServices({ employee, onSuccess, onCancel }: AssignServicesProps) {
     const [selectedServices, setSelectedServices] = useState<string[]>(employee.services || []);
+    const [loading, setLoading] = useState(false);
 
     const toggleService = (serviceId: string) => {
         if (selectedServices.includes(serviceId)) {
@@ -34,10 +31,22 @@ export default function AssignServices({ employee, onSuccess, onCancel }: Assign
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // TODO: Call Assign Services API
-        console.log(`Assigning services for ${employee.id}:`, selectedServices);
+        setLoading(true);
+        try {
+            console.log(`Assigning services for ${employee.id}:`, selectedServices);
+            const response = await axiosInstance.patch(
+                `${endPoints.ORGANIZATION.ASSIGN_SERVICES}/${employee.id}/services`,
+                { allowedServices: selectedServices }
+            );
 
-        onSuccess();
+            if (response.data.success) {
+                onSuccess();
+            }
+        } catch (error) {
+            console.error("Failed to assign services", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -69,8 +78,10 @@ export default function AssignServices({ employee, onSuccess, onCancel }: Assign
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
-                <Button type="submit">Save Changes</Button>
+                <Button type="button" variant="ghost" onClick={onCancel} disabled={loading}>Cancel</Button>
+                <Button type="submit" disabled={loading}>
+                    {loading ? "Saving..." : "Save Changes"}
+                </Button>
             </div>
         </form>
     );

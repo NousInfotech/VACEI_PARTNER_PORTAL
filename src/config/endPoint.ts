@@ -10,5 +10,6 @@ export const endPoints = {
   ORGANIZATION: {
     CREATE_MEMBER: '/organization-members',
     GET_MEMBERS: '/organization-members',
+    ASSIGN_SERVICES: '/organization-members',
   },
 };

@@ -2,18 +2,12 @@ import { useState } from "react";
 import { Button } from "@/ui/Button";
 import axiosInstance from "@/config/axiosConfig";
 import { endPoints } from "@/config/endPoint";
+import { AVAILABLE_SERVICES } from "@/lib/types";
 
 interface CreateEmployeeProps {
     onSuccess: (data: unknown) => void;
     onCancel: () => void;
 }
-
-const AVAILABLE_SERVICES = [
-    { id: "ACCOUNTING", label: "Accounting" },
-    { id: "VAT", label: "VAT" },
-    { id: "AUDIT", label: "Audit" },
-    { id: "CORPORATE_TAX", label: "Corporate Tax" }
-];
 
 export default function CreateEmployee({ onSuccess, onCancel }: CreateEmployeeProps) {
     const [loading, setLoading] = useState(false);
@@ -53,7 +47,6 @@ export default function CreateEmployee({ onSuccess, onCancel }: CreateEmployeePr
             }
         } catch (error) {
             console.error("Failed to create employee", error);
-            // Ideally show error message to user
         } finally {
             setLoading(false);
         }

@@ -69,3 +69,17 @@ export interface AuthMeResponse {
   };
   message?: string;
 }
+
+export const AVAILABLE_SERVICES = [
+  { id: "ACCOUNTING", label: "Accounting" },
+  { id: "AUDITING", label: "Auditing" },
+  { id: "VAT", label: "VAT" },
+  { id: "CFO", label: "CFO" },
+  { id: "CSP", label: "CSP" },
+  { id: "LEGAL", label: "Legal" },
+  { id: "PAYROLL", label: "Payroll" },
+  { id: "PROJECTS_TRANSACTIONS", label: "Projects & Transactions" },
+  { id: "TECHNOLOGY", label: "Technology" },
+  { id: "GRANTS_AND_INCENTIVES", label: "Grants & Incentives" },
+  { id: "INCORPORATION", label: "Incorporation" }
+];
