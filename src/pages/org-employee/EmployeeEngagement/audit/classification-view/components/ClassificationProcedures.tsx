@@ -46,10 +46,6 @@ export default function ClassificationProcedures({ title }: ClassificationProced
                 </div>
             </div>
 
-            {/* Navigation Tabs - Only show if not deep in wizard? Or always?
-                If I am in Step 1/2 of wizard, tab switching might be confusing. 
-                But let's keep it simple for now. 
-            */}
             <div className="flex items-center bg-gray-50 p-1.5 rounded-xl border border-gray-100 w-full">
                 <button
                     onClick={() => { setMode('generate'); setWizardStep('select-mode'); }}
