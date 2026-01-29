@@ -4,7 +4,8 @@ import {
     ArrowRightLeft,
     TrendingUp,
     Scale,
-    Download
+    Download,
+    PanelLeftClose
 } from 'lucide-react';
 
 interface SidebarItem {
@@ -38,17 +39,17 @@ const CLASSIFICATION_SECTIONS: SidebarItem[] = [
 ];
 
 const PLANNING_SECTIONS: SidebarItem[] = [
-    { id: 'header-planning', label: 'PLANNING PROCEDURES', type: 'header' },
-    { id: 'generate-procedures', label: 'Generate Procedures', icon: Sliders, type: 'item' },
-    { id: 'view-procedures', label: 'View Procedures', icon: FileText, type: 'item' },
+    { id: 'header-planning', label: 'PLANNING', type: 'header' },
+    { id: 'planning-procedures', label: 'Planning Procedures', icon: Sliders, type: 'item' },
 ];
 
 interface SectionsSidebarProps {
     activeSection: string;
     onSectionChange: (sectionId: string) => void;
+    onToggle: () => void;
 }
 
-export default function SectionsSidebar({ activeSection, onSectionChange }: SectionsSidebarProps) {
+export default function SectionsSidebar({ activeSection, onSectionChange, onToggle }: SectionsSidebarProps) {
     const activeColor = 'rgb(253, 230, 138)';
 
     const renderItem = (item: SidebarItem) => {
@@ -71,7 +72,6 @@ export default function SectionsSidebar({ activeSection, onSectionChange }: Sect
         const Icon = item.icon;
         const isActive = activeSection === item.id;
 
-        // Indent items that are part of classifications (rudimentary check, can be improved)
         const isClassificationItem = !item.icon;
 
         return (
@@ -94,18 +94,26 @@ export default function SectionsSidebar({ activeSection, onSectionChange }: Sect
 
     return (
         <div className="w-72 border-r border-gray-100 flex flex-col shrink-0 bg-gray-50/50">
-            <div className="p-6 border-b border-gray-100 bg-white">
-                <h3 className="font-bold text-gray-900 leading-tight">Sections</h3>
-                <p className="text-xs text-gray-500 mt-1">Quick views and classifications</p>
+            <div className="p-6 border-b border-gray-100 bg-white flex justify-between items-start">
+                <div>
+                    <h3 className="font-bold text-gray-900 leading-tight">Sections</h3>
+                    <p className="text-xs text-gray-500 mt-1">Quick views and classifications</p>
+                </div>
+                <button
+                    onClick={onToggle}
+                    className="p-1.5 hover:bg-gray-100 rounded-md text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                    <PanelLeftClose size={18} />
+                </button>
             </div>
             <nav className="flex-1 overflow-y-auto p-4 space-y-1">
                 {/* Planning Procedures */}
-                <div className="space-y-1 mb-6">
+                <div className="space-y-1">
                     {PLANNING_SECTIONS.map(renderItem)}
                 </div>
 
                 {/* General Tools */}
-                <div className="space-y-1 mb-6">
+                <div className="space-y-1">
                     {GENERAL_SECTIONS.map(renderItem)}
                 </div>
 

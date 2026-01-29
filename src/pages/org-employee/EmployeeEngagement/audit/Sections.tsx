@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Menu } from 'lucide-react';
 import ExtendedTB from './extended-tb/ExtendedTB';
 import SectionsSidebar from './components/SectionsSidebar';
 import Adjustments from './adjustments/Adjustments';
@@ -7,8 +8,7 @@ import IncomeStatement from './income-statement/IncomeStatement';
 import BalanceSheet from './balance-sheet/BalanceSheet';
 import Exports from './exports/Exports';
 import ClassificationView from './classification-view/ClassificationView';
-import GenerateProcedures from './classification-view/components/GenerateProcedures';
-import ViewProcedures from './classification-view/components/ViewProcedures';
+import ClassificationProcedures from './classification-view/components/ClassificationProcedures';
 
 const SECTIONS = [
     { id: 'extended-tb', label: 'Extended Trial Balance' },
@@ -17,12 +17,12 @@ const SECTIONS = [
     { id: 'income-statement', label: 'Income Statement' },
     { id: 'balance-sheet', label: 'Balance Sheet' },
     { id: 'exports', label: 'Exports' },
-    { id: 'generate-procedures', label: 'Generate Procedures' },
-    { id: 'view-procedures', label: 'View Procedures' },
+    { id: 'planning-procedures', label: 'Planning Procedures' },
 ];
 
 export default function Sections() {
-    const [activeSection, setActiveSection] = useState('generate-procedures');
+    const [activeSection, setActiveSection] = useState('planning-procedures');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     const renderContent = () => {
         switch (activeSection) {
@@ -40,16 +40,10 @@ export default function Sections() {
                 return <Exports />;
 
             // Planning Procedures
-            case 'generate-procedures':
+            case 'planning-procedures':
                 return (
                     <div className="p-8">
-                        <GenerateProcedures onProceed={() => setActiveSection('view-procedures')} />
-                    </div>
-                );
-            case 'view-procedures':
-                return (
-                    <div className="p-8">
-                        <ViewProcedures title="Audit Procedures" />
+                        <ClassificationProcedures title="Audit Procedures" />
                     </div>
                 );
 
@@ -69,15 +63,28 @@ export default function Sections() {
     };
 
     return (
-        <div className="flex bg-white rounded-2xl overflow-hidden min-h-[600px] h-[calc(100vh-140px)]">
-            <SectionsSidebar
-                activeSection={activeSection}
-                onSectionChange={setActiveSection}
-            />
+        <div className="flex bg-white rounded-2xl overflow-hidden min-h-[600px] h-[calc(100vh-140px)] relative">
+            <div className={`${isSidebarOpen ? 'w-72 border-r' : 'w-0'} transition-all duration-300 overflow-hidden bg-gray-50/50 border-gray-100 flex flex-col shrink-0`}>
+                <SectionsSidebar
+                    activeSection={activeSection}
+                    onSectionChange={setActiveSection}
+                    onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+                />
+            </div>
 
             {/* Main Content */}
-            <div className="flex-1 min-w-0 bg-white">
-                <div className="h-full overflow-y-auto">
+            <div className="flex-1 min-w-0 bg-white relative flex flex-col">
+                {!isSidebarOpen && (
+                    <div className="absolute top-4 left-4 z-20">
+                        <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="p-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 text-gray-500 hover:text-gray-700 transition-colors"
+                        >
+                            <Menu size={20} />
+                        </button>
+                    </div>
+                )}
+                <div className={`h-full overflow-y-auto ${!isSidebarOpen ? 'pt-16' : ''}`}>
                     {renderContent()}
                 </div>
             </div>
