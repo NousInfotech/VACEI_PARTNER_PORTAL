@@ -9,6 +9,7 @@ import BalanceSheet from './balance-sheet/BalanceSheet';
 import Exports from './exports/Exports';
 import ClassificationView from './classification-view/ClassificationView';
 import PlanningProcedures from './classification-view/components/PlanningProcedures';
+import CompletionProcedures from './classification-view/components/CompletionProcedures';
 
 const SECTIONS = [
     { id: 'extended-tb', label: 'Extended Trial Balance' },
@@ -18,6 +19,7 @@ const SECTIONS = [
     { id: 'balance-sheet', label: 'Balance Sheet' },
     { id: 'exports', label: 'Exports' },
     { id: 'planning-procedures', label: 'Planning Procedures' },
+    { id: 'completion-procedures', label: 'Completion Procedures' },
 ];
 
 export default function Sections() {
@@ -44,6 +46,14 @@ export default function Sections() {
                 return (
                     <div className="p-8">
                         <PlanningProcedures title="Planning Procedures" />
+                    </div>
+                );
+
+            // Completion Procedures
+            case 'completion-procedures':
+                return (
+                    <div className="p-8">
+                        <CompletionProcedures title="Completion Procedures" />
                     </div>
                 );
 

@@ -22,6 +22,7 @@ const GENERAL_SECTIONS: SidebarItem[] = [
     { id: 'income-statement', label: 'Income Statement', icon: TrendingUp, type: 'item' },
     { id: 'balance-sheet', label: 'Balance Sheet', icon: Scale, type: 'item' },
     { id: 'exports', label: 'Exports', icon: Download, type: 'item' },
+    { id: 'completion-procedures', label: 'Completion Procedures', icon: FileText, type: 'item' },
 ];
 
 const CLASSIFICATION_SECTIONS: SidebarItem[] = [
@@ -93,7 +94,7 @@ export default function SectionsSidebar({ activeSection, onSectionChange, onTogg
     };
 
     return (
-        <div className="w-72 border-r border-gray-100 flex flex-col shrink-0 bg-gray-50/50">
+        <div className="w-full h-full border-r border-gray-100 flex flex-col shrink-0 bg-gray-50/50">
             <div className="p-6 border-b border-gray-100 bg-white flex justify-between items-start">
                 <div>
                     <h3 className="font-bold text-gray-900 leading-tight">Sections</h3>
