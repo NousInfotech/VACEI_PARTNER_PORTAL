@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "../../../../../../ui/Button";
 
 interface MaterialityStepProps {
-    onProceed: () => void;
+    onProceed: (amount: string) => void;
 }
 
 export default function MaterialityStep({ onProceed }: MaterialityStepProps) {
@@ -56,7 +56,7 @@ export default function MaterialityStep({ onProceed }: MaterialityStepProps) {
             </div>
 
             <div className="flex justify-end">
-                <Button onClick={onProceed} className="bg-gray-600 hover:bg-gray-700 text-white px-6">
+                <Button onClick={() => onProceed(amount)} className="bg-gray-600 hover:bg-gray-700 text-white px-6">
                     Proceed to Classifications →
                 </Button>
             </div>

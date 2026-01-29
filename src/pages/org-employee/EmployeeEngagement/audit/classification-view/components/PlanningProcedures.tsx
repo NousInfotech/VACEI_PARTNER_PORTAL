@@ -2,15 +2,33 @@ import { useState } from "react";
 import { Sparkles, Eye } from "lucide-react";
 import GenerateProcedures from "./GenerateProcedures";
 import ViewProcedures from "./ViewProcedures";
+import ClassificationSelectionStep from "./ClassificationSelectionStep";
 
-interface ClassificationProceduresProps {
+interface PlanningProceduresProps {
     title: string;
 }
 
+type WizardStep = 'select-mode' | 'materiality' | 'classifications';
 type Mode = 'generate' | 'view';
+type WizardMode = 'manual' | 'ai' | 'hybrid';
 
-export default function ClassificationProcedures({ title }: ClassificationProceduresProps) {
+export default function PlanningProcedures({ title }: PlanningProceduresProps) {
     const [mode, setMode] = useState<Mode>('generate');
+    const [wizardStep, setWizardStep] = useState<WizardStep>('select-mode');
+    const [activeWizardMode, setActiveWizardMode] = useState<WizardMode>('manual');
+
+    const handleModeSelect = (selectedMode: WizardMode) => {
+        setActiveWizardMode(selectedMode);
+        setWizardStep('classifications');
+    };
+
+    const handleClassificationProceed = () => {
+        setMode('view');
+    };
+
+    const handleBackToMode = () => {
+        setWizardStep('select-mode');
+    };
 
     return (
         <div className="space-y-8">
@@ -18,14 +36,14 @@ export default function ClassificationProcedures({ title }: ClassificationProced
             <div className="flex justify-between items-center">
                 <div className="flex items-center gap-4">
                     <div>
-                        <h1 className="text-xl font-bold text-gray-900">Procedures</h1>
+                        <h1 className="text-xl font-bold text-gray-900">{title}</h1>
                     </div>
                 </div>
             </div>
 
             <div className="flex items-center bg-gray-50 p-1.5 rounded-xl border border-gray-100 w-full">
                 <button
-                    onClick={() => setMode('generate')}
+                    onClick={() => { setMode('generate'); setWizardStep('select-mode'); }}
                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${mode === 'generate'
                         ? 'bg-white text-gray-900 shadow-sm border border-gray-200/50'
                         : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100/50'
@@ -48,7 +66,19 @@ export default function ClassificationProcedures({ title }: ClassificationProced
             </div>
 
             {mode === 'generate' && (
-                <GenerateProcedures onProceed={() => setMode('view')} />
+                <>
+                    {wizardStep === 'select-mode' && (
+                        <GenerateProcedures onProceed={handleModeSelect} />
+                    )}
+                    {wizardStep === 'classifications' && (
+                        <ClassificationSelectionStep
+                            mode={activeWizardMode}
+                            materialityAmount="0"
+                            onProceed={handleClassificationProceed}
+                            onBack={handleBackToMode}
+                        />
+                    )}
+                </>
             )}
 
             {mode === 'view' && (

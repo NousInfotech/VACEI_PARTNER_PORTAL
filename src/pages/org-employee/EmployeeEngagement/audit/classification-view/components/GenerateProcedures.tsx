@@ -1,7 +1,7 @@
 import { Bot, User, BrainCircuit } from "lucide-react";
 
 interface GenerateProceduresProps {
-    onProceed: () => void;
+    onProceed: (mode: 'manual' | 'ai' | 'hybrid') => void;
 }
 
 export default function GenerateProcedures({ onProceed }: GenerateProceduresProps) {
@@ -15,7 +15,7 @@ export default function GenerateProcedures({ onProceed }: GenerateProceduresProp
             <div className="grid grid-cols-1 gap-4 w-full max-w-2xl">
                 {/* Manual */}
                 <button
-                    onClick={onProceed}
+                    onClick={() => onProceed('manual')}
                     className="flex items-center gap-6 p-6 bg-white border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-sm transition-all text-left group"
                 >
                     <div className="w-12 h-12 rounded-xl bg-gray-900 flex items-center justify-center shrink-0">
@@ -29,7 +29,7 @@ export default function GenerateProcedures({ onProceed }: GenerateProceduresProp
 
                 {/* AI */}
                 <button
-                    onClick={onProceed}
+                    onClick={() => onProceed('ai')}
                     className="flex items-center gap-6 p-6 bg-white border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-sm transition-all text-left group"
                 >
                     <div className="w-12 h-12 rounded-xl bg-gray-500 flex items-center justify-center shrink-0">
@@ -43,7 +43,7 @@ export default function GenerateProcedures({ onProceed }: GenerateProceduresProp
 
                 {/* Hybrid */}
                 <button
-                    onClick={onProceed}
+                    onClick={() => onProceed('hybrid')}
                     className="flex items-center gap-6 p-6 bg-white border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-sm transition-all text-left group"
                 >
                     <div className="w-12 h-12 rounded-xl bg-gray-700 flex items-center justify-center shrink-0">

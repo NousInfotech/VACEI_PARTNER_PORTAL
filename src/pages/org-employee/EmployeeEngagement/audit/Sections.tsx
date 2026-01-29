@@ -8,7 +8,7 @@ import IncomeStatement from './income-statement/IncomeStatement';
 import BalanceSheet from './balance-sheet/BalanceSheet';
 import Exports from './exports/Exports';
 import ClassificationView from './classification-view/ClassificationView';
-import ClassificationProcedures from './classification-view/components/ClassificationProcedures';
+import PlanningProcedures from './classification-view/components/PlanningProcedures';
 
 const SECTIONS = [
     { id: 'extended-tb', label: 'Extended Trial Balance' },
@@ -43,7 +43,7 @@ export default function Sections() {
             case 'planning-procedures':
                 return (
                     <div className="p-8">
-                        <ClassificationProcedures title="Audit Procedures" />
+                        <PlanningProcedures title="Planning Procedures" />
                     </div>
                 );
 
