@@ -26,7 +26,7 @@ export default function LeadSheetMappingsDialog({ isOpen, onClose }: LeadSheetMa
                     range: 'Sheet1!A2:D4',
                     workbook: 'Unique Ltd.xlsx',
                     refFiles: 1,
-                    isHighlighted: true // To match the pink background in screenshot
+                    isHighlighted: true
                 }
             ]
         },
@@ -90,8 +90,8 @@ export default function LeadSheetMappingsDialog({ isOpen, onClose }: LeadSheetMa
                                             <div
                                                 key={idx}
                                                 className={`p-4 rounded-lg border flex items-center justify-between ${item.isHighlighted
-                                                        ? 'bg-pink-50 border-pink-100'
-                                                        : 'bg-gray-50 border-gray-100'
+                                                    ? 'bg-pink-50 border-pink-100'
+                                                    : 'bg-gray-50 border-gray-100'
                                                     }`}
                                             >
                                                 <div>
@@ -104,8 +104,8 @@ export default function LeadSheetMappingsDialog({ isOpen, onClose }: LeadSheetMa
                                                     {item.refFiles > 0 && (
                                                         <div className="flex items-center gap-4 mt-2">
                                                             <div className={`text-xs font-medium px-2 py-0.5 rounded border ${item.isHighlighted
-                                                                    ? 'bg-pink-100 border-pink-200 text-pink-800'
-                                                                    : 'bg-white border-gray-200 text-gray-600'
+                                                                ? 'bg-pink-100 border-pink-200 text-pink-800'
+                                                                : 'bg-white border-gray-200 text-gray-600'
                                                                 }`}>
                                                                 {item.refFiles} reference file
                                                             </div>
