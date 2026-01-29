@@ -26,8 +26,6 @@ export default function ClassificationProcedures({ title }: ClassificationProced
 
     const handleClassificationProceed = () => {
         setMode('view');
-        // Reset wizard for next time? Or keep it?
-        // setWizardStep('select-mode'); 
     };
 
 
