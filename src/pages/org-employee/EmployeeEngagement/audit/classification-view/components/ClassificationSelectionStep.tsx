@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { CheckCircle, Circle, CheckCircle2, Euro, Info, Filter, Sparkles } from "lucide-react";
+import { CheckCircle, Circle, CheckCircle2, Euro, Info, Filter, Sparkles, ArrowLeft } from "lucide-react";
 import { Button } from "../../../../../../ui/Button";
 
 interface ClassificationSelectionStepProps {
@@ -7,6 +7,7 @@ interface ClassificationSelectionStepProps {
     onBack?: () => void;
     mode?: 'manual' | 'ai' | 'hybrid';
     materialityAmount?: string;
+    stepLabel?: string;
 }
 
 interface AccountRow {
@@ -35,7 +36,7 @@ const MOCK_DATA: AccountRow[] = [
     { id: '14', valid: true, code: '14', accountName: 'Other Income:Other Income (not taxable)', finalBalance: -4917, classification: 'Unclassified' },
 ];
 
-export default function ClassificationSelectionStep({ onProceed, onBack, mode = 'manual', materialityAmount = '0' }: ClassificationSelectionStepProps) {
+export default function ClassificationSelectionStep({ onProceed, onBack, mode = 'manual', materialityAmount = '0', stepLabel = 'Step 1 of 2' }: ClassificationSelectionStepProps) {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(MOCK_DATA.filter(r => r.valid).map(r => r.id)));
 
     const toggleSelection = (id: string) => {
@@ -76,6 +77,14 @@ export default function ClassificationSelectionStep({ onProceed, onBack, mode = 
             {/* Top Navigation / Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
+                    {onBack && (
+                        <button
+                            onClick={onBack}
+                            className="p-1 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-700 transition-colors mr-2"
+                        >
+                            <ArrowLeft size={20} />
+                        </button>
+                    )}
                     <span className="bg-gray-100 text-gray-700 text-xs font-bold px-2 py-1 rounded uppercase flex items-center gap-1 border border-gray-200">
                         {mode === 'manual' && <span className="w-2 h-2 rounded-full bg-gray-500"></span>}
                         {mode === 'ai' && <Sparkles size={10} className="text-purple-500" />}
@@ -83,7 +92,7 @@ export default function ClassificationSelectionStep({ onProceed, onBack, mode = 
                     </span>
                     <h2 className="text-xl font-semibold text-gray-900">Select Classifications</h2>
                 </div>
-                <div className="text-sm text-gray-500 font-medium">Step 1 of 2</div>
+                <div className="text-sm text-gray-500 font-medium">{stepLabel}</div>
             </div>
 
             <div className="border-t border-gray-200 -mt-2 mb-4" />
