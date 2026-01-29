@@ -2,12 +2,17 @@ import { FileSpreadsheet } from "lucide-react";
 import WorkbookTable from "./WorkbookTable";
 import LinkedWorkbooksCard from "./LinkedWorkbooksCard";
 import UploadWorkbookCard from "./UploadWorkbookCard";
+import type { WorkbookFile } from "../ClassificationView";
 
 interface ClassificationWorkbookProps {
     title: string;
+    files: WorkbookFile[];
+    onUpload: (file: WorkbookFile) => void;
+    onFileClick: (file: WorkbookFile) => void;
+    onDeleteFile: (id: string) => void;
 }
 
-export default function ClassificationWorkbook({ title }: ClassificationWorkbookProps) {
+export default function ClassificationWorkbook({ title, files, onUpload, onFileClick, onDeleteFile }: ClassificationWorkbookProps) {
     // Mock Data
     const groupedRows = [
         {
@@ -70,7 +75,12 @@ export default function ClassificationWorkbook({ title }: ClassificationWorkbook
                     <LinkedWorkbooksCard />
                 </div>
 
-                <UploadWorkbookCard />
+                <UploadWorkbookCard
+                    files={files}
+                    onUpload={onUpload}
+                    onFileClick={onFileClick}
+                    onDelete={onDeleteFile}
+                />
             </div>
         </div>
     );

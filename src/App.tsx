@@ -6,6 +6,7 @@ import MainLayout from './layout/MainLayout'
 import NotFound from './pages/common/NotFound'
 import { AuthProvider } from './context/AuthContext'
 import EngagementFullView from './pages/org-employee/EmployeeEngagement/EngagementFullView'
+import WorkbookViewerPage from './pages/common/WorkbookViewerPage'
 
 const App = () => {
   return (
@@ -27,6 +28,7 @@ const App = () => {
             <Route path="*" element={<NotFound />} />
           </Route>
           <Route path="/engagement-view/:id" element={<EngagementFullView />} />
+          <Route path="/workbook-viewer" element={<WorkbookViewerPage />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </Router>

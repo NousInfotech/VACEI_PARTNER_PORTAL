@@ -1,20 +1,16 @@
-import { useState, useRef } from "react";
+import { useRef } from "react";
 import { UploadCloud, FileSpreadsheet, Clock, Link, Trash2 } from "lucide-react";
+import type { WorkbookFile } from "../ClassificationView";
 
-interface WorkbookFile {
-    id: string;
-    name: string;
-    user: string;
-    size: string;
-    date: string;
+interface UploadWorkbookCardProps {
+    files: WorkbookFile[];
+    onUpload: (file: WorkbookFile) => void;
+    onFileClick: (file: WorkbookFile) => void;
+    onDelete: (id: string) => void;
 }
 
-export default function UploadWorkbookCard() {
+export default function UploadWorkbookCard({ files, onUpload, onFileClick, onDelete }: UploadWorkbookCardProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [files, setFiles] = useState<WorkbookFile[]>([
-        { id: '1', name: "Unique Ltd.xlsx", user: "Uploaded by User", size: "2.4 MB", date: "2 min ago" },
-        { id: '2', name: "Financial_Report_2024.xlsx", user: "Uploaded by Admin", size: "1.8 MB", date: "1 hour ago" }
-    ]);
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -26,12 +22,8 @@ export default function UploadWorkbookCard() {
                 size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
                 date: "Just now"
             };
-            setFiles([newFile, ...files]);
+            onUpload(newFile);
         }
-    };
-
-    const handleDelete = (id: string) => {
-        setFiles(files.filter(f => f.id !== id));
     };
 
     const handleUploadClick = () => {
@@ -78,7 +70,11 @@ export default function UploadWorkbookCard() {
                 <h3 className="text-lg font-bold text-gray-900 mb-6">Recent Workbooks</h3>
                 <div className="space-y-4">
                     {files.map((file) => (
-                        <div key={file.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100 group hover:border-blue-200 transition-all">
+                        <div
+                            key={file.id}
+                            onClick={() => onFileClick(file)}
+                            className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100 group hover:border-blue-200 transition-all cursor-pointer hover:bg-blue-50/30"
+                        >
                             <div className="p-3 bg-white border border-gray-200 rounded-lg text-green-600">
                                 <FileSpreadsheet size={20} />
                             </div>
@@ -94,7 +90,7 @@ export default function UploadWorkbookCard() {
                                     <span>{file.date}</span>
                                 </div>
 
-                                <div className="flex items-center gap-2 pl-2 border-l border-gray-200">
+                                <div className="flex items-center gap-2 pl-2 border-l border-gray-200" onClick={(e) => e.stopPropagation()}>
                                     <button
                                         className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-white rounded transition-colors"
                                         title="Link to Field"
@@ -102,7 +98,7 @@ export default function UploadWorkbookCard() {
                                         <Link size={16} />
                                     </button>
                                     <button
-                                        onClick={() => handleDelete(file.id)}
+                                        onClick={() => onDelete(file.id)}
                                         className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-white rounded transition-colors"
                                         title="Delete"
                                     >
