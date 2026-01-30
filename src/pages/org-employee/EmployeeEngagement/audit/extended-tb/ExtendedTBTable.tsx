@@ -41,14 +41,14 @@ export default function ExtendedTBTable({ data, onUpdateRow, onDeleteRow, isSect
                     <thead>
                         <tr className="bg-gray-50/50 border-b border-gray-200">
                             <th className="py-4 px-4 font-semibold text-gray-600 w-16 text-center">Code</th>
-                            <th className="py-4 px-4 font-semibold text-gray-600 min-w-[200px] text-center">Account Name</th>
+                            <th className="py-4 px-4 font-semibold text-gray-600 min-w-[200px] text-left">Account Name</th>
 
 
-                            <th className="py-4 px-4 font-semibold text-gray-600 text-center whitespace-nowrap">Current Year</th>
-                            <th className="py-4 px-4 font-semibold text-gray-600 text-center whitespace-nowrap">Re-Classification</th>
-                            <th className="py-4 px-4 font-semibold text-gray-600 text-center whitespace-nowrap">Adjustments</th>
-                            <th className="py-4 px-4 font-semibold text-gray-600 text-center whitespace-nowrap">Final Balance</th>
-                            <th className="py-4 px-4 font-semibold text-gray-600 text-center whitespace-nowrap">Prior Year</th>
+                            <th className="py-4 px-4 font-semibold text-gray-600 text-right whitespace-nowrap">Current Year</th>
+                            <th className="py-4 px-4 font-semibold text-gray-600 text-right whitespace-nowrap">Re-Classification</th>
+                            <th className="py-4 px-4 font-semibold text-gray-600 text-right whitespace-nowrap">Adjustments</th>
+                            <th className="py-4 px-4 font-semibold text-gray-600 text-right whitespace-nowrap">Final Balance</th>
+                            <th className="py-4 px-4 font-semibold text-gray-600 text-right whitespace-nowrap">Prior Year</th>
                             {!isSectionsView && <th className="py-4 px-4 font-semibold text-gray-600 min-w-[300px] text-center">Classification</th>}
                             <th className="py-4 px-4 font-semibold text-gray-600 w-24 text-center">
                                 {isSectionsView ? "Linked files" : "Actions"}
@@ -70,21 +70,29 @@ export default function ExtendedTBTable({ data, onUpdateRow, onDeleteRow, isSect
                                         />
                                     )}
                                 </td>
-                                <td className="py-3 px-4 font-medium text-gray-900 text-center align-top">
+                                <td className="py-3 px-4 font-medium text-gray-900 text-left align-top">
                                     {isSectionsView ? (
-                                        <div className="px-3 py-2 text-gray-900 font-medium">{row.accountName}</div>
+                                        <div className="px-3 py-2 text-gray-900 font-medium break-words max-w-[300px] bg-white border border-gray-200 rounded-xl leading-relaxed shadow-sm">
+                                            {row.accountName}
+                                        </div>
                                     ) : (
-                                        <input
-                                            type="text"
+                                        <textarea
                                             value={row.accountName}
-                                            onChange={(e) => onUpdateRow(row.id, 'accountName', e.target.value)}
-                                            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 font-medium text-center focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                            onChange={(e) => {
+                                                onUpdateRow(row.id, 'accountName', e.target.value);
+                                                e.target.style.height = 'auto';
+                                                e.target.style.height = e.target.scrollHeight + 'px';
+                                            }}
+                                            rows={1}
+                                            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 font-medium text-left focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none shadow-sm overflow-hidden min-h-[50px] leading-relaxed"
+                                            placeholder="Enter account name..."
+                                            style={{ height: 'auto' }}
                                         />
                                     )}
                                 </td>
 
 
-                                <td className="py-3 px-4 text-center font-medium text-gray-700 align-top">
+                                <td className="py-3 px-4 text-right font-medium text-gray-700 align-top">
                                     {isSectionsView ? (
                                         <div className="px-3 py-2 font-medium text-gray-700">{formatCurrency(row.currentYear)}</div>
                                     ) : (
@@ -92,14 +100,14 @@ export default function ExtendedTBTable({ data, onUpdateRow, onDeleteRow, isSect
                                             type="number"
                                             value={row.currentYear}
                                             onChange={(e) => onUpdateRow(row.id, 'currentYear', Number(e.target.value))}
-                                            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-center font-medium text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-right font-medium text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                                         />
                                     )}
                                 </td>
-                                <td className="py-3 px-4 text-center text-gray-500 align-top pt-5">{row.reClassification !== 0 ? formatCurrency(row.reClassification) : '-'}</td>
-                                <td className="py-3 px-4 text-center text-gray-500 align-top pt-5">{row.adjustments !== 0 ? formatCurrency(row.adjustments) : '-'}</td>
-                                <td className="py-3 px-4 text-center font-bold text-gray-900 align-top pt-5">{formatCurrency(row.finalBalance)}</td>
-                                <td className="py-3 px-4 text-center text-gray-500 align-top">
+                                <td className="py-3 px-4 text-right text-gray-500 align-top pt-5">{row.reClassification !== 0 ? formatCurrency(row.reClassification) : '-'}</td>
+                                <td className="py-3 px-4 text-right text-gray-500 align-top pt-5">{row.adjustments !== 0 ? formatCurrency(row.adjustments) : '-'}</td>
+                                <td className="py-3 px-4 text-right font-bold text-gray-900 align-top pt-5">{formatCurrency(row.finalBalance)}</td>
+                                <td className="py-3 px-4 text-right text-gray-500 align-top">
                                     {isSectionsView ? (
                                         <div className="px-3 py-2 text-gray-500">{formatCurrency(row.priorYear)}</div>
                                     ) : (
@@ -107,7 +115,7 @@ export default function ExtendedTBTable({ data, onUpdateRow, onDeleteRow, isSect
                                             type="number"
                                             value={row.priorYear}
                                             onChange={(e) => onUpdateRow(row.id, 'priorYear', Number(e.target.value))}
-                                            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-center text-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-right text-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                                         />
                                     )}
                                 </td>
@@ -119,11 +127,11 @@ export default function ExtendedTBTable({ data, onUpdateRow, onDeleteRow, isSect
                                         />
                                     </td>
                                 )}
-                                <td className="py-3 px-4 text-center align-top pt-4">
+                                <td className="py-3 px-4 text-center align-top pt-4 whitespace-nowrap">
                                     {isSectionsView ? (
                                         <div className="flex justify-center">
                                             <div className={`
-                                                flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-medium transition-colors
+                                                flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-medium transition-colors whitespace-nowrap
                                                 ${row.linkedFiles && row.linkedFiles.length > 0
                                                     ? "bg-blue-50 border-blue-100 text-blue-600"
                                                     : "bg-gray-50 border-gray-200 text-gray-500"}
@@ -147,19 +155,19 @@ export default function ExtendedTBTable({ data, onUpdateRow, onDeleteRow, isSect
                         {/* Summary Row */}
                         <tr className="bg-gray-50 font-bold border-t-2 border-gray-200">
                             <td colSpan={2} className="py-4 px-4 text-center text-gray-900 uppercase text-xs tracking-wider">Total</td>
-                            <td className="py-4 px-4 text-center text-gray-900">
+                            <td className="py-4 px-4 text-right text-gray-900">
                                 {formatCurrency(data.reduce((acc, row) => acc + row.currentYear, 0))}
                             </td>
-                            <td className="py-4 px-4 text-center text-gray-900">
+                            <td className="py-4 px-4 text-right text-gray-900">
                                 {formatCurrency(data.reduce((acc, row) => acc + row.reClassification, 0))}
                             </td>
-                            <td className="py-4 px-4 text-center text-gray-900">
+                            <td className="py-4 px-4 text-right text-gray-900">
                                 {formatCurrency(data.reduce((acc, row) => acc + row.adjustments, 0))}
                             </td>
-                            <td className="py-4 px-4 text-center text-gray-900">
+                            <td className="py-4 px-4 text-right text-gray-900">
                                 {formatCurrency(data.reduce((acc, row) => acc + row.finalBalance, 0))}
                             </td>
-                            <td className="py-4 px-4 text-center text-gray-900">
+                            <td className="py-4 px-4 text-right text-gray-900">
                                 {formatCurrency(data.reduce((acc, row) => acc + row.priorYear, 0))}
                             </td>
                             <td colSpan={2}></td>
