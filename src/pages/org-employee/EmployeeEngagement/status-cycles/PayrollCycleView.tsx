@@ -1,5 +1,3 @@
-
-import { useMemo } from 'react';
 import { CheckCircle2, Building2, User, AlertTriangle, Download } from 'lucide-react';
 import { Button } from '../../../../ui/Button';
 import { ShadowCard } from '../../../../ui/ShadowCard';
@@ -7,27 +5,25 @@ import { PayrollCycleStatus, EmployeePayrollStatus } from './types';
 import { MOCK_PAYROLL_CYCLES, MOCK_EMPLOYEES_PAYROLL } from './data';
 import { cn } from '../../../../lib/utils';
 
+const ORG_STATUS_STEPS = [
+    { id: PayrollCycleStatus.DRAFT, label: 'Draft' },
+    { id: PayrollCycleStatus.DATA_COLLECTION, label: 'Data Collection' },
+    { id: PayrollCycleStatus.CALCULATION_IN_PROGRESS, label: 'Calculating' },
+    { id: PayrollCycleStatus.REVIEW_IN_PROGRESS, label: 'Review' },
+    // Combining Clarification/Approval for simplified view or keeping distinct steps
+    { id: PayrollCycleStatus.APPROVED, label: 'Approved' },
+    { id: PayrollCycleStatus.PROCESSING_PAYMENTS, label: 'Processing' },
+    { id: PayrollCycleStatus.PAID, label: 'Paid' },
+    { id: PayrollCycleStatus.STATUTORY_FILING, label: 'Filing' },
+    { id: PayrollCycleStatus.COMPLETED, label: 'Completed' },
+];
+
 export default function PayrollCycleView() {
     // Mock fetching current cycle
     const currentCycle = MOCK_PAYROLL_CYCLES[0];
     const employees = MOCK_EMPLOYEES_PAYROLL;
 
-    const ORG_STATUS_STEPS = [
-        { id: PayrollCycleStatus.DRAFT, label: 'Draft' },
-        { id: PayrollCycleStatus.DATA_COLLECTION, label: 'Data Collection' },
-        { id: PayrollCycleStatus.CALCULATION_IN_PROGRESS, label: 'Calculating' },
-        { id: PayrollCycleStatus.REVIEW_IN_PROGRESS, label: 'Review' },
-        // Combining Clarification/Approval for simplified view or keeping distinct steps
-        { id: PayrollCycleStatus.APPROVED, label: 'Approved' },
-        { id: PayrollCycleStatus.PROCESSING_PAYMENTS, label: 'Processing' },
-        { id: PayrollCycleStatus.PAID, label: 'Paid' },
-        { id: PayrollCycleStatus.STATUTORY_FILING, label: 'Filing' },
-        { id: PayrollCycleStatus.COMPLETED, label: 'Completed' },
-    ];
-
-    const currentStepIndex = useMemo(() => {
-        return ORG_STATUS_STEPS.findIndex(s => s.id === currentCycle.status);
-    }, [currentCycle.status]);
+    const currentStepIndex = ORG_STATUS_STEPS.findIndex(s => s.id === currentCycle.status);
 
     return (
         <div className="space-y-8">

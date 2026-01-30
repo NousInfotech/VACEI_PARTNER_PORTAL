@@ -1,32 +1,31 @@
-import { useMemo } from 'react';
 import { CheckCircle2, Circle, Clock, ArrowRight, Download, Upload } from 'lucide-react';
 import { ShadowCard } from '../../../../ui/ShadowCard';
 import { VATCycleStatus } from './types';
 import { MOCK_VAT_CYCLES } from './data';
 import { cn } from '../../../../lib/utils';
 
+const STATUS_STEPS = [
+    { id: VATCycleStatus.DRAFT, label: 'Draft', description: 'Period created' },
+    { id: VATCycleStatus.DATA_COLLECTING, label: 'Data Collection', description: 'Gathering invoices' },
+    { id: VATCycleStatus.REVIEW_IN_PROGRESS, label: 'Review', description: 'Accountant reviewing' },
+    { id: VATCycleStatus.READY_TO_FILE, label: 'Ready to File', description: 'Confirmed numbers' },
+    { id: VATCycleStatus.FILED, label: 'Filed', description: 'Submitted to authority' },
+    { id: VATCycleStatus.COMPLETED, label: 'Completed', description: 'Cycle closed' },
+];
+
 export default function VATCycleView() {
     // In a real app, this would come from an API based on the engagement ID
     const currentCycle = MOCK_VAT_CYCLES[0];
     const historyCycles = MOCK_VAT_CYCLES.slice(1);
 
-    const STATUS_STEPS = [
-        { id: VATCycleStatus.DRAFT, label: 'Draft', description: 'Period created' },
-        { id: VATCycleStatus.DATA_COLLECTING, label: 'Data Collection', description: 'Gathering invoices' },
-        { id: VATCycleStatus.REVIEW_IN_PROGRESS, label: 'Review', description: 'Accountant reviewing' },
-        { id: VATCycleStatus.READY_TO_FILE, label: 'Ready to File', description: 'Confirmed numbers' },
-        { id: VATCycleStatus.FILED, label: 'Filed', description: 'Submitted to authority' },
-        { id: VATCycleStatus.COMPLETED, label: 'Completed', description: 'Cycle closed' },
-    ];
-
-    const currentStepIndex = useMemo(() => {
+    const currentStepIndex = (() => {
         // Simple logic to map the status to the step index
         // Note: This simplifies the branching logic (Refund/Payment) for linear display
         if (currentCycle.status === VATCycleStatus.PAYMENT_PENDING || currentCycle.status === VATCycleStatus.PAID) {
-            return 4; // Map payment states to after Filed but before Completed for visual simplicity or handle branching
+            return 4;
         }
         return STATUS_STEPS.findIndex(s => s.id === currentCycle.status);
-    }, [currentCycle.status]);
+    })();
 
     return (
         <div className="space-y-6">
