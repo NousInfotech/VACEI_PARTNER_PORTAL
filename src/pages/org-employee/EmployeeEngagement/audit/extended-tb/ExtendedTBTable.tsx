@@ -1,3 +1,4 @@
+import { useRef, useEffect } from "react";
 import {
     Trash2,
     Eye
@@ -11,6 +12,36 @@ interface ExtendedTBTableProps {
     onUpdateRow: (id: number, field: string, value: string | number) => void;
     onDeleteRow: (id: number) => void;
     isSectionsView?: boolean;
+}
+
+
+function ResizableTextarea({ value, onChange, placeholder }: { value: string, onChange: (val: string) => void, placeholder?: string }) {
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    const adjustHeight = () => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = `${textarea.scrollHeight}px`;
+        }
+    };
+
+    useEffect(() => {
+        adjustHeight();
+    }, [value]);
+
+    return (
+        <textarea
+            ref={textareaRef}
+            value={value}
+            onChange={(e) => {
+                onChange(e.target.value);
+            }}
+            rows={1}
+            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 font-medium text-left focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none shadow-sm overflow-hidden min-h-[50px] leading-relaxed block"
+            placeholder={placeholder}
+        />
+    );
 }
 
 export default function ExtendedTBTable({ data, onUpdateRow, onDeleteRow, isSectionsView = false }: ExtendedTBTableProps) {
@@ -76,17 +107,10 @@ export default function ExtendedTBTable({ data, onUpdateRow, onDeleteRow, isSect
                                             {row.accountName}
                                         </div>
                                     ) : (
-                                        <textarea
+                                        <ResizableTextarea
                                             value={row.accountName}
-                                            onChange={(e) => {
-                                                onUpdateRow(row.id, 'accountName', e.target.value);
-                                                e.target.style.height = 'auto';
-                                                e.target.style.height = e.target.scrollHeight + 'px';
-                                            }}
-                                            rows={1}
-                                            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 font-medium text-left focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none shadow-sm overflow-hidden min-h-[50px] leading-relaxed"
+                                            onChange={(val) => onUpdateRow(row.id, 'accountName', val)}
                                             placeholder="Enter account name..."
-                                            style={{ height: 'auto' }}
                                         />
                                     )}
                                 </td>

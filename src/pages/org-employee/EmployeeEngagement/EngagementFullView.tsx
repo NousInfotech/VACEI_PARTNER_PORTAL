@@ -15,6 +15,8 @@ import {
   Activity,
   CheckCircle2,
   BookOpen,
+  PieChart,
+  Landmark,
 } from "lucide-react";
 import { ShadowCard } from "../../../ui/ShadowCard";
 import { Button } from "../../../ui/Button";
@@ -29,6 +31,8 @@ import AuditContent from "./audit/AuditContent";
 
 import VATCycleView from "./status-cycles/VATCycleView";
 import PayrollCycleView from "./status-cycles/PayrollCycleView";
+import MBRView from "./mbr/MBRView";
+import TaxView from "./tax/TaxView";
 
 const ENGAGEMENT_TABS = [
   { id: 'dashboard', label: 'Engagement Dashboard', icon: LayoutDashboard },
@@ -36,6 +40,8 @@ const ENGAGEMENT_TABS = [
   { id: 'audit', label: 'AUDIT', icon: BookOpen },
   { id: 'vat', label: 'VAT', icon: Activity },
   { id: 'payroll', label: 'Payroll', icon: Users },
+  { id: 'mbr', label: 'MBR', icon: PieChart },
+  { id: 'tax', label: 'TAX', icon: Landmark },
   { id: 'library', label: 'Library', icon: Library },
   { id: 'todo', label: 'Todo/Checklists', icon: CheckSquare },
   { id: 'messages', label: 'Messages', icon: MessageSquare },
@@ -325,6 +331,10 @@ export default function EngagementFullView() {
           <VATCycleView />
         ) : activeTab === 'payroll' ? (
           <PayrollCycleView />
+        ) : activeTab === 'mbr' ? (
+          <MBRView />
+        ) : activeTab === 'tax' ? (
+          <TaxView />
         ) : (
           <ShadowCard className="p-10 md:p-20 flex flex-col items-center justify-center text-center bg-gray-50/10 border-dashed min-h-[400px]">
             <div className="p-8 bg-white shadow-sm rounded-full mb-8 text-gray-300 transform transition-transform hover:scale-110 duration-500">
