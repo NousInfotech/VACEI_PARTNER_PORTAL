@@ -14,13 +14,10 @@ const STATUS_STEPS = [
 ];
 
 export default function VATCycleView() {
-    // In a real app, this would come from an API based on the engagement ID
     const currentCycle = MOCK_VAT_CYCLES[0];
     const historyCycles = MOCK_VAT_CYCLES.slice(1);
 
     const currentStepIndex = (() => {
-        // Simple logic to map the status to the step index
-        // Note: This simplifies the branching logic (Refund/Payment) for linear display
         if (currentCycle.status === VATCycleStatus.PAYMENT_PENDING || currentCycle.status === VATCycleStatus.PAID) {
             return 4;
         }

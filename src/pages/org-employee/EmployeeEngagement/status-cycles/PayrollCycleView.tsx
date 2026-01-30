@@ -10,7 +10,6 @@ const ORG_STATUS_STEPS = [
     { id: PayrollCycleStatus.DATA_COLLECTION, label: 'Data Collection' },
     { id: PayrollCycleStatus.CALCULATION_IN_PROGRESS, label: 'Calculating' },
     { id: PayrollCycleStatus.REVIEW_IN_PROGRESS, label: 'Review' },
-    // Combining Clarification/Approval for simplified view or keeping distinct steps
     { id: PayrollCycleStatus.APPROVED, label: 'Approved' },
     { id: PayrollCycleStatus.PROCESSING_PAYMENTS, label: 'Processing' },
     { id: PayrollCycleStatus.PAID, label: 'Paid' },
@@ -19,7 +18,6 @@ const ORG_STATUS_STEPS = [
 ];
 
 export default function PayrollCycleView() {
-    // Mock fetching current cycle
     const currentCycle = MOCK_PAYROLL_CYCLES[0];
     const employees = MOCK_EMPLOYEES_PAYROLL;
 

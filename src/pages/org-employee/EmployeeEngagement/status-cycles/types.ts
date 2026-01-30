@@ -53,7 +53,7 @@ export interface VATCycle {
 
 export interface PayrollCycle {
     id: string;
-    period: string; // e.g. "October 2024"
+    period: string;
     status: PayrollCycleStatus;
     totalSalaries: number;
     employeeCount: number;
