@@ -22,7 +22,7 @@ export default function TaxView() {
                     <TaxUpdateStatusCard />
                 </div>
                 <div className="h-full">
-                    <UploadDraftDocumentCard />
+                    <UploadDraftDocumentCard status="Rejected" />
                 </div>
                 <div className="h-full">
                     <UploadFinalDocumentCard />

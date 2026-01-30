@@ -24,7 +24,12 @@ export default function DocumentOverviewCard() {
                             <p className="text-[10px] text-gray-500">v1.2 • Draft</p>
                         </div>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-primary">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-gray-400 hover:text-primary"
+                        onClick={() => window.open('/path/to/draft-document', '_blank')}
+                    >
                         <Eye size={16} />
                     </Button>
                 </div>
@@ -40,7 +45,13 @@ export default function DocumentOverviewCard() {
                             <p className="text-[10px] text-gray-500">Not generated</p>
                         </div>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-primary" disabled>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-gray-400 hover:text-primary"
+                        disabled
+                        onClick={() => window.open('/path/to/final-document', '_blank')}
+                    >
                         <Eye size={16} />
                     </Button>
                 </div>

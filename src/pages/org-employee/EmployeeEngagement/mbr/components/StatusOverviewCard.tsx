@@ -27,7 +27,11 @@ export default function StatusOverviewCard() {
             </div>
 
             <div className="mt-6">
-                <Button className="w-full flex items-center gap-2" variant="outline">
+                <Button
+                    className="w-full flex items-center gap-2"
+                    variant="outline"
+                    onClick={() => window.open('/path/to/document', '_blank')}
+                >
                     <Eye size={16} />
                     View Document
                 </Button>

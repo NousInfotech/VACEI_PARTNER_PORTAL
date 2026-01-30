@@ -1,8 +1,25 @@
-import { UploadCloud, AlertTriangle, Lightbulb } from "lucide-react";
+import { useRef } from "react";
+import { UploadCloud, AlertTriangle, Lightbulb, FileUp } from "lucide-react";
 import { ShadowCard } from "../../../../../ui/ShadowCard";
-import { Button } from "../../../../../ui/Button";
 
-export default function UploadDraftDocumentCard() {
+interface UploadDraftDocumentCardProps {
+    status?: string;
+}
+
+export default function UploadDraftDocumentCard({ status = 'Rejected' }: UploadDraftDocumentCardProps) {
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            console.log("Draft File selected:", file.name);
+        }
+    };
+
     return (
         <ShadowCard className="p-6 h-full flex flex-col group hover:shadow-lg transition-all duration-300">
             <div className="flex items-center gap-3 mb-4">
@@ -18,20 +35,27 @@ export default function UploadDraftDocumentCard() {
                     <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
                     <p className="text-xs text-red-700 font-medium leading-relaxed">
                         Draft upload is only allowed at <strong>DRAFT</strong> status.<br />
-                        Current status: <span className="font-bold">REJECTED</span>
+                        Current status: <span className="font-bold">{status.toUpperCase()}</span>
                     </p>
                 </div>
 
-                <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Select Draft File</label>
-                    <div className="flex gap-2">
-                        <div className="flex-1 px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm text-gray-400 italic">
-                            No file chosen
-                        </div>
-                        <Button variant="outline" size="sm" disabled>
-                            Browse
-                        </Button>
+                {/* Functional Upload Area */}
+                <div
+                    onClick={handleClick}
+                    className="flex-1 flex flex-col items-center justify-center p-6 bg-gray-50 rounded-2xl border border-gray-100 border-dashed group-hover:bg-white transition-colors cursor-pointer min-h-[120px]"
+                >
+                    <div className="mb-3 p-3 bg-white rounded-full shadow-sm text-primary">
+                        <FileUp size={20} />
                     </div>
+                    <p className="text-sm font-bold text-gray-900">Click to upload</p>
+                    <p className="text-xs text-gray-400 mt-1">PDF, DOCX up to 10MB</p>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        onChange={handleFileChange}
+                        accept=".pdf,.docx,.doc"
+                    />
                 </div>
 
                 {/* Tip */}
