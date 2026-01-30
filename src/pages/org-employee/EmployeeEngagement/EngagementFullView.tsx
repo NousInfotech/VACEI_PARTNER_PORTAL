@@ -27,10 +27,15 @@ import PageHeader from "../../common/PageHeader";
 import { LibraryExplorer } from "./library/LibraryExplorer";
 import AuditContent from "./audit/AuditContent";
 
+import VATCycleView from "./status-cycles/VATCycleView";
+import PayrollCycleView from "./status-cycles/PayrollCycleView";
+
 const ENGAGEMENT_TABS = [
   { id: 'dashboard', label: 'Engagement Dashboard', icon: LayoutDashboard },
   { id: 'requests', label: 'Document Requests', icon: FileText },
   { id: 'audit', label: 'AUDIT', icon: BookOpen },
+  { id: 'vat', label: 'VAT', icon: Activity },
+  { id: 'payroll', label: 'Payroll', icon: Users },
   { id: 'library', label: 'Library', icon: Library },
   { id: 'todo', label: 'Todo/Checklists', icon: CheckSquare },
   { id: 'messages', label: 'Messages', icon: MessageSquare },
@@ -316,6 +321,10 @@ export default function EngagementFullView() {
           <LibraryExplorer />
         ) : activeTab === 'audit' ? (
           <AuditContent />
+        ) : activeTab === 'vat' ? (
+          <VATCycleView />
+        ) : activeTab === 'payroll' ? (
+          <PayrollCycleView />
         ) : (
           <ShadowCard className="p-10 md:p-20 flex flex-col items-center justify-center text-center bg-gray-50/10 border-dashed min-h-[400px]">
             <div className="p-8 bg-white shadow-sm rounded-full mb-8 text-gray-300 transform transition-transform hover:scale-110 duration-500">
