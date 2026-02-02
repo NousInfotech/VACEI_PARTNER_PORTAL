@@ -127,7 +127,7 @@ export default function EngagementFullView() {
     <div className="min-h-screen bg-gray-50 p-4 md:p-8 animate-in fade-in duration-500">
       <div className="max-w-[1600px] mx-auto space-y-6 md:space-y-8">
         <PageHeader
-          title={`Engagement Dashboard`}
+          title={`${serviceName} Dashboard`}
           actions={
             <Button variant="header" onClick={() => window.close()}>
               Close View
