@@ -36,6 +36,7 @@ import PayrollCycleView from "./status-cycles/PayrollCycleView";
 import MBRView from "./mbr/MBRView";
 import TaxView from "./tax/TaxView";
 import MessagesView from "./messages/MessagesView";
+import TeamsView from "./teams/TeamsView";
 
 const ENGAGEMENT_TABS = [
   { id: 'dashboard', label: 'Engagement Dashboard', icon: LayoutDashboard },
@@ -382,6 +383,8 @@ export default function EngagementFullView() {
           <TaxView />
         ) : activeTab === 'messages' ? (
           <MessagesView />
+        ) : activeTab === 'teams' ? (
+          <TeamsView />
         ) : (
           <ShadowCard className="p-10 md:p-20 flex flex-col items-center justify-center text-center bg-gray-50/10 border-dashed min-h-[400px]">
             <div className="p-8 bg-white shadow-sm rounded-full mb-8 text-gray-300 transform transition-transform hover:scale-110 duration-500">
