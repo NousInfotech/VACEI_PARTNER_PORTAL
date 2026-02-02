@@ -81,5 +81,7 @@ export const AVAILABLE_SERVICES = [
   { id: "PROJECTS_TRANSACTIONS", label: "Projects & Transactions" },
   { id: "TECHNOLOGY", label: "Technology" },
   { id: "GRANTS_AND_INCENTIVES", label: "Grants & Incentives" },
-  { id: "INCORPORATION", label: "Incorporation" }
+  { id: "INCORPORATION", label: "Incorporation" },
+  { id: "MBR", label: "MBR" },
+  { id: "TAX", label: "Tax" }
 ];

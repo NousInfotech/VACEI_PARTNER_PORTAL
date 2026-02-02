@@ -1,3 +1,4 @@
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard,
@@ -22,6 +23,7 @@ import { ShadowCard } from "../../../ui/ShadowCard";
 import { Button } from "../../../ui/Button";
 import { Skeleton } from "../../../ui/Skeleton";
 import PillTab from "../../common/PillTab";
+import { useParams } from "react-router-dom";
 import { useTabQuery } from "../../../hooks/useTabQuery";
 import { useAuth } from "../../../context/auth-context-core";
 import { cn } from "../../../lib/utils";
@@ -33,6 +35,7 @@ import VATCycleView from "./status-cycles/VATCycleView";
 import PayrollCycleView from "./status-cycles/PayrollCycleView";
 import MBRView from "./mbr/MBRView";
 import TaxView from "./tax/TaxView";
+import MessagesView from "./messages/MessagesView";
 
 const ENGAGEMENT_TABS = [
   { id: 'dashboard', label: 'Engagement Dashboard', icon: LayoutDashboard },
@@ -65,9 +68,51 @@ const MOCK_STATUS = {
 };
 
 export default function EngagementFullView() {
-  const [activeTab, setActiveTab] = useTabQuery('dashboard');
-  const { selectedService } = useAuth();
+  const { serviceId } = useParams();
+  const { selectedService, setSelectedService } = useAuth();
+
+  React.useEffect(() => {
+    if (serviceId && serviceId !== selectedService) {
+      setSelectedService(serviceId);
+    }
+  }, [serviceId, selectedService, setSelectedService]);
+
   const serviceName = selectedService?.replace(/_/g, " ") || 'Engagement';
+
+  const initialTab = React.useMemo(() => {
+    if (!selectedService) return 'dashboard';
+    const serviceMap: Record<string, string> = {
+      'AUDITING': 'audit',
+      'VAT': 'vat',
+      'PAYROLL': 'payroll',
+      'MBR': 'mbr',
+      'TAX': 'tax'
+    };
+    return serviceMap[selectedService] || 'dashboard';
+  }, [selectedService]);
+
+  const [activeTab, setActiveTab] = useTabQuery(initialTab);
+
+  const filteredTabs = React.useMemo(() => {
+    if (!selectedService) return ENGAGEMENT_TABS;
+
+    const serviceMap: Record<string, string> = {
+      'AUDITING': 'audit',
+      'VAT': 'vat',
+      'PAYROLL': 'payroll',
+      'MBR': 'mbr',
+      'TAX': 'tax'
+    };
+
+    const activeServiceTab = serviceMap[selectedService];
+
+    return ENGAGEMENT_TABS.filter(tab => {
+      if (['dashboard', 'requests', 'library', 'todo', 'messages', 'teams'].includes(tab.id)) {
+        return true;
+      }
+      return tab.id === activeServiceTab;
+    });
+  }, [selectedService]);
 
   const { isLoading: loading } = useQuery({
     queryKey: ['engagement-view', activeTab],
@@ -91,7 +136,7 @@ export default function EngagementFullView() {
 
         <div className="w-full overflow-hidden flex items-center">
           <PillTab
-            tabs={ENGAGEMENT_TABS}
+            tabs={filteredTabs}
             activeTab={activeTab}
             onTabChange={setActiveTab}
           />
@@ -335,16 +380,17 @@ export default function EngagementFullView() {
           <MBRView />
         ) : activeTab === 'tax' ? (
           <TaxView />
+        ) : activeTab === 'messages' ? (
+          <MessagesView />
         ) : (
           <ShadowCard className="p-10 md:p-20 flex flex-col items-center justify-center text-center bg-gray-50/10 border-dashed min-h-[400px]">
             <div className="p-8 bg-white shadow-sm rounded-full mb-8 text-gray-300 transform transition-transform hover:scale-110 duration-500">
               {activeTab === 'requests' && <FileText className="h-20 w-20" />}
               {activeTab === 'todo' && <CheckSquare className="h-20 w-20" />}
-              {activeTab === 'messages' && <MessageSquare className="h-20 w-20" />}
               {activeTab === 'teams' && <Users className="h-20 w-20" />}
             </div>
             <h2 className="text-2xl font-bold text-gray-900 font-secondary">
-              {ENGAGEMENT_TABS.find(t => t.id === activeTab)?.label}
+              {filteredTabs.find(t => t.id === activeTab)?.label}
             </h2>
             <p className="text-gray-500 max-w-md mt-4 text-lg">
               This module is being prepared for your specific engagement type.

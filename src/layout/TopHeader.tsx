@@ -27,10 +27,14 @@ export default function TopHeader({
     };
 
     const services = useMemo(() => {
-        return (organizationMember?.allowedServices || []).map(service => ({
+        const allowedServices = organizationMember?.allowedServices || [];
+
+        return allowedServices.map(service => ({
             id: service,
             label: service.replace(/_/g, " "),
-            onClick: () => setSelectedService(service)
+            onClick: () => {
+                setSelectedService(service);
+            }
         }));
     }, [organizationMember?.allowedServices, setSelectedService]);
 
