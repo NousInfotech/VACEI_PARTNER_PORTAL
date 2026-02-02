@@ -1,11 +1,8 @@
-import { Users, Mail, Phone, Shield, Plus, Trash2 } from "lucide-react";
+import { Users, Mail, Phone, Shield } from "lucide-react";
 import { ShadowCard } from "../../../../ui/ShadowCard";
 import { useAuth } from "../../../../context/auth-context-core";
-import { Button } from "../../../../ui/Button";
-import AddMemberDialog from "./components/AddMemberDialog";
-import { useState } from "react";
 
-const INITIAL_TEAM_MEMBERS = [
+const MOCK_TEAM_MEMBERS = [
     {
         id: 1,
         name: "Sarah Williams",
@@ -55,12 +52,6 @@ const INITIAL_TEAM_MEMBERS = [
 export default function TeamsView() {
     const { selectedService } = useAuth();
     const serviceName = selectedService?.replace(/_/g, " ") || "Engagement";
-    const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
-    const [teamMembers, setTeamMembers] = useState(INITIAL_TEAM_MEMBERS);
-
-    const handleDeleteMember = (id: number) => {
-        setTeamMembers(prev => prev.filter(member => member.id !== id));
-    };
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -81,20 +72,13 @@ export default function TeamsView() {
                                 </p>
                             </div>
                         </div>
-
-                        <div className="flex items-center gap-3">
-                            <Button onClick={() => setIsAddMemberOpen(true)} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700">
-                                <Plus size={16} />
-                                Add Member
-                            </Button>
-                        </div>
                     </div>
                 </div>
 
                 {/* Team Grid */}
                 <div className="p-8 bg-gray-50/50 min-h-[500px]">
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                        {teamMembers.map((member) => (
+                        {MOCK_TEAM_MEMBERS.map((member) => (
                             <div
                                 key={member.id}
                                 className="group bg-white rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all duration-300 relative overflow-hidden"
@@ -106,12 +90,6 @@ export default function TeamsView() {
                                     <div className={`h-10 w-10 rounded-xl ${member.color} flex items-center justify-center text-sm font-bold shadow-xs`}>
                                         {member.initials}
                                     </div>
-                                    <button
-                                        onClick={() => handleDeleteMember(member.id)}
-                                        className="text-gray-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
                                 </div>
 
                                 <div className="mb-4">
@@ -147,11 +125,6 @@ export default function TeamsView() {
                     </div>
                 </div>
             </ShadowCard>
-
-            <AddMemberDialog
-                open={isAddMemberOpen}
-                onOpenChange={setIsAddMemberOpen}
-            />
         </div>
     );
 }

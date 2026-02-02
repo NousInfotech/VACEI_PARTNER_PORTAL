@@ -1,8 +1,11 @@
-import { CheckCircle2, Circle, Clock, ArrowRight, Download, Upload } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle2, Circle, Clock, ArrowRight, Download, Upload, PenLine } from 'lucide-react';
 import { ShadowCard } from '../../../../ui/ShadowCard';
+import { Button } from '../../../../ui/Button';
 import { VATCycleStatus } from './types';
 import { MOCK_VAT_CYCLES } from './data';
 import { cn } from '../../../../lib/utils';
+import ChangeStatusDialog from './components/ChangeStatusDialog';
 
 const STATUS_STEPS = [
     { id: VATCycleStatus.DRAFT, label: 'Draft', description: 'Period created' },
@@ -14,8 +17,9 @@ const STATUS_STEPS = [
 ];
 
 export default function VATCycleView() {
-    const currentCycle = MOCK_VAT_CYCLES[0];
+    const [currentCycle, setCurrentCycle] = useState(MOCK_VAT_CYCLES[0]);
     const historyCycles = MOCK_VAT_CYCLES.slice(1);
+    const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
 
     const currentStepIndex = (() => {
         if (currentCycle.status === VATCycleStatus.PAYMENT_PENDING || currentCycle.status === VATCycleStatus.PAID) {
@@ -43,6 +47,15 @@ export default function VATCycleView() {
                             )}>
                                 {currentCycle.status.replace(/_/g, " ")}
                             </span>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="ml-4 h-8 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                onClick={() => setIsStatusDialogOpen(true)}
+                            >
+                                <PenLine size={12} className="mr-1.5" />
+                                Update Status
+                            </Button>
                         </div>
 
                         {/* Visual Timeline */}
@@ -174,6 +187,14 @@ export default function VATCycleView() {
                     </ShadowCard>
                 </div>
             </div>
+            <ChangeStatusDialog
+                open={isStatusDialogOpen}
+                onOpenChange={setIsStatusDialogOpen}
+                currentStatus={currentCycle.status}
+                onStatusChange={(newStatus) => setCurrentCycle({ ...currentCycle, status: newStatus as VATCycleStatus })}
+                statusOptions={Object.values(VATCycleStatus).map(s => ({ value: s, label: s.replace(/_/g, " ") }))}
+                title="Update VAT Status"
+            />
         </div>
     );
 }

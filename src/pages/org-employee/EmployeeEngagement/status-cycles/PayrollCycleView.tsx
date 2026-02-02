@@ -1,9 +1,11 @@
-import { CheckCircle2, Building2, User, AlertTriangle, Download } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle2, Building2, User, AlertTriangle, Download, PenLine } from 'lucide-react';
 import { Button } from '../../../../ui/Button';
 import { ShadowCard } from '../../../../ui/ShadowCard';
 import { PayrollCycleStatus, EmployeePayrollStatus } from './types';
 import { MOCK_PAYROLL_CYCLES, MOCK_EMPLOYEES_PAYROLL } from './data';
 import { cn } from '../../../../lib/utils';
+import ChangeStatusDialog from './components/ChangeStatusDialog';
 
 const ORG_STATUS_STEPS = [
     { id: PayrollCycleStatus.DRAFT, label: 'Draft' },
@@ -18,8 +20,9 @@ const ORG_STATUS_STEPS = [
 ];
 
 export default function PayrollCycleView() {
-    const currentCycle = MOCK_PAYROLL_CYCLES[0];
+    const [currentCycle, setCurrentCycle] = useState(MOCK_PAYROLL_CYCLES[0]);
     const employees = MOCK_EMPLOYEES_PAYROLL;
+    const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
 
     const currentStepIndex = ORG_STATUS_STEPS.findIndex(s => s.id === currentCycle.status);
 
@@ -87,6 +90,14 @@ export default function PayrollCycleView() {
                         <Download size={16} />
                         Download Summary
                     </Button>
+                    <Button
+                        variant="outline"
+                        className="gap-2 text-blue-600 border-blue-200 hover:bg-blue-50"
+                        onClick={() => setIsStatusDialogOpen(true)}
+                    >
+                        <PenLine size={16} />
+                        Update Status
+                    </Button>
                     {currentCycle.status === PayrollCycleStatus.REVIEW_IN_PROGRESS && (
                         <Button className="bg-green-600 hover:bg-green-700 text-white gap-2">
                             <CheckCircle2 size={16} />
@@ -141,6 +152,14 @@ export default function PayrollCycleView() {
                     </tbody>
                 </table>
             </div>
+            <ChangeStatusDialog
+                open={isStatusDialogOpen}
+                onOpenChange={setIsStatusDialogOpen}
+                currentStatus={currentCycle.status}
+                onStatusChange={(newStatus) => setCurrentCycle({ ...currentCycle, status: newStatus as PayrollCycleStatus })}
+                statusOptions={Object.values(PayrollCycleStatus).map(s => ({ value: s, label: s.replace(/_/g, " ") }))}
+                title="Update Payroll Status"
+            />
         </div>
     );
 }
