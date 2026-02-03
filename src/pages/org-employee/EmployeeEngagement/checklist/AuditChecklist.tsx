@@ -193,7 +193,7 @@ export default function AuditChecklist() {
                     <ChecklistPhaseComponent
                         key={phase.id}
                         phase={phase}
-                        allTasks={getAllTasks([data.find(p => p.id === phase.id)!])} // Pass full tasks for correct progress calc even when filtered
+                        allTasks={getAllTasks([data.find(p => p.id === phase.id)!])}
                         isExpanded={expandedPhaseId === phase.id}
                         onToggle={() => setExpandedPhaseId(expandedPhaseId === phase.id ? null : phase.id)}
                         onTaskUpdate={handleTaskUpdate}

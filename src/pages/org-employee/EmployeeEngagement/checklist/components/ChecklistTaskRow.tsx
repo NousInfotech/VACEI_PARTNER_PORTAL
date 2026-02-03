@@ -111,7 +111,7 @@ export default function ChecklistTaskRow({ task, onStatusChange, onUpdate }: Che
                                     type="text"
                                     placeholder="Enter details..."
                                     className="text-xs border border-gray-200 rounded px-2 py-1 w-full max-w-xs focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
-                                    value={task.notes || ''} // Using notes field for text input for simplicity
+                                    value={task.notes || ''}
                                     onChange={(e) => onUpdate({ notes: e.target.value })}
                                 />
                             )}
@@ -119,7 +119,7 @@ export default function ChecklistTaskRow({ task, onStatusChange, onUpdate }: Che
                             {task.type === 'select' && task.selectOptions && (
                                 <select
                                     className="text-xs border border-gray-200 rounded px-2 py-1 max-w-xs focus:ring-1 focus:ring-indigo-500"
-                                    onChange={(e) => onUpdate({ notes: e.target.value })} // Storing selection in notes for now
+                                    onChange={(e) => onUpdate({ notes: e.target.value })}
                                     defaultValue=""
                                 >
                                     <option value="" disabled>Select option...</option>
