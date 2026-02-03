@@ -42,7 +42,7 @@ import CFOView from "./cfo/CFOView";
 import CSPView from "./csp/CSPView";
 
 const ENGAGEMENT_TABS = [
-  { id: 'dashboard', label: 'Engagement Dashboard', icon: LayoutDashboard },
+  { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
   { id: 'requests', label: 'Document Requests', icon: FileText },
   { id: 'audit', label: 'AUDIT', icon: BookOpen },
   { id: 'vat', label: 'VAT', icon: Activity },
@@ -116,12 +116,14 @@ export default function EngagementFullView() {
 
     const activeServiceTab = serviceMap[selectedService];
 
-    return ENGAGEMENT_TABS.filter(tab => {
+    const tabs = ENGAGEMENT_TABS.filter(tab => {
       if (['dashboard', 'requests', 'library', 'todo', 'messages', 'teams'].includes(tab.id)) {
         return true;
       }
       return tab.id === activeServiceTab;
     });
+
+    return tabs;
   }, [selectedService]);
 
   const { isLoading: loading } = useQuery({
