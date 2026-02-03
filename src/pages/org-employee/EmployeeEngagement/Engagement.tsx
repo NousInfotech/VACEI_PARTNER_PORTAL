@@ -49,6 +49,18 @@ const MOCK_ENGAGEMENTS = [
     name: "Legal Compliance Review",
     progress: 90,
     service: "LEGAL"
+  },
+  {
+    id: "ENG-2024-008",
+    name: "CFO Services - Monthly Reporting",
+    progress: 80,
+    service: "CFO"
+  },
+  {
+    id: "ENG-2024-009",
+    name: "Corporate Services - Annual Return",
+    progress: 65,
+    service: "CSP"
   }
 ];
 

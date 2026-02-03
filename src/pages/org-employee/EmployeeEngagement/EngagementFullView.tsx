@@ -18,6 +18,7 @@ import {
   BookOpen,
   PieChart,
   Landmark,
+  Building2,
 } from "lucide-react";
 import { ShadowCard } from "../../../ui/ShadowCard";
 import { Button } from "../../../ui/Button";
@@ -37,6 +38,8 @@ import MBRView from "./mbr/MBRView";
 import TaxView from "./tax/TaxView";
 import MessagesView from "./messages/MessagesView";
 import TeamsView from "./teams/TeamsView";
+import CFOView from "./cfo/CFOView";
+import CSPView from "./csp/CSPView";
 
 const ENGAGEMENT_TABS = [
   { id: 'dashboard', label: 'Engagement Dashboard', icon: LayoutDashboard },
@@ -46,6 +49,8 @@ const ENGAGEMENT_TABS = [
   { id: 'payroll', label: 'Payroll', icon: Users },
   { id: 'mbr', label: 'MBR', icon: PieChart },
   { id: 'tax', label: 'TAX', icon: Landmark },
+  { id: 'cfo', label: 'CFO', icon: TrendingUp },
+  { id: 'csp', label: 'CSP', icon: Building2 },
   { id: 'library', label: 'Library', icon: Library },
   { id: 'todo', label: 'Todo/Checklists', icon: CheckSquare },
   { id: 'messages', label: 'Messages', icon: MessageSquare },
@@ -87,7 +92,9 @@ export default function EngagementFullView() {
       'VAT': 'vat',
       'PAYROLL': 'payroll',
       'MBR': 'mbr',
-      'TAX': 'tax'
+      'TAX': 'tax',
+      'CFO': 'cfo',
+      'CSP': 'csp'
     };
     return serviceMap[selectedService] || 'dashboard';
   }, [selectedService]);
@@ -102,7 +109,9 @@ export default function EngagementFullView() {
       'VAT': 'vat',
       'PAYROLL': 'payroll',
       'MBR': 'mbr',
-      'TAX': 'tax'
+      'TAX': 'tax',
+      'CFO': 'cfo',
+      'CSP': 'csp'
     };
 
     const activeServiceTab = serviceMap[selectedService];
@@ -381,6 +390,10 @@ export default function EngagementFullView() {
           <MBRView />
         ) : activeTab === 'tax' ? (
           <TaxView />
+        ) : activeTab === 'cfo' ? (
+          <CFOView />
+        ) : activeTab === 'csp' ? (
+          <CSPView />
         ) : activeTab === 'messages' ? (
           <MessagesView />
         ) : activeTab === 'teams' ? (
