@@ -41,6 +41,8 @@ import TeamsView from "./teams/TeamsView";
 import CFOView from "./cfo/CFOView";
 import CSPView from "./csp/CSPView";
 import AuditChecklist from "./checklist/AuditChecklist";
+import CFOEngagementsTable from "./cfo/CFOEngagementsTable";
+import CSPCoverageTable from "./csp/CSPCoverageTable";
 
 const ENGAGEMENT_TABS = [
   { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -55,7 +57,9 @@ const ENGAGEMENT_TABS = [
   { id: 'library', label: 'Library', icon: Library },
   { id: 'todo', label: 'Todo/Checklists', icon: CheckSquare },
   { id: 'messages', label: 'Messages', icon: MessageSquare },
+
   { id: 'teams', label: 'Team', icon: Users },
+  { id: 'services-coverage', label: 'Services & Coverage', icon: CheckSquare }, // Reusing icon for now
 ];
 
 const MOCK_DEADLINES = [
@@ -100,6 +104,9 @@ export default function EngagementFullView() {
     return serviceMap[selectedService] || 'dashboard';
   }, [selectedService]);
 
+  const [cfoSelectedId, setCfoSelectedId] = React.useState<string | null>(null);
+  const [cspSelectedId, setCspSelectedId] = React.useState<string | null>(null);
+
   const [activeTab, setActiveTab] = useTabQuery(initialTab);
 
   const filteredTabs = React.useMemo(() => {
@@ -118,7 +125,7 @@ export default function EngagementFullView() {
     const activeServiceTab = serviceMap[selectedService];
 
     const tabs = ENGAGEMENT_TABS.filter(tab => {
-      if (['dashboard', 'requests', 'library', 'todo', 'messages', 'teams'].includes(tab.id)) {
+      if (['dashboard', 'requests', 'library', 'todo', 'messages', 'teams', 'services-coverage'].includes(tab.id)) {
         return true;
       }
       return tab.id === activeServiceTab;
@@ -394,9 +401,17 @@ export default function EngagementFullView() {
         ) : activeTab === 'tax' ? (
           <TaxView />
         ) : activeTab === 'cfo' ? (
-          <CFOView />
+          <CFOView selectedId={cfoSelectedId} />
         ) : activeTab === 'csp' ? (
-          <CSPView />
+          <CSPView selectedId={cspSelectedId} />
+        ) : activeTab === 'services-coverage' ? (
+          selectedService === 'CFO' ? (
+            <CFOEngagementsTable selectedId={cfoSelectedId} onSelect={setCfoSelectedId} />
+          ) : selectedService === 'CSP' ? (
+            <CSPCoverageTable selectedId={cspSelectedId} onSelect={setCspSelectedId} />
+          ) : (
+            <div className="p-8 text-center text-gray-500">Select CFO or CSP to view services.</div>
+          )
         ) : activeTab === 'messages' ? (
           <MessagesView />
         ) : activeTab === 'teams' ? (

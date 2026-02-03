@@ -1,6 +1,4 @@
-import { useState } from "react";
 import ServiceDashboardLayout, { type DashboardConfig } from "../components/ServiceDashboardLayout";
-import CFOEngagementsTable from "./CFOEngagementsTable";
 
 // Mock Data for "engagements" context switching
 const ENGAGEMENTS_DATA: Record<string, Partial<DashboardConfig>> = {
@@ -108,29 +106,19 @@ const DEFAULT_CONFIG: DashboardConfig = {
     ]
 };
 
-export default function CFOView() {
-    const [selectedEngagementId, setSelectedEngagementId] = useState<string | null>(null);
-
+export default function CFOView({ selectedId }: { selectedId: string | null }) {
     // Merge default config with selected engagement overrides
-    const activeConfig = selectedEngagementId && ENGAGEMENTS_DATA[selectedEngagementId]
-        ? { ...DEFAULT_CONFIG, ...ENGAGEMENTS_DATA[selectedEngagementId] }
+    const activeConfig = selectedId && ENGAGEMENTS_DATA[selectedId]
+        ? { ...DEFAULT_CONFIG, ...ENGAGEMENTS_DATA[selectedId] }
         : DEFAULT_CONFIG;
-
-    const EngagementsTab = (
-        <CFOEngagementsTable
-            selectedId={selectedEngagementId}
-            onSelect={setSelectedEngagementId}
-        />
-    );
 
     return (
         <ServiceDashboardLayout
             config={{
                 ...activeConfig,
                 overviewTabLabel: 'Dashboard',
-                additionalTabs: [
-                    { id: 'engagements', label: 'Engagements', content: EngagementsTab }
-                ]
+                hideTabs: true,
+                additionalTabs: []
             }}
         />
     );

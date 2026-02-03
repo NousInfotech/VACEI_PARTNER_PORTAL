@@ -1,6 +1,4 @@
-import { useState } from "react";
 import ServiceDashboardLayout, { type DashboardConfig } from "../components/ServiceDashboardLayout";
-import CSPCoverageTable from "./CSPCoverageTable";
 
 // Mock Data for "coverage" context switching
 const COVERAGE_DATA: Record<string, Partial<DashboardConfig>> = {
@@ -106,29 +104,19 @@ const DEFAULT_CONFIG: DashboardConfig = {
     ]
 };
 
-export default function CSPView() {
-    const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-
+export default function CSPView({ selectedId }: { selectedId: string | null }) {
     // Merge default config with selected coverage overrides
-    const activeConfig = selectedItemId && COVERAGE_DATA[selectedItemId]
-        ? { ...DEFAULT_CONFIG, ...COVERAGE_DATA[selectedItemId] }
+    const activeConfig = selectedId && COVERAGE_DATA[selectedId]
+        ? { ...DEFAULT_CONFIG, ...COVERAGE_DATA[selectedId] }
         : DEFAULT_CONFIG;
-
-    const CoverageTab = (
-        <CSPCoverageTable
-            selectedId={selectedItemId}
-            onSelect={setSelectedItemId}
-        />
-    );
 
     return (
         <ServiceDashboardLayout
             config={{
                 ...activeConfig,
                 overviewTabLabel: 'Dashboard',
-                additionalTabs: [
-                    { id: 'coverage', label: 'Services & Coverage', content: CoverageTab }
-                ]
+                hideTabs: true,
+                additionalTabs: []
             }}
         />
     );

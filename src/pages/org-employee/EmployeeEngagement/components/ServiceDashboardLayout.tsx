@@ -69,6 +69,7 @@ export interface DashboardConfig {
         content: React.ReactNode;
     }[];
     overviewTabLabel?: string;
+    hideTabs?: boolean;
 }
 
 interface ServiceDashboardLayoutProps {
@@ -148,13 +149,15 @@ export default function ServiceDashboardLayout({ config }: ServiceDashboardLayou
             />
 
             {/* Tabs */}
-            <div className="flex items-center gap-4">
-                <PillTab
-                    tabs={tabs}
-                    activeTab={activeTab}
-                    onTabChange={setActiveTab}
-                />
-            </div>
+            {!config.hideTabs && (
+                <div className="flex items-center gap-4">
+                    <PillTab
+                        tabs={tabs}
+                        activeTab={activeTab}
+                        onTabChange={setActiveTab}
+                    />
+                </div>
+            )}
 
             {activeTab === 'overview' ? (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
