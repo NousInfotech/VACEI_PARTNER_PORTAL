@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle2, Circle, Clock, MinusCircle, MessageSquare, Calendar } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, MinusCircle, MessageSquare, Calendar, ChevronDown } from 'lucide-react';
 import { cn } from '../../../../../lib/utils';
 import { type ChecklistTask, type ChecklistTaskStatus } from '../types';
 
@@ -62,17 +62,33 @@ export default function ChecklistTaskRow({ task, onStatusChange, onUpdate }: Che
                             {task.title}
                         </span>
 
-                        {/* Status Dropdown (Quick Change) */}
-                        <select
-                            value={task.status}
-                            onChange={(e) => onStatusChange(e.target.value as ChecklistTaskStatus)}
-                            className="bg-transparent text-[10px] uppercase font-bold text-gray-500 border-none p-0 focus:ring-0 cursor-pointer"
-                        >
-                            <option value="not_started">To Do</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="completed">Done</option>
-                            <option value="not_applicable">N/A</option>
-                        </select>
+                        {/* Status Dropdown (Button Style) */}
+                        <div className="relative shrink-0">
+                            <select
+                                value={task.status}
+                                onChange={(e) => onStatusChange(e.target.value as ChecklistTaskStatus)}
+                                className={cn(
+                                    "appearance-none pl-3 pr-7 py-1.5 rounded-md text-[10px] uppercase font-bold border focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500 cursor-pointer transition-all shadow-sm",
+                                    task.status === 'not_started' && "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100 hover:border-gray-300",
+                                    task.status === 'in_progress' && "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:border-blue-300",
+                                    task.status === 'completed' && "bg-green-50 text-green-700 border-green-200 hover:bg-green-100 hover:border-green-300",
+                                    task.status === 'not_applicable' && "bg-gray-50 text-gray-400 border-gray-200 opacity-70"
+                                )}
+                            >
+                                <option value="not_started">To Do</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="completed">Done</option>
+                                <option value="not_applicable">N/A</option>
+                            </select>
+                            <ChevronDown
+                                size={12}
+                                className={cn(
+                                    "absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none",
+                                    task.status === 'in_progress' ? "text-blue-500" :
+                                        task.status === 'completed' ? "text-green-500" : "text-gray-400"
+                                )}
+                            />
+                        </div>
                     </div>
 
                     {/* Controls based on task type */}
