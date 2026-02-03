@@ -124,7 +124,10 @@ export default function EngagementFullView() {
     const activeServiceTab = serviceMap[selectedService];
 
     const tabs = ENGAGEMENT_TABS.filter(tab => {
-      if (['dashboard', 'requests', 'library', 'todo', 'messages', 'teams', 'services-coverage'].includes(tab.id)) {
+      if (['dashboard', 'requests', 'library', 'todo', 'messages', 'teams'].includes(tab.id)) {
+        return true;
+      }
+      if (tab.id === 'services-coverage' && (activeServiceTab === 'cfo' || activeServiceTab === 'csp')) {
         return true;
       }
       return tab.id === activeServiceTab;
