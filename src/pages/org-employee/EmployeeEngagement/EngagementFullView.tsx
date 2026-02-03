@@ -40,6 +40,7 @@ import MessagesView from "./messages/MessagesView";
 import TeamsView from "./teams/TeamsView";
 import CFOView from "./cfo/CFOView";
 import CSPView from "./csp/CSPView";
+import AuditChecklist from "./checklist/AuditChecklist";
 
 const ENGAGEMENT_TABS = [
   { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -400,6 +401,8 @@ export default function EngagementFullView() {
           <MessagesView />
         ) : activeTab === 'teams' ? (
           <TeamsView />
+        ) : activeTab === 'todo' ? (
+          <AuditChecklist />
         ) : (
           <ShadowCard className="p-10 md:p-20 flex flex-col items-center justify-center text-center bg-gray-50/10 border-dashed min-h-[400px]">
             <div className="p-8 bg-white shadow-sm rounded-full mb-8 text-gray-300 transform transition-transform hover:scale-110 duration-500">

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import {
     CheckCircle2,
     AlertCircle,
@@ -78,11 +78,45 @@ interface ServiceDashboardLayoutProps {
 export default function ServiceDashboardLayout({ config }: ServiceDashboardLayoutProps) {
     const [activeTab, setActiveTab] = useState('overview');
     const [isReferenceExpanded, setIsReferenceExpanded] = useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const [pendingUploadContext, setPendingUploadContext] = useState<string | null>(null);
 
     const tabs = [
         { id: 'overview', label: config.overviewTabLabel || 'Overview' },
         ...(config.additionalTabs ? config.additionalTabs.map(t => ({ id: t.id, label: t.label })) : [])
     ];
+
+    const handleUploadClick = (context: string) => {
+        setPendingUploadContext(context);
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file && pendingUploadContext) {
+            alert(`File "${file.name}" uploaded successfully for: ${pendingUploadContext}`);
+        }
+        setPendingUploadContext(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const handleDownload = (title: string) => {
+        alert(`Downloading document: "${title}"...`);
+    };
+
+    const handleAction = (type: string, label: string, context?: string) => {
+        if (type === 'upload') {
+            handleUploadClick(context || label);
+        } else if (type === 'approve') {
+            alert(`Approved: ${label}`);
+        } else if (type === 'confirm') {
+            alert(`Confirmed: ${label}`);
+        } else if (type === 'schedule') {
+            alert(`Opening scheduler for: ${label}`);
+        }
+    };
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -106,6 +140,13 @@ export default function ServiceDashboardLayout({ config }: ServiceDashboardLayou
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
+            <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                onChange={handleFileChange}
+            />
+
             {/* Tabs */}
             <div className="flex items-center gap-4">
                 <PillTab
@@ -174,11 +215,16 @@ export default function ServiceDashboardLayout({ config }: ServiceDashboardLayou
                                                             <p className="text-sm font-semibold text-gray-900">{action.label}</p>
                                                             {action.context && <p className="text-xs text-gray-500">{action.context}</p>}
                                                         </div>
-                                                        <Button size="sm" variant={action.type === 'upload' ? 'default' : 'outline'} className={cn(
-                                                            "h-8 text-xs gap-1.5",
-                                                            action.type === 'upload' && "bg-indigo-600 hover:bg-indigo-700",
-                                                            action.type === 'confirm' && "text-green-600 border-green-200 hover:bg-green-50"
-                                                        )}>
+                                                        <Button
+                                                            size="sm"
+                                                            variant={action.type === 'upload' ? 'default' : 'outline'}
+                                                            className={cn(
+                                                                "h-8 text-xs gap-1.5",
+                                                                action.type === 'upload' && "bg-indigo-600 hover:bg-indigo-700",
+                                                                action.type === 'confirm' && "text-green-600 border-green-200 hover:bg-green-50"
+                                                            )}
+                                                            onClick={() => handleAction(action.type, action.label, action.context)}
+                                                        >
                                                             {action.type === 'upload' && <Upload size={14} />}
                                                             {action.type === 'approve' && <CheckCircle2 size={14} />}
                                                             {action.type === 'confirm' && <CheckCircle2 size={14} />}
@@ -214,7 +260,11 @@ export default function ServiceDashboardLayout({ config }: ServiceDashboardLayou
                                                 <p className="text-xs text-gray-500">{request.details}</p>
                                             </div>
                                         </div>
-                                        <Button size="sm" className="gap-2">
+                                        <Button
+                                            size="sm"
+                                            className="gap-2"
+                                            onClick={() => handleAction(request.ctaType, request.title, request.details)}
+                                        >
                                             {request.ctaType === 'upload' && <Upload size={14} />}
                                             {request.ctaType === 'approve' && <CheckCircle2 size={14} />}
                                             {request.ctaLabel}
@@ -269,7 +319,11 @@ export default function ServiceDashboardLayout({ config }: ServiceDashboardLayou
                                             <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest">{group.group}</h4>
                                             <ul className="space-y-2">
                                                 {group.items.map((item, i) => (
-                                                    <li key={i} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg group/item cursor-pointer transition-colors border border-transparent hover:border-gray-100">
+                                                    <li
+                                                        key={i}
+                                                        className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg group/item cursor-pointer transition-colors border border-transparent hover:border-gray-100"
+                                                        onClick={() => handleDownload(item.title)}
+                                                    >
                                                         <div className="flex items-center gap-2 overflow-hidden">
                                                             <div className={cn(
                                                                 "h-8 w-8 rounded flex items-center justify-center text-[10px] font-bold shrink-0",
