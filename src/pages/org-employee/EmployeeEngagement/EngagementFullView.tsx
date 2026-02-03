@@ -57,7 +57,6 @@ const ENGAGEMENT_TABS = [
   { id: 'library', label: 'Library', icon: Library },
   { id: 'todo', label: 'Todo/Checklists', icon: CheckSquare },
   { id: 'messages', label: 'Messages', icon: MessageSquare },
-
   { id: 'teams', label: 'Team', icon: Users },
   { id: 'services-coverage', label: 'Services & Coverage', icon: CheckSquare }, // Reusing icon for now
 ];
