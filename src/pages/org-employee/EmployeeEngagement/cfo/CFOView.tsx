@@ -167,6 +167,7 @@ export default function CFOView() {
         <ServiceDashboardLayout
             config={{
                 ...activeConfig,
+                overviewTabLabel: 'Dashboard',
                 additionalTabs: [
                     { id: 'engagements', label: 'Engagements', content: EngagementsTab }
                 ]

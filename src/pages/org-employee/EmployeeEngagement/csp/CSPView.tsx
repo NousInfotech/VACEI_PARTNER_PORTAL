@@ -166,6 +166,7 @@ export default function CSPView() {
         <ServiceDashboardLayout
             config={{
                 ...activeConfig,
+                overviewTabLabel: 'Dashboard',
                 additionalTabs: [
                     { id: 'coverage', label: 'Services & Coverage', content: CoverageTab }
                 ]

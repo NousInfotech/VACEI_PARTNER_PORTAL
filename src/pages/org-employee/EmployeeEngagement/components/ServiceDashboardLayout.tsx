@@ -68,6 +68,7 @@ export interface DashboardConfig {
         label: string;
         content: React.ReactNode;
     }[];
+    overviewTabLabel?: string;
 }
 
 interface ServiceDashboardLayoutProps {
@@ -79,7 +80,7 @@ export default function ServiceDashboardLayout({ config }: ServiceDashboardLayou
     const [isReferenceExpanded, setIsReferenceExpanded] = useState(false);
 
     const tabs = [
-        { id: 'overview', label: 'Overview' },
+        { id: 'overview', label: config.overviewTabLabel || 'Overview' },
         ...(config.additionalTabs ? config.additionalTabs.map(t => ({ id: t.id, label: t.label })) : [])
     ];
 
