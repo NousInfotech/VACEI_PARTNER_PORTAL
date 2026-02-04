@@ -1,4 +1,4 @@
-import { Eye, FileText, Flag, RefreshCw, Save } from "lucide-react";
+import { Eye, FileText, Flag, Maximize2, RefreshCw, Save } from "lucide-react";
 import { Button } from "../../../../../../ui/Button";
 
 interface ClassificationHeaderProps {
@@ -29,9 +29,9 @@ export default function ClassificationHeader({ title, accountCount }: Classifica
                     <Flag size={16} />
                     Review History
                 </Button>
-                {/* <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500">
                     <Maximize2 size={16} />
-                </Button> */}
+                </Button>
                 <Button variant="outline" size="sm" className="gap-2 text-gray-600">
                     <RefreshCw size={16} />
                     Reload Data
