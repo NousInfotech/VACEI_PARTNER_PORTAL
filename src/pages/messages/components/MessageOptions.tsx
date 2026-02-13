@@ -11,7 +11,7 @@ import {
   Pencil
 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
-import { EMOJI_LIST } from './EmojiPicker';
+import { EMOJI_LIST } from '../constants';
 
 export type MessageAction = 'reply' | 'react' | 'forward' | 'delete' | 'copy' | 'select' | 'edit';
 
@@ -38,12 +38,16 @@ export const MessageOptions: React.FC<MessageOptionsProps> = ({
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState<{ top: number; left: number; transformOrigin: string } | null>(null);
+  const [now, setNow] = useState(() => Date.now());
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   useEffect(() => {
-    if (!isOpen) {
-      setShowEmojiPicker(false);
-      setCoords(null);
+    if (isOpen) {
+      requestAnimationFrame(() => {
+        setNow(Date.now());
+        setShowEmojiPicker(false);
+        setCoords(null);
+      });
     }
   }, [isOpen]);
 
@@ -72,13 +76,14 @@ export const MessageOptions: React.FC<MessageOptionsProps> = ({
         left = 20;
       }
 
-      setCoords({ top, left, transformOrigin });
+      requestAnimationFrame(() => {
+        setCoords({ top, left, transformOrigin });
+      });
     }
   }, [isOpen, triggerRect, isMe]);
 
   if (!isOpen) return null;
 
-  const now = Date.now();
   const isEditable = isMe && !isDeleted && createdAt && (now - createdAt < 15 * 60 * 1000);
 
   const mainOptions = isDeleted ? [] : [

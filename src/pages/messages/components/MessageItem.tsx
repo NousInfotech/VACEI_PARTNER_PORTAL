@@ -50,6 +50,25 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const reactionContainerRef = useRef<HTMLDivElement>(null);
 
+  const [triggerCoords, setTriggerCoords] = useState<DOMRect | null>(null);
+  const [reactionCoords, setReactionCoords] = useState<DOMRect | null>(null);
+
+  React.useEffect(() => {
+    if (showOptions && triggerRef.current) {
+      setTriggerCoords(triggerRef.current.getBoundingClientRect());
+    } else if (!showOptions) {
+      setTriggerCoords(null);
+    }
+  }, [showOptions]);
+
+  React.useEffect(() => {
+    if (showReactionDetails && reactionContainerRef.current) {
+      setReactionCoords(reactionContainerRef.current.getBoundingClientRect());
+    } else if (!showReactionDetails) {
+      setReactionCoords(null);
+    }
+  }, [showReactionDetails]);
+
   const handleAction = (action: MessageAction, data?: string) => {
     if (action === 'reply') onReply?.();
     else if (action === 'edit') onEdit?.();
@@ -148,7 +167,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             onAction={handleAction}
             isMe={isMe}
             isDeleted={message.isDeleted}
-            triggerRect={triggerRef.current?.getBoundingClientRect()}
+            triggerRect={triggerCoords}
             createdAt={message.createdAt}
           />
 
@@ -271,7 +290,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                   onReact?.(emoji);
                   setShowReactionDetails(false);
                 }}
-                triggerRect={reactionContainerRef.current?.getBoundingClientRect()}
+                triggerRect={reactionCoords}
               />
             )}
           </div>

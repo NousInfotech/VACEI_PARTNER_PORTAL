@@ -74,7 +74,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       const element = document.getElementById(`msg-${scrollToMessageId}`);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        setHighlightedId(scrollToMessageId);
+        requestAnimationFrame(() => {
+          setHighlightedId(scrollToMessageId);
+        });
         
         const timer = setTimeout(() => {
           setHighlightedId(null);

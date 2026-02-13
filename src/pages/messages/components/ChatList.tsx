@@ -1,4 +1,4 @@
-import { Search, CircleDashed, MessageSquarePlus, Users, Pin, PinOff, VolumeX, Volume2 } from 'lucide-react';
+import { Search, MessageSquarePlus, Users, Pin, PinOff, VolumeX, Volume2 } from 'lucide-react';
 import type { Chat } from '../types';
 import { cn } from '../../../lib/utils';
 import { useState, useEffect, useRef } from 'react';

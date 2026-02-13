@@ -7,9 +7,19 @@ interface GifPickerProps {
   onClose: () => void;
 }
 
+interface TenorGif {
+  id: string;
+  media: {
+    tinygif: {
+      url: string;
+    };
+  }[];
+  content_description: string;
+}
+
 export const GifPicker: React.FC<GifPickerProps> = ({ onSelect, onClose }) => {
   const [search, setSearch] = useState('');
-  const [gifs, setGifs] = useState<any[]>([]);
+  const [gifs, setGifs] = useState<TenorGif[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Using a common public test key for Tenor

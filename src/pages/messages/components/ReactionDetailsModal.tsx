@@ -47,7 +47,7 @@ export const ReactionDetailsModal: React.FC<ReactionDetailsModalProps> = ({
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
-    const newCoords: any = { top: triggerRect.top + (triggerRect.height / 2), left: 0 };
+    const newCoords: { top: number; left: number } = { top: triggerRect.top + (triggerRect.height / 2), left: 0 };
     let transform = 'translateY(-50%)';
     let transformOrigin = 'left center';
 
@@ -81,7 +81,9 @@ export const ReactionDetailsModal: React.FC<ReactionDetailsModalProps> = ({
       transform = 'none';
     }
 
-    setCoords({ ...newCoords, transform, transformOrigin });
+    requestAnimationFrame(() => {
+      setCoords({ ...newCoords, transform, transformOrigin });
+    });
   }, [triggerRect, isMe]);
 
   return createPortal(
