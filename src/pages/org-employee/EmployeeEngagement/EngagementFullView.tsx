@@ -43,6 +43,7 @@ import CSPView from "./csp/CSPView";
 import AuditChecklist from "./checklist/AuditChecklist";
 import CFOEngagementsTable from "./cfo/CFOEngagementsTable";
 import CSPCoverageTable from "./csp/CSPCoverageTable";
+import Messages from "../../messages/Messages";
 
 const ENGAGEMENT_TABS = [
   { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -56,7 +57,8 @@ const ENGAGEMENT_TABS = [
   { id: 'csp', label: 'CSP', icon: Building2 },
   { id: 'library', label: 'Library', icon: Library },
   { id: 'todo', label: 'Todo/Checklists', icon: CheckSquare },
-  { id: 'messages', label: 'Messages', icon: MessageSquare },
+  { id: 'updates', label: 'Updates', icon: MessageSquare },
+  { id: 'chat', label: 'Chat', icon: MessageSquare },
   { id: 'teams', label: 'Team', icon: Users },
   { id: 'services-coverage', label: 'Services & Coverage', icon: CheckSquare }, // Reusing icon for now
 ];
@@ -124,7 +126,7 @@ export default function EngagementFullView() {
     const activeServiceTab = serviceMap[selectedService];
 
     const tabs = ENGAGEMENT_TABS.filter(tab => {
-      if (['dashboard', 'requests', 'library', 'todo', 'messages', 'teams'].includes(tab.id)) {
+      if (['dashboard', 'requests', 'library', 'todo', 'updates', 'chat', 'teams'].includes(tab.id)) {
         return true;
       }
       if (tab.id === 'services-coverage' && (activeServiceTab === 'cfo' || activeServiceTab === 'csp')) {
@@ -414,8 +416,10 @@ export default function EngagementFullView() {
           ) : (
             <div className="p-8 text-center text-gray-500">Select CFO or CSP to view services.</div>
           )
-        ) : activeTab === 'messages' ? (
+        ) : activeTab === 'updates' ? (
           <MessagesView />
+        ) : activeTab === 'chat' ? (
+          <Messages isSingleChat={true} contextualChatId="engagement-chat" />
         ) : activeTab === 'teams' ? (
           <TeamsView />
         ) : activeTab === 'todo' ? (

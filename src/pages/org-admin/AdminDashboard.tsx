@@ -1,4 +1,5 @@
 import EmployeeManagement from "./employee-management/EmployeeManagement";
+import Messages from "../messages/Messages";
 
 interface AdminDashboardProps {
   activeSection?: string;
@@ -8,6 +9,10 @@ export default function AdminDashboard({ activeSection }: AdminDashboardProps) {
 
   if (activeSection === "Employees") {
     return <EmployeeManagement />;
+  }
+
+  if (activeSection === "Messages") {
+    return <Messages />;
   }
 
   // Default Admin Dashboard (or redirect to Employees if it's the main view)

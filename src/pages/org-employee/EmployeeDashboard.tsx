@@ -19,6 +19,7 @@ import { useAuth } from "../../context/auth-context-core";
 import { cn } from "../../lib/utils";
 import EmployeeCompliance from "./EmployeeCompliance";
 import Engagement from "./EmployeeEngagement/Engagement";
+import Messages from "../messages/Messages";
  
  
 const MOCK_CLIENTS = [
@@ -303,6 +304,8 @@ export default function EmployeeDashboard({ activeSection = "Dashboard" }: Emplo
         </div>
       ) : activeSection === "Compliance" ? (
         <EmployeeCompliance />
+      ) : activeSection === "Messages" ? (
+        <Messages />
       ) : activeSection === "Engagements" ? (
         <Engagement />
       ) : (

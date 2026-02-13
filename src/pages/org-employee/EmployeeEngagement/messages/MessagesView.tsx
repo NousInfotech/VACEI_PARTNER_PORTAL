@@ -46,10 +46,10 @@ export default function MessagesView() {
                         </div>
                         <div>
                             <h2 className="text-xl font-bold text-gray-900 uppercase tracking-tight font-secondary">
-                                {serviceName} MESSAGES
+                                {serviceName} UPDATES
                             </h2>
                             <p className="text-gray-500 text-sm">
-                                All {serviceName.toLowerCase()}-related communication appears here.
+                                All {serviceName.toLowerCase()}-related updates appear here.
                             </p>
                         </div>
                     </div>

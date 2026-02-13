@@ -7,6 +7,7 @@ import NotFound from './pages/common/NotFound'
 import { AuthProvider } from './context/AuthContext'
 import EngagementFullView from './pages/org-employee/EmployeeEngagement/EngagementFullView'
 import WorkbookViewerPage from './pages/common/WorkbookViewerPage'
+import Messages from './pages/messages/Messages'
 
 const App = () => {
   return (
@@ -24,6 +25,8 @@ const App = () => {
             <Route path="/dashboard/compliance" element={<Dashboard activeSection="Compliance" />} />
             <Route path="/dashboard/templates" element={<Dashboard activeSection="Document Request Templates" />} />
             <Route path="/dashboard/employees" element={<Dashboard activeSection="Employees" />} />
+            <Route path="/dashboard/messages" element={<Messages />} />
+            <Route path="/dashboard/support" element={<Messages isSingleChat={true} contextualChatId="support-chat" />} />
             <Route path="/dashboard/settings" element={<Dashboard activeSection="Settings" />} />
             <Route path="*" element={<NotFound />} />
           </Route>

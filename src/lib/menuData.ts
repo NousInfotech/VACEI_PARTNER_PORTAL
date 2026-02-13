@@ -5,6 +5,7 @@ import {
     DocumentValidationIcon,
     InstallingUpdates02Icon,
     Building01Icon,
+    BubbleChatIcon,
 } from '@hugeicons/core-free-icons';
 import type { MenuItem } from './types';
 
@@ -72,6 +73,24 @@ export const menuData: MenuItem[] = [
     //     description: "Manage organization details",
     //     roles: ["ORG_ADMIN"]
     // },
+    {
+        slug: "messages",
+        icon: BubbleChatIcon,
+        label: "Messages",
+        href: "/dashboard/messages",
+        section: "primary",
+        description: "Chat with your team",
+        roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
+    },
+    {
+        slug: "support",
+        icon: BubbleChatIcon,
+        label: "Support",
+        href: "/dashboard/support",
+        section: "settings",
+        description: "Get help from Vacei",
+        roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
+    },
     {
         slug: "settings",
         icon: InstallingUpdates02Icon,
