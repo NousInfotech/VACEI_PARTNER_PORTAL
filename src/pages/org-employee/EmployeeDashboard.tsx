@@ -34,7 +34,7 @@ interface EmployeeDashboardProps {
 }
 
 export default function EmployeeDashboard({ activeSection = "Dashboard" }: EmployeeDashboardProps) {
-  const { selectedService } = useAuth();
+  const { selectedService, selectedServiceLabel } = useAuth();
   
   const { isLoading: loading } = useQuery({
     queryKey: ['employee-dashboard', activeSection, selectedService],
@@ -48,8 +48,8 @@ export default function EmployeeDashboard({ activeSection = "Dashboard" }: Emplo
     <div className="mx-auto space-y-8">
       {/* Header Section */}
       <PageHeader
-        title={`${selectedService?.replace(/_/g, " ")} ${activeSection}`}
-        subtitle={`Manage your ${selectedService?.toLowerCase().replace(/_/g, " ")} ${activeSection.toLowerCase()} and clients`}
+        title={`${selectedServiceLabel} ${activeSection}`}
+        subtitle={`Manage your ${selectedServiceLabel.toLowerCase()} ${activeSection.toLowerCase()} and clients`}
         actions={
           <div className="flex items-center gap-3">
             <Button variant="header" className="rounded-xl">
@@ -315,7 +315,7 @@ export default function EmployeeDashboard({ activeSection = "Dashboard" }: Emplo
           </div>
           <h2 className="text-2xl font-bold text-gray-900">{activeSection} Section</h2>
           <p className="text-gray-500 max-w-md mt-2">
-            This module is currently being optimized for the {selectedService?.replace(/_/g, " ")} service. 
+            This module is currently being optimized for the {selectedServiceLabel} service. 
             Check back soon for the full feature set.
           </p>
         </ShadowCard>

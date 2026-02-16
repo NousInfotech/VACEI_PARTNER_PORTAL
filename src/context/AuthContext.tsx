@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
 import { apiPost, apiGet } from "../config/base";
 import { endPoints } from "../config/endPoint";
-import { type User, type OrganizationMember, type AuthMeResponse, type LoginResponse } from "../lib/types";
+import { type User, type OrganizationMember, type AuthMeResponse, type LoginResponse, AVAILABLE_SERVICES } from "../lib/types";
 import { AuthContext } from "./auth-context-core";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -35,12 +35,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("selectedService", service);
     }, []);
 
+    const selectedServiceLabel = useMemo(() => {
+        if (!selectedService) return "Select Service";
+        
+        // Check standard services first
+        const standardService = AVAILABLE_SERVICES.find(s => s.id === selectedService);
+        if (standardService) return standardService.label;
+
+        // Check custom services in organizationMember
+        const customService = organizationMember?.allowedCustomServiceCycles?.find(c => c.id === selectedService);
+        if (customService) return customService.title;
+
+        // Fallback to formatted ID
+        return selectedService.replace(/_/g, " ");
+    }, [selectedService, organizationMember]);
+
     const handleLogoutState = useCallback(() => {
         setUser(null);
         setOrganizationMember(null);
         setSelectedServiceState(null);
         localStorage.removeItem("user");
         localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
         localStorage.removeItem("userRole");
         localStorage.removeItem("organizationMember");
         localStorage.removeItem("selectedService");
@@ -56,28 +72,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             const response = await apiGet<AuthMeResponse>(endPoints.AUTH.ME);
             if (response.data) {
-                const userData = response.data.user;
+                // Backend may return flat user object or nested for /auth/me
+                const responseData = response.data;
+                const userData = (responseData.user || (responseData.id ? responseData : null)) as User | null;
+                let memberData = responseData.organizationMember || null;
+                const refreshToken = responseData.refreshToken;
+                
+                if (userData) {
+                    if (userData.role !== "ORG_ADMIN" && userData.role !== "ORG_EMPLOYEE") {
+                        handleLogoutState();
+                        return;
+                    }
 
-                if (userData.role !== "ORG_ADMIN" && userData.role !== "ORG_EMPLOYEE") {
+                    setUser(userData);
+                    if (refreshToken) {
+                        localStorage.setItem("refreshToken", refreshToken);
+                    }
+                    
+                    // Fallback to localStorage for organizationMember if not provided by /auth/me
+                    if (!memberData) {
+                        const savedMember = localStorage.getItem("organizationMember");
+                        if (savedMember && savedMember !== "undefined" && savedMember !== "null") {
+                            try {
+                                memberData = JSON.parse(savedMember);
+                            } catch (e) {
+                                console.error("Failed to parse cached organizationMember:", e);
+                            }
+                        }
+                    }
+                    
+                    setOrganizationMember(memberData);
+                    
+                    const savedService = localStorage.getItem("selectedService");
+                    const isServiceAllowed = memberData && savedService && (
+                        memberData.allowedServices?.includes(savedService) || 
+                        memberData.allowedCustomServiceCycles?.some(c => c.id === savedService)
+                    );
+
+                    if (isServiceAllowed) {
+                        setSelectedServiceState(savedService as string);
+                    } else if (memberData) {
+                        if (memberData.allowedServices && memberData.allowedServices.length > 0) {
+                            setSelectedService(memberData.allowedServices[0]);
+                        } else if (memberData.allowedCustomServiceCycles && memberData.allowedCustomServiceCycles.length > 0) {
+                            setSelectedService(memberData.allowedCustomServiceCycles[0].id);
+                        }
+                    }
+
+                    localStorage.setItem("user", JSON.stringify(userData));
+                    if (memberData) {
+                        localStorage.setItem("organizationMember", JSON.stringify(memberData));
+                    }
+                    localStorage.setItem("userRole", userData.role);
+                } else {
                     handleLogoutState();
-                    return;
                 }
-
-                const memberData = response.data.organizationMember;
-                
-                setUser(userData);
-                setOrganizationMember(memberData);
-                
-                const savedService = localStorage.getItem("selectedService");
-                if (savedService && memberData?.allowedServices.includes(savedService)) {
-                    setSelectedServiceState(savedService);
-                } else if (memberData?.allowedServices?.length > 0) {
-                    setSelectedService(memberData.allowedServices[0]);
-                }
-
-                localStorage.setItem("user", JSON.stringify(userData));
-                localStorage.setItem("organizationMember", JSON.stringify(memberData));
-                localStorage.setItem("userRole", userData.role);
             }
         } catch (error) {
             console.error("Failed to fetch user profile:", error);
@@ -115,14 +164,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setUser(userData);
                 setOrganizationMember(memberData);
                 
-                if (memberData?.allowedServices?.length > 0) {
+                if (memberData?.allowedServices && memberData.allowedServices.length > 0) {
                     setSelectedService(memberData.allowedServices[0]);
+                } else if (memberData?.allowedCustomServiceCycles && memberData.allowedCustomServiceCycles.length > 0) {
+                    setSelectedService(memberData.allowedCustomServiceCycles[0].id);
                 }
 
                 localStorage.setItem("user", JSON.stringify(userData));
-                localStorage.setItem("organizationMember", JSON.stringify(memberData));
+                if (memberData) {
+                    localStorage.setItem("organizationMember", JSON.stringify(memberData));
+                }
                 if (token) {
                     localStorage.setItem("token", token);
+                }
+                if (response.data.refreshToken) {
+                    localStorage.setItem("refreshToken", response.data.refreshToken);
                 }
                 localStorage.setItem("userRole", userData.role);
                 
@@ -160,6 +216,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             user, 
             organizationMember, 
             selectedService, 
+            selectedServiceLabel,
             setSelectedService, 
             isAuthenticated: !!user, 
             login, 

@@ -81,7 +81,7 @@ const MOCK_STATUS = {
 
 export default function EngagementFullView() {
   const { serviceId } = useParams();
-  const { selectedService, setSelectedService } = useAuth();
+  const { selectedService, setSelectedService, selectedServiceLabel } = useAuth();
 
   React.useEffect(() => {
     if (serviceId && serviceId !== selectedService) {
@@ -89,7 +89,7 @@ export default function EngagementFullView() {
     }
   }, [serviceId, selectedService, setSelectedService]);
 
-  const serviceName = selectedService?.replace(/_/g, " ") || 'Engagement';
+  const serviceName = selectedServiceLabel;
 
   const initialTab = React.useMemo(() => {
     if (!selectedService) return 'dashboard';

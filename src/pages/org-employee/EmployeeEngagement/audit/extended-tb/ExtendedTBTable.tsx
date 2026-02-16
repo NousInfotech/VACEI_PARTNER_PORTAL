@@ -65,16 +65,21 @@ export default function ExtendedTBTable({ data, onUpdateRow, onDeleteRow, isSect
                     input[type=number] {
                         -moz-appearance: textfield;
                     }
+                    /* Ensure table borders collapse */
+                    .custom-table {
+                        border-collapse: collapse;
+                    }
+                    .custom-table th, .custom-table td {
+                        border: 1px solid #e5e7eb; /* gray-200 */
+                    }
                 `}
             </style>
             <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm custom-table">
                     <thead>
-                        <tr className="bg-gray-50/50 border-b border-gray-200">
+                        <tr className="bg-gray-50/50">
                             <th className="py-4 px-4 font-semibold text-gray-600 w-16 text-center">Code</th>
                             <th className="py-4 px-4 font-semibold text-gray-600 min-w-[200px] text-left">Account Name</th>
-
-
                             <th className="py-4 px-4 font-semibold text-gray-600 text-right whitespace-nowrap">Current Year</th>
                             <th className="py-4 px-4 font-semibold text-gray-600 text-right whitespace-nowrap">Re-Classification</th>
                             <th className="py-4 px-4 font-semibold text-gray-600 text-right whitespace-nowrap">Adjustments</th>
@@ -114,8 +119,6 @@ export default function ExtendedTBTable({ data, onUpdateRow, onDeleteRow, isSect
                                         />
                                     )}
                                 </td>
-
-
                                 <td className="py-3 px-4 text-right font-medium text-gray-700 align-top">
                                     {isSectionsView ? (
                                         <div className="px-3 py-2 font-medium text-gray-700">{formatCurrency(row.currentYear)}</div>
@@ -176,8 +179,7 @@ export default function ExtendedTBTable({ data, onUpdateRow, onDeleteRow, isSect
                                 </td>
                             </tr>
                         ))}
-                        {/* Summary Row */}
-                        <tr className="bg-gray-50 font-bold border-t-2 border-gray-200">
+                        <tr className="bg-gray-50 font-bold">
                             <td colSpan={2} className="py-4 px-4 text-center text-gray-900 uppercase text-xs tracking-wider">Total</td>
                             <td className="py-4 px-4 text-right text-gray-900">
                                 {formatCurrency(data.reduce((acc, row) => acc + row.currentYear, 0))}
@@ -194,7 +196,8 @@ export default function ExtendedTBTable({ data, onUpdateRow, onDeleteRow, isSect
                             <td className="py-4 px-4 text-right text-gray-900">
                                 {formatCurrency(data.reduce((acc, row) => acc + row.priorYear, 0))}
                             </td>
-                            <td colSpan={2}></td>
+                            {!isSectionsView && <td></td>}
+                            <td></td>
                         </tr>
                     </tbody>
                 </table>

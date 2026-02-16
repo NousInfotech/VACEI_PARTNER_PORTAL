@@ -5,6 +5,7 @@ export interface AuthContextType {
     user: User | null;
     organizationMember: OrganizationMember | null;
     selectedService: string | null;
+    selectedServiceLabel: string;
     setSelectedService: (service: string) => void;
     isAuthenticated: boolean;
     login: (email: string, password: string) => Promise<{ success: boolean; message: string; user?: User; token?: string }>;

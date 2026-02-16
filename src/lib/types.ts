@@ -34,12 +34,18 @@ export interface Organization {
   availableServices: string[];
 }
 
+export interface CustomServiceCycle {
+  id: string;
+  title: string;
+}
+
 export interface OrganizationMember {
   id: string;
   userId: string;
   organizationId: string;
   role: string;
   allowedServices: string[];
+  allowedCustomServiceCycles?: CustomServiceCycle[];
   organization: Organization;
 }
 
@@ -58,15 +64,19 @@ export interface LoginResponse {
     user: User;
     organizationMember: OrganizationMember;
     token: string;
+    refreshToken?: string;
   };
   message?: string;
 }
 
 export interface AuthMeResponse {
   data: {
-    user: User;
-    organizationMember: OrganizationMember;
-  };
+    id?: string;
+    user?: User;
+    organizationMember?: OrganizationMember;
+    role?: string;
+    refreshToken?: string;
+  } & Partial<User>;
   message?: string;
 }
 
