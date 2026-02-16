@@ -18,6 +18,23 @@ interface Employee {
     role: string;
 }
 
+interface CustomServiceCycle {
+    id: string;
+    title: string;
+}
+
+interface EmployeeResponseItem {
+    id: string;
+    user: {
+        firstName: string;
+        lastName: string;
+        email: string;
+    };
+    role: string;
+    allowedServices: string[];
+    allowedCustomServiceCycles: CustomServiceCycle[];
+}
+
 export default function EmployeeManagement() {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
@@ -46,14 +63,14 @@ export default function EmployeeManagement() {
             });
 
             if (response.data.success) {
-                const mappedEmployees: Employee[] = response.data.data.map((item: any) => {
+                const mappedEmployees: Employee[] = response.data.data.map((item: EmployeeResponseItem) => {
                     const standardServices = item.allowedServices || [];
                     const customServices = item.allowedCustomServiceCycles || [];
 
                     const standardLabels = standardServices.map((id: string) =>
                         AVAILABLE_SERVICES.find(s => s.id === id)?.label || id
                     );
-                    const customLabels = customServices.map((s: any) => s.title || s.id);
+                    const customLabels = customServices.map((s: CustomServiceCycle) => s.title || s.id);
 
                     return {
                         id: item.id,
@@ -61,7 +78,7 @@ export default function EmployeeManagement() {
                         lastName: item.user.lastName,
                         email: item.user.email,
                         role: item.role,
-                        services: [...standardServices, ...customServices.map((s: any) => s.id)],
+                        services: [...standardServices, ...customServices.map((s: CustomServiceCycle) => s.id)],
                         serviceNames: [...standardLabels, ...customLabels]
                     };
                 });
