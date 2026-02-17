@@ -5,12 +5,14 @@ interface ShadowCardProps {
   className?: string;
   animate?: boolean;
   hover?: boolean;
+  onClick?: () => void;
 }
 
 export const ShadowCard = ({ 
   children, 
   className = "", 
   animate = false, 
+  onClick
 }: ShadowCardProps) => {
   const hasBg = className.includes("bg-");
 
@@ -18,7 +20,7 @@ export const ShadowCard = ({
   const animationStyles = animate ? "animate-slide-in-right" : "";
  
   return (
-    <div className={`${baseStyles} ${animationStyles} ${className}`}>
+    <div onClick={onClick} className={`${baseStyles} ${animationStyles} ${className}`}>
       {children}
     </div>
   );

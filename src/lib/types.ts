@@ -95,3 +95,16 @@ export const AVAILABLE_SERVICES = [
   { id: "MBR", label: "MBR" },
   { id: "TAX", label: "Tax" }
 ];
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+  meta?: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+

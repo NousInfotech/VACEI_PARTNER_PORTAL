@@ -16,4 +16,10 @@ export const endPoints = {
   CUSTOM_SERVICE: {
     GET_ACTIVE: '/custom-services/active',
   },
+  NOTICE: {
+    GET_TODAY: '/notices/today',
+  },
+  ENGAGEMENT: {
+    GET_ALL: '/engagements',
+  },
 };
