@@ -1,87 +1,55 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-  ArrowRight,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { ShadowCard } from "../../../ui/ShadowCard";
 import { Button } from "../../../ui/Button";
 import { Skeleton } from "../../../ui/Skeleton";
 import { useAuth } from "../../../context/auth-context-core";
+import { apiGet } from "../../../config/base";
+import { endPoints } from "../../../config/endPoint";
 
-const MOCK_ENGAGEMENTS = [
-  {
-    id: "ENG-2024-001",
-    name: "Acme Corp Tax Audit",
-    progress: 75,
-    service: "TAX"
-  },
-  {
-    id: "ENG-2024-002",
-    name: "Global Logistics VAT Filing",
-    progress: 30,
-    service: "VAT"
-  },
-  {
-    id: "ENG-2024-003",
-    name: "Bistro Malta Payroll",
-    progress: 100,
-    service: "PAYROLL"
-  },
-  {
-    id: "ENG-2024-004",
-    name: "Tech Solutions Annual Audit",
-    progress: 15,
-    service: "AUDITING"
-  },
-  {
-    id: "ENG-2024-005",
-    name: "StartUp Inc MBR Registration",
-    progress: 60,
-    service: "MBR"
-  },
-  {
-    id: "ENG-2024-006",
-    name: "Retail Group Accounting Review",
-    progress: 45,
-    service: "ACCOUNTING"
-  },
-  {
-    id: "ENG-2024-007",
-    name: "Legal Compliance Review",
-    progress: 90,
-    service: "LEGAL"
-  },
-  {
-    id: "ENG-2024-008",
-    name: "CFO Services - Monthly Reporting",
-    progress: 80,
-    service: "CFO"
-  },
-  {
-    id: "ENG-2024-009",
-    name: "Corporate Services - Annual Return",
-    progress: 65,
-    service: "CSP"
-  }
-];
+interface OrgEngagement {
+  id: string;
+  companyName: string;
+  name: string | null;
+  serviceType: string;
+}
+
+interface OrgEngagementResponse {
+  data: OrgEngagement[];
+  total: number;
+  page: number;
+  limit: number;
+}
 
 export default function Engagement() {
-  const { selectedService } = useAuth();
+  const { selectedService, organizationMember } = useAuth();
+  const hasToken = typeof window !== "undefined" && !!localStorage.getItem("token");
 
-  const { isLoading: loading } = useQuery({
-    queryKey: ['employee-engagements'],
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ["employee-engagements", organizationMember?.organizationId],
+    enabled: !!hasToken && !!organizationMember?.organizationId,
     queryFn: async () => {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      return MOCK_ENGAGEMENTS;
-    }
+      if (!organizationMember?.organizationId) return [];
+      const response = await apiGet<OrgEngagementResponse>(endPoints.ENGAGEMENTS.GET_ALL, {
+        organizationId: organizationMember.organizationId,
+        page: 1,
+        limit: 100,
+      });
+      return response.data ?? [];
+    },
   });
 
-  const filteredEngagements = MOCK_ENGAGEMENTS.filter(engagement => {
+  const engagements = (data ?? []) as OrgEngagement[];
+  const filteredEngagements = engagements.filter((engagement) => {
     if (!selectedService) return true;
-    return engagement.service === selectedService;
+    return engagement.serviceType === selectedService;
   });
 
-  const handleViewDetails = (service: string) => {
-    window.open(`/engagement-view/services/${service}`, '_blank');
+  const handleViewDetails = (engagement: OrgEngagement) => {
+    window.open(
+      `/engagement-view/${engagement.id}?service=${encodeURIComponent(engagement.serviceType)}`,
+      "_blank"
+    );
   };
 
   return (
@@ -96,20 +64,26 @@ export default function Engagement() {
           ))
         ) : (
           filteredEngagements.map((engagement) => (
-            <ShadowCard key={engagement.id} className="group hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 flex flex-col">
-              {/* Header info */}
-              <div className="p-6 flex-1">
-                <h3 className="text-xl font-medium mb-2 group-hover:text-primary transition-colors line-clamp-1">
-                  {engagement.name}
-                </h3>
+            <ShadowCard key={engagement.id} className="group relative flex flex-col overflow-hidden border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl">
+              <div className="p-5 flex-1 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="text-lg font-semibold tracking-tight text-slate-900 group-hover:text-primary transition-colors line-clamp-2">
+                    {engagement.name ?? engagement.companyName}
+                  </h3>
+                  <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    {engagement.serviceType.replace(/_/g, " ")}
+                  </span>
+                </div>
               </div>
-
-              {/* Action Area */}
-              <Button
-                onClick={() => handleViewDetails(engagement.service)} className="w-full">
-                View Details
-                <ArrowRight size={16} />
-              </Button>
+              <div className="border-t border-slate-100 bg-slate-50 px-5 py-3">
+                <Button
+                  onClick={() => handleViewDetails(engagement)}
+                  className="w-full justify-between rounded-xl bg-slate-900 text-sm font-semibold shadow-none hover:bg-slate-800"
+                >
+                  <span>View details</span>
+                  <ArrowRight size={14} />
+                </Button>
+              </div>
             </ShadowCard>
           ))
         )}

@@ -24,7 +24,7 @@ import { ShadowCard } from "../../../ui/ShadowCard";
 import { Button } from "../../../ui/Button";
 import { Skeleton } from "../../../ui/Skeleton";
 import PillTab from "../../common/PillTab";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useTabQuery } from "../../../hooks/useTabQuery";
 import { useAuth } from "../../../context/auth-context-core";
 import { cn } from "../../../lib/utils";
@@ -37,6 +37,7 @@ import PayrollCycleView from "./status-cycles/PayrollCycleView";
 import MBRView from "./mbr/MBRView";
 import TaxView from "./tax/TaxView";
 import MessagesView from "./messages/MessagesView";
+import DocumentRequestsView from "./document-requests/DocumentRequestsView";
 import TeamsView from "./teams/TeamsView";
 import CFOView from "./cfo/CFOView";
 import CSPView from "./csp/CSPView";
@@ -80,14 +81,18 @@ const MOCK_STATUS = {
 };
 
 export default function EngagementFullView() {
-  const { serviceId } = useParams();
+  const { id: engagementId, serviceId } = useParams();
+  const [searchParams] = useSearchParams();
   const { selectedService, setSelectedService } = useAuth();
 
+  const serviceFromQuery = searchParams.get("service") ?? undefined;
+
   React.useEffect(() => {
-    if (serviceId && serviceId !== selectedService) {
-      setSelectedService(serviceId);
+    const effectiveService = serviceFromQuery ?? serviceId;
+    if (effectiveService && effectiveService !== selectedService) {
+      setSelectedService(effectiveService);
     }
-  }, [serviceId, selectedService, setSelectedService]);
+  }, [serviceFromQuery, serviceId, selectedService, setSelectedService]);
 
   const serviceName = selectedService?.replace(/_/g, " ") || 'Engagement';
 
@@ -393,7 +398,7 @@ export default function EngagementFullView() {
             </div>
           </div>
         ) : activeTab === 'library' ? (
-          <LibraryExplorer />
+          <LibraryExplorer engagementId={engagementId ?? undefined} />
         ) : activeTab === 'audit' ? (
           <AuditContent />
         ) : activeTab === 'vat' ? (
@@ -417,13 +422,15 @@ export default function EngagementFullView() {
             <div className="p-8 text-center text-gray-500">Select CFO or CSP to view services.</div>
           )
         ) : activeTab === 'updates' ? (
-          <MessagesView />
+          <MessagesView engagementId={engagementId ?? undefined} />
         ) : activeTab === 'chat' ? (
-          <Messages isSingleChat={true} contextualChatId="engagement-chat" />
+          <Messages isSingleChat={true} contextualChatId="engagement-chat" engagementId={engagementId ?? undefined} />
         ) : activeTab === 'teams' ? (
-          <TeamsView />
+          <TeamsView engagementId={engagementId ?? undefined} />
         ) : activeTab === 'todo' ? (
-          <AuditChecklist />
+          <AuditChecklist engagementId={engagementId ?? undefined} />
+        ) : activeTab === 'requests' ? (
+          <DocumentRequestsView engagementId={engagementId ?? undefined} />
         ) : (
           <ShadowCard className="p-10 md:p-20 flex flex-col items-center justify-center text-center bg-gray-50/10 border-dashed min-h-[400px]">
             <div className="p-8 bg-white shadow-sm rounded-full mb-8 text-gray-300 transform transition-transform hover:scale-110 duration-500">

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { ChatList } from './components/ChatList';
 import { ChatWindow } from './components/ChatWindow';
 import { NewGroupSidebar } from './components/NewGroupSidebar';
@@ -11,6 +12,8 @@ import { mockChats, users as mockUsers } from './mockData';
 import type { Chat, Message } from './types';
 import { Inbox, X, Copy, Forward, Trash2, Check, Users } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { apiGet } from '../../config/base';
+import { endPoints } from '../../config/endPoint';
 
 type RightPaneMode = 'search' | 'info' | null;
 type SidebarView = 'chats' | 'create-group';
@@ -18,9 +21,15 @@ type SidebarView = 'chats' | 'create-group';
 interface MessagesProps {
   isSingleChat?: boolean;
   contextualChatId?: string;
+  engagementId?: string;
 }
 
-const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, contextualChatId }) => {
+const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, contextualChatId, engagementId }) => {
+  useQuery({
+    queryKey: ['chat-rooms', engagementId],
+    enabled: !!engagementId,
+    queryFn: () => apiGet<{ data: unknown }>(endPoints.CHAT.ROOMS),
+  });
   const [chats, setChats] = useState<Chat[]>(mockChats);
   const [activeChatId, setActiveChatId] = useState<string | undefined>(mockChats[0]?.id);
   const [searchQuery, setSearchQuery] = useState('');
