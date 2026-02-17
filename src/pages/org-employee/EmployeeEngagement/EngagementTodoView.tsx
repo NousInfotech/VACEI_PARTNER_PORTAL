@@ -1,15 +1,40 @@
-import { useEngagementChecklists } from "../../../hooks/useEngagementApi";
+import { useQuery } from "@tanstack/react-query";
+import { apiGet } from "../../../config/base";
+import { endPoints } from "../../../config/endPoint";
 import { ShadowCard } from "../../../ui/ShadowCard";
 import { Skeleton } from "../../../ui/Skeleton";
 import { CheckSquare } from "lucide-react";
 import { cn } from "../../../lib/utils";
+
+interface ChecklistItem {
+  id: string;
+  title: string;
+  status: string;
+  category?: string | null;
+  deadline?: string | null;
+}
+
+interface ApiResponse<T> {
+  data: T;
+  message?: string;
+}
 
 interface EngagementTodoViewProps {
   engagementId: string | undefined;
 }
 
 export default function EngagementTodoView({ engagementId }: EngagementTodoViewProps) {
-  const { data: checklists, isLoading } = useEngagementChecklists(engagementId);
+  const { data: checklists, isLoading } = useQuery({
+    queryKey: ["engagement-checklists", engagementId],
+    enabled: !!engagementId,
+    queryFn: async () => {
+      if (!engagementId) return [];
+      const res = await apiGet<ApiResponse<ChecklistItem[]>>(
+        endPoints.ENGAGEMENTS.CHECKLISTS(engagementId)
+      );
+      return (res?.data ?? []) as ChecklistItem[];
+    },
+  });
 
   if (!engagementId) {
     return (
@@ -30,7 +55,7 @@ export default function EngagementTodoView({ engagementId }: EngagementTodoViewP
     );
   }
 
-  const list = checklists ?? [];
+  const list: ChecklistItem[] = checklists ?? [];
   if (list.length === 0) {
     return (
       <ShadowCard className="p-10 flex flex-col items-center justify-center text-center">
