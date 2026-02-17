@@ -40,7 +40,7 @@ export default function AdminDashboard({ activeSection }: AdminDashboardProps) {
   // Fetch Engagements Count
   const { data: engagementsResponse, isLoading: loadingEngagements } = useQuery({
     queryKey: ['org-engagements', orgId],
-    queryFn: () => apiGet<ApiResponse<unknown[]>>(endPoints.ENGAGEMENT.GET_ALL, { organizationId: orgId }),
+    queryFn: () => apiGet<ApiResponse<unknown[]>>(endPoints.ENGAGEMENTS.GET_ALL, { organizationId: orgId }),
     enabled: !!orgId
   });
 
