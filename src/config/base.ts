@@ -11,7 +11,7 @@ export const apiGet = async <T>(url: string, params?: Record<string, unknown>): 
 /**
  * Generic POST method
  */
-export const apiPost = async <T>(url: string, data?: Record<string, unknown>): Promise<T> => {
+export const apiPost = async <T>(url: string, data?: unknown): Promise<T> => {
   const response = await axiosInstance.post<T>(url, data);
   return response.data;
 };
@@ -19,7 +19,7 @@ export const apiPost = async <T>(url: string, data?: Record<string, unknown>): P
 /**
  * Generic PUT method
  */
-export const apiPut = async <T>(url: string, data?: Record<string, unknown>): Promise<T> => {
+export const apiPut = async <T>(url: string, data?: unknown): Promise<T> => {
   const response = await axiosInstance.put<T>(url, data);
   return response.data;
 };
@@ -27,7 +27,7 @@ export const apiPut = async <T>(url: string, data?: Record<string, unknown>): Pr
 /**
  * Generic PATCH method
  */
-export const apiPatch = async <T>(url: string, data?: Record<string, unknown>): Promise<T> => {
+export const apiPatch = async <T>(url: string, data?: unknown): Promise<T> => {
   const response = await axiosInstance.patch<T>(url, data);
   return response.data;
 };
@@ -37,5 +37,17 @@ export const apiPatch = async <T>(url: string, data?: Record<string, unknown>): 
  */
 export const apiDelete = async <T>(url: string): Promise<T> => {
   const response = await axiosInstance.delete<T>(url);
+  return response.data;
+};
+
+/**
+ * Generic POST method for FormData (e.g. file uploads)
+ */
+export const apiPostFormData = async <T>(url: string, data: FormData): Promise<T> => {
+  const response = await axiosInstance.post<T>(url, data, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return response.data;
 };

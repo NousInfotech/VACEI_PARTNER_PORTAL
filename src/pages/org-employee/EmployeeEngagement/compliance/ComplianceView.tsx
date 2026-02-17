@@ -1,0 +1,332 @@
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { 
+    ShieldCheck, 
+    Plus, 
+    Edit2, 
+    Trash2, 
+    Loader2, 
+    Calendar,
+    AlertCircle,
+    CheckCircle2,
+    Clock,
+    ExternalLink
+} from 'lucide-react';
+import { ShadowCard } from '../../../../ui/ShadowCard';
+import { Button } from '../../../../ui/Button';
+import { Input } from '../../../../ui/input';
+import { Textarea } from '../../../../ui/Textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../../../../ui/Dialog';
+import { apiGet, apiPost, apiPatch, apiDelete } from '../../../../config/base';
+import { endPoints } from '../../../../config/endPoint';
+import { cn } from '../../../../lib/utils';
+
+type ComplianceStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'OVERDUE' | 'WAIVED';
+
+interface ComplianceItem {
+    id: string;
+    title: string;
+    description: string | null;
+    startDate: string;
+    deadline: string;
+    status: ComplianceStatus;
+    cta: string;
+    service: string;
+}
+
+interface ApiResponse<T> {
+    data: T;
+    message?: string;
+}
+
+export default function ComplianceView({ engagementId }: { engagementId?: string }) {
+    const queryClient = useQueryClient();
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [editingItem, setEditingItem] = useState<ComplianceItem | null>(null);
+    const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
+    const [formData, setFormData] = useState({
+        title: '',
+        description: '',
+        startDate: '',
+        deadline: '',
+        cta: 'Action Required',
+        service: 'AUDITING' // default
+    });
+
+    const { data: compliances = [], isLoading } = useQuery({
+        queryKey: ['engagement-compliances', engagementId],
+        enabled: !!engagementId,
+        queryFn: async () => {
+            if (!engagementId) return [];
+            const res = await apiGet<ApiResponse<ComplianceItem[]>>(
+                endPoints.ENGAGEMENTS.COMPLIANCES(engagementId)
+            );
+            return res?.data ?? [];
+        },
+    });
+
+    const createMutation = useMutation({
+        mutationFn: async (payload: { title: string; description: string; startDate: string; deadline: string; cta: string; service: string }) => {
+            return apiPost(endPoints.ENGAGEMENTS.COMPLIANCES(engagementId!), payload);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['engagement-compliances', engagementId] });
+            setIsAddModalOpen(false);
+            resetForm();
+        },
+    });
+
+    const updateMutation = useMutation({
+        mutationFn: async ({ id, payload }: { id: string; payload: { title: string; description: string; startDate: string; deadline: string; cta: string; service: string } }) => {
+            return apiPatch(`${endPoints.ENGAGEMENTS.COMPLIANCES(engagementId!)}/${id}`, payload);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['engagement-compliances', engagementId] });
+            setEditingItem(null);
+            resetForm();
+        },
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: async (id: string) => {
+            return apiDelete(`${endPoints.ENGAGEMENTS.COMPLIANCES(engagementId!)}/${id}`);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['engagement-compliances', engagementId] });
+            setDeletingItemId(null);
+        },
+    });
+
+    const resetForm = () => {
+        setFormData({
+            title: '',
+            description: '',
+            startDate: '',
+            deadline: '',
+            cta: 'Action Required',
+            service: 'AUDITING'
+        });
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const payload = {
+            ...formData,
+            startDate: new Date(formData.startDate).toISOString(),
+            deadline: new Date(formData.deadline).toISOString()
+        };
+        if (editingItem) {
+            updateMutation.mutate({ id: editingItem.id, payload });
+        } else {
+            createMutation.mutate(payload);
+        }
+    };
+
+    const getStatusColor = (status: ComplianceStatus) => {
+        switch (status) {
+            case 'COMPLETED': return 'bg-green-100 text-green-700 border-green-200';
+            case 'IN_PROGRESS': return 'bg-blue-100 text-blue-700 border-blue-200';
+            case 'OVERDUE': return 'bg-red-100 text-red-700 border-red-200';
+            case 'WAIVED': return 'bg-gray-100 text-gray-700 border-gray-200';
+            default: return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+        }
+    };
+
+    const getStatusIcon = (status: ComplianceStatus) => {
+        switch (status) {
+            case 'COMPLETED': return <CheckCircle2 size={14} />;
+            case 'IN_PROGRESS': return <Clock size={14} />;
+            case 'OVERDUE': return <AlertCircle size={14} />;
+            default: return <Clock size={14} />;
+        }
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-indigo-50 rounded-lg">
+                        <ShieldCheck className="h-6 w-6 text-indigo-600" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-gray-900">Compliance & Regulatory</h2>
+                        <p className="text-sm text-gray-500">Track and manage regulatory requirements</p>
+                    </div>
+                </div>
+                <Button onClick={() => { setEditingItem(null); resetForm(); setIsAddModalOpen(true); }}>
+                    <Plus className="h-4 w-4 mr-2" /> Add Requirement
+                </Button>
+            </div>
+
+            {isLoading ? (
+                <div className="flex justify-center p-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+                </div>
+            ) : compliances.length === 0 ? (
+                <ShadowCard className="p-12 text-center bg-gray-50/30 border-dashed">
+                    <ShieldCheck className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900">No compliance items yet</h3>
+                    <p className="text-gray-500 mt-2">Add your first regulatory requirement to start tracking.</p>
+                </ShadowCard>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {compliances.map((item) => (
+                        <ShadowCard key={item.id} className="flex flex-col h-full border-t-4 border-t-indigo-500/50">
+                            <div className="p-5 flex-1">
+                                <div className="flex justify-between items-start mb-3">
+                                    <span className={cn(
+                                        "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border flex items-center gap-1",
+                                        getStatusColor(item.status)
+                                    )}>
+                                        {getStatusIcon(item.status)}
+                                        {item.status.replace('_', ' ')}
+                                    </span>
+                                    <div className="flex gap-1">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
+                                            setEditingItem(item);
+                                            setFormData({
+                                                title: item.title,
+                                                description: item.description || '',
+                                                startDate: item.startDate.split('T')[0],
+                                                deadline: item.deadline.split('T')[0],
+                                                cta: item.cta,
+                                                service: item.service
+                                            });
+                                            setIsAddModalOpen(true);
+                                        }}>
+                                            <Edit2 size={14} />
+                                        </Button>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-50" onClick={() => setDeletingItemId(item.id)}>
+                                            <Trash2 size={14} />
+                                        </Button>
+                                    </div>
+                                </div>
+                                <h3 className="text-base font-bold text-gray-900 mb-1">{item.title}</h3>
+                                <p className="text-xs text-gray-500 mb-4 line-clamp-2">{item.description || 'No description provided.'}</p>
+                                
+                                <div className="space-y-2 mt-auto">
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="text-gray-400 flex items-center gap-1">
+                                            <Calendar size={12} /> Deadline
+                                        </span>
+                                        <span className="font-medium text-gray-700">{new Date(item.deadline).toLocaleDateString()}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between mt-auto rounded-b-xl">
+                                <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">{item.service}</span>
+                                <Button variant="ghost" size="sm" className="h-8 text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50">
+                                    {item.cta} <ExternalLink size={12} className="ml-1" />
+                                </Button>
+                            </div>
+                        </ShadowCard>
+                    ))}
+                </div>
+            )}
+
+            {/* Add/Edit Modal */}
+            <Dialog open={isAddModalOpen || !!editingItem} onOpenChange={() => { setIsAddModalOpen(false); setEditingItem(null); }}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>{editingItem ? 'Edit Requirement' : 'Add Compliance Requirement'}</DialogTitle>
+                        <DialogDescription>
+                            Define a new regulatory or compliance milestone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleSubmit} className="space-y-4 py-4">
+                        <div className="grid grid-cols-1 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Service Category</label>
+                                <select 
+                                    className="w-full h-10 px-3 rounded-md border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    value={formData.service}
+                                    onChange={(e) => setFormData({...formData, service: e.target.value})}
+                                >
+                                    <option value="AUDITING">Auditing</option>
+                                    <option value="VAT">VAT</option>
+                                    <option value="PAYROLL">Payroll</option>
+                                    <option value="TAX">Tax</option>
+                                    <option value="MBR">MBR</option>
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Title</label>
+                                <Input 
+                                    placeholder="Requirement title" 
+                                    value={formData.title}
+                                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Description</label>
+                                <Textarea 
+                                    placeholder="Add details about this requirement..." 
+                                    value={formData.description}
+                                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                                    className="min-h-[80px]"
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Start Date</label>
+                                    <Input 
+                                        type="date" 
+                                        value={formData.startDate}
+                                        onChange={(e) => setFormData({...formData, startDate: e.target.value})}
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Deadline</label>
+                                    <Input 
+                                        type="date" 
+                                        value={formData.deadline}
+                                        onChange={(e) => setFormData({...formData, deadline: e.target.value})}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Action Label (CTA)</label>
+                                <Input 
+                                    placeholder="e.g. Upload Files, Approve Draft" 
+                                    value={formData.cta}
+                                    onChange={(e) => setFormData({...formData, cta: e.target.value})}
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => { setIsAddModalOpen(false); setEditingItem(null); }}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+                                {createMutation.isPending || updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+                                {editingItem ? 'Update' : 'Add Item'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Modal */}
+            <Dialog open={!!deletingItemId} onOpenChange={() => setDeletingItemId(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Requirement</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to remove this compliance requirement?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setDeletingItemId(null)}>Cancel</Button>
+                        <Button variant="destructive" onClick={() => deletingItemId && deleteMutation.mutate(deletingItemId)} disabled={deleteMutation.isPending}>
+                            {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
+}

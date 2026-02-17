@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { 
-  BarChart3, 
   Users, 
   MessageSquare, 
   FileText, 
@@ -12,7 +11,6 @@ import {
 } from "lucide-react";
 import { Button } from "../../ui/Button";
 import { ShadowCard } from "../../ui/ShadowCard";
-import { Select } from "../../ui/Select";
 import { PageHeader } from "../common/PageHeader";
 import { Skeleton } from "../../ui/Skeleton";
 import { useAuth } from "../../context/auth-context-core";
@@ -20,6 +18,7 @@ import { cn } from "../../lib/utils";
 import EmployeeCompliance from "./EmployeeCompliance";
 import Engagement from "./EmployeeEngagement/Engagement";
 import Messages from "../messages/Messages";
+import { NoticeBoard } from "../common/NoticeBoard";
  
  
 const MOCK_CLIENTS = [
@@ -113,123 +112,14 @@ export default function EmployeeDashboard({ activeSection = "Dashboard" }: Emplo
               )}
             </div>
 
-            {/* Analytics Section */}
-            <ShadowCard className="p-8">
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
-                    <BarChart3 className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold">Performance Analytics</h2>
-                    <p className="text-sm text-gray-500">Service delivery vs. Target</p>
-                  </div>
-                </div>
-                {loading ? (
-                    <Skeleton className="h-10 w-32 rounded-xl" />
-                ) : (
-                    <Select 
-                      label="Last 30 Days"
-                      items={[
-                        { id: '30d', label: 'Last 30 Days', onClick: () => {} },
-                        { id: '6m', label: 'Last 6 Months', onClick: () => {} },
-                        { id: '1y', label: 'This Year', onClick: () => {} },
-                      ]}
-                    />
-                )}
-              </div>
-              
-              <div className="relative h-64 bg-gray-50/0 rounded-2xl overflow-hidden group/graph">
-                {loading ? (
-                    <Skeleton className="w-full h-full rounded-2xl" />
-                ) : (
-                    <>
-                        {/* CSS for Drawing Animation */}
-                        <style>{`
-                          @keyframes drawLine {
-                            from { stroke-dashoffset: 1200; }
-                            to { stroke-dashoffset: 0; }
-                          }
-                          .animate-draw {
-                            stroke-dasharray: 1200;
-                            stroke-dashoffset: 1200;
-                            animation: drawLine 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-                          }
-                          @keyframes fadeInUp {
-                            from { opacity: 0; transform: translateY(10px); }
-                            to { opacity: 1; transform: translateY(0); }
-                          }
-                          .animate-fade-up {
-                            animation: fadeInUp 1s ease-out forwards;
-                          }
-                        `}</style>
+            {/* Notice Board */}
+            <div className="bg-white rounded-2xl p-0 shadow-sm border border-gray-100 overflow-hidden">
+              <NoticeBoard />
+            </div>
 
-                        {/* SVG Graph */}
-                        <svg className="w-full h-full" viewBox="0 0 1000 200" preserveAspectRatio="none">
-                          <defs>
-                            <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#6366f1" stopOpacity="0.3" />
-                              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
-                            </linearGradient>
-                            <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
-                              <stop offset="0%" stopColor="#6366f1" />
-                              <stop offset="100%" stopColor="#3b82f6" />
-                            </linearGradient>
-                          </defs>
-                          
-                          {/* Grid Lines */}
-                          {[0, 50, 100, 150].map((y) => (
-                            <line key={y} x1="0" y1={y} x2="1000" y2={y} stroke="rgba(0,0,0,0.03)" strokeWidth="1" />
-                          ))}
+            {/* Performance Analytics Section - Commented out */}
 
-                          {/* Area Fill */}
-                          <path
-                            d="M 0 200 L 0 120 C 100 120, 150 40, 200 60 C 250 80, 300 160, 400 140 C 500 120, 550 40, 600 30 C 650 20, 750 150, 850 130 C 950 110, 1000 80, 1000 80 L 1000 200 Z"
-                            fill="url(#chartGradient)"
-                            className="opacity-0 animate-[fadeIn_1.5s_ease-out_0.5s_forwards]"
-                          />
 
-                          {/* Line */}
-                          <path
-                            d="M 0 120 C 100 120, 150 40, 200 60 C 250 80, 300 160, 400 140 C 500 120, 550 40, 600 30 C 650 20, 750 150, 850 130 C 950 110, 1000 80, 1000 80"
-                            fill="none"
-                            stroke="url(#lineGradient)"
-                            strokeWidth="4"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="animate-draw"
-                          />
-
-                          {/* Interactive Points */}
-                          {[
-                            { x: 200, y: 60, val: "65", delay: '0.8s' },
-                            { x: 400, y: 140, val: "45", delay: '1s' },
-                            { x: 600, y: 30, val: "90", delay: '1.2s' },
-                            { x: 850, y: 130, val: "60", delay: '1.4s' }
-                          ].map((pt, i) => (
-                            <g key={i} className="cursor-pointer group/pt opacity-0 animate-[fadeIn_0.5s_ease-out_forwards]" style={{ animationDelay: pt.delay }}>
-                              <circle cx={pt.x} cy={pt.y} r="5" fill="white" stroke="#6366f1" strokeWidth="3" className="drop-shadow-sm" />
-                              <circle cx={pt.x} cy={pt.y} r="15" fill="#6366f1" fillOpacity="0" className="group-hover/pt:fill-opacity-10 transition-all duration-300" />
-                              
-                              {/* Tooltip on hover */}
-                              <g className="opacity-0 group-hover/pt:opacity-100 transition-opacity duration-300">
-                                <rect x={pt.x - 20} y={pt.y - 35} width="40" height="20" rx="6" fill="#0f1729" />
-                                <text x={pt.x} y={pt.y - 21} textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">{pt.val}%</text>
-                              </g>
-                            </g>
-                          ))}
-                        </svg>
-
-                        {/* X-Axis Labels */}
-                        <div className="absolute bottom-2 left-0 w-full flex justify-between px-6 text-[10px] font-bold text-gray-400 capitalize tracking-wider animate-fade-up">
-                          {['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7', 'Week 8'].map((label, i) => (
-                            <span key={i} className="hover:text-primary transition-colors cursor-default">{label}</span>
-                          ))}
-                        </div>
-                    </>
-                )}
-              </div>
-            </ShadowCard>
           </div>
 
           {/* Side Feedback/Chat List Area */}

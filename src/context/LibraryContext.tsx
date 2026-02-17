@@ -1,6 +1,50 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
-import { type LibraryItem, mockLibraryData, formatFileSize } from '../lib/libraryData';
+import { apiGet, apiPost, apiDelete } from '../config/base';
+import { endPoints } from '../config/endPoint';
+
+export interface LibraryItem {
+  id: string;
+  name: string;
+  type: 'folder' | 'file';
+  fileType: string;
+  size: string;
+  updatedAt: string;
+  url?: string;
+  parentId?: string | null;
+  folderId?: string | null;
+// Raw API fields
+  folder_name?: string;
+  file_name?: string;
+  file_size?: number;
+  createdAt?: string;
+}
+
+interface ApiFolder {
+  id: string;
+  folder_name: string;
+  name?: string;
+  updatedAt?: string;
+}
+
+interface ApiFile {
+  id: string;
+  file_name: string;
+  filename?: string;
+  file_type?: string;
+  fileType?: string;
+  file_size?: number;
+  size?: number;
+  url?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface LibraryContentResponse {
+  folders: ApiFolder[];
+  files: ApiFile[];
+  folder?: ApiFolder;
+}
 
 type ViewMode = 'list' | 'grid';
 type SortField = 'name' | 'type' | 'size';
@@ -19,6 +63,7 @@ interface ContextMenuState {
 
 interface LibraryContextType {
   // State
+  engagementId?: string;
   viewMode: ViewMode;
   currentFolderId: string | null;
   searchQuery: string;
@@ -48,11 +93,23 @@ interface LibraryContextType {
   setIsMobileSidebarOpen: (open: boolean) => void;
   setSelectedItems: (ids: string[]) => void;
   handleDownload: (item?: LibraryItem) => void;
+  handleCreateFolder: (name: string) => Promise<void>;
+  handleUpload: (files: FileList) => Promise<void>;
+  handleDelete: (item: LibraryItem) => Promise<void>;
 }
 
 const LibraryContext = createContext<LibraryContextType | undefined>(undefined);
 
-export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const formatFileSize = (bytes?: number) => {
+  if (!bytes) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+export const LibraryProvider: React.FC<{ children: React.ReactNode; engagementId?: string }> = ({ children, engagementId }) => {
+  const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,11 +119,77 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [filterType, setFilterType] = useState('all');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-  const { isLoading } = useQuery({
-    queryKey: ['library-items', currentFolderId, filterType],
+  // Fetch Root Folders or Engagement Library Folder
+  const { data: libraryRootData } = useQuery({
+    queryKey: ['library-roots', engagementId],
     queryFn: async () => {
-      await new Promise(resolve => setTimeout(resolve, 600));
-      return true;
+      if (engagementId) {
+        const res = await apiGet<{ data: LibraryContentResponse }>(
+          endPoints.ENGAGEMENTS.LIBRARY_FOLDER(engagementId)
+        );
+        return res?.data;
+      }
+      const res = await apiGet<{ data: ApiFolder[] }>(endPoints.LIBRARY.FOLDERS_ROOTS);
+      return { folders: res?.data ?? [], files: [] };
+    },
+  });
+
+  const rootsData = useMemo(() => {
+    return libraryRootData?.folders ?? [];
+  }, [libraryRootData]);
+
+  const rootFiles = useMemo(() => {
+    if (engagementId) return libraryRootData?.files ?? [];
+    return [];
+  }, [libraryRootData, engagementId]);
+
+  // Fetch Folder Content
+  const { data: contentData, isLoading } = useQuery({
+    queryKey: ['library-content', currentFolderId],
+    enabled: !!currentFolderId,
+    queryFn: async () => {
+      if (!currentFolderId) return { folders: [], files: [] };
+      const res = await apiGet<{ data: LibraryContentResponse }>(
+        endPoints.LIBRARY.FOLDER_CONTENT(currentFolderId)
+      );
+      return res?.data ?? { folders: [], files: [] };
+    },
+  });
+
+  // Mutations
+  const createFolderMutation = useMutation({
+    mutationFn: async (name: string) => {
+      return apiPost(endPoints.LIBRARY.FOLDER_CREATE, {
+        folder_name: name,
+        engagementId,
+        parentId: currentFolderId
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['library-content', currentFolderId] });
+      queryClient.invalidateQueries({ queryKey: ['library-roots'] });
+    }
+  });
+
+  const uploadFileMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      return apiPost(endPoints.LIBRARY.FILE_UPLOAD, formData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['library-content', currentFolderId] });
+    }
+  });
+
+  const deleteItemMutation = useMutation({
+    mutationFn: async (item: LibraryItem) => {
+      const url = item.type === 'folder' 
+        ? endPoints.LIBRARY.FOLDER_DELETE(item.id)
+        : endPoints.LIBRARY.FILE_DELETE(item.id);
+      return apiDelete(url);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['library-content', currentFolderId] });
+      queryClient.invalidateQueries({ queryKey: ['library-roots'] });
     }
   });
 
@@ -77,183 +200,136 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return () => window.removeEventListener('click', closeContextMenu);
   }, []);
 
-  const breadcrumbs = useMemo(() => {
-    const path: LibraryItem[] = [];
-    let currentId = currentFolderId;
-    while (currentId) {
-      const folder = mockLibraryData.find(item => item.id === currentId && item.type === 'folder');
-      if (folder && folder.type === 'folder') {
-        // Normalize breadcrumb item
-        path.unshift({
-          ...folder,
-          name: folder.folder_name,
-        });
-        currentId = folder.parentId;
-      } else {
-        break;
-      }
-    }
-    return path;
-  }, [currentFolderId]);
+  const rootFolders = useMemo(() => {
+    return (rootsData ?? []).map((f: ApiFolder) => ({
+      ...f,
+      id: f.id,
+      name: f.name || f.folder_name,
+      type: 'folder' as const,
+      fileType: 'Folder',
+      size: '',
+      updatedAt: f.updatedAt ? new Date(f.updatedAt).toLocaleDateString() : '',
+    })) as LibraryItem[];
+  }, [rootsData]);
 
   const currentItems = useMemo(() => {
-    const filtered = mockLibraryData.filter(item => {
-      const itemParentId = item.type === 'folder' ? item.parentId : item.folderId;
-      const itemName = item.type === 'folder' ? item.folder_name : item.file_name;
-      
-      const matchesFolder = itemParentId === currentFolderId;
-      const matchesSearch = searchQuery === '' || itemName.toLowerCase().includes(searchQuery.toLowerCase());
+    let folders: LibraryItem[] = [];
+    let files: LibraryItem[] = [];
+
+    if (!currentFolderId) {
+      folders = rootFolders as LibraryItem[];
+      files = (rootFiles ?? []).map((f: ApiFile) => ({
+        ...f,
+        name: f.filename || f.file_name,
+        type: 'file' as const,
+        fileType: f.fileType || f.file_type || 'File',
+        size: formatFileSize(f.size || f.file_size),
+        updatedAt: f.updatedAt ? new Date(f.updatedAt).toLocaleDateString() : (f.createdAt ? new Date(f.createdAt).toLocaleDateString() : ''),
+      })) as LibraryItem[];
+    } else if (contentData) {
+      folders = (contentData.folders ?? []).map((f: ApiFolder) => ({
+        ...f,
+        name: f.name || f.folder_name,
+        type: 'folder' as const,
+        fileType: 'Folder',
+        size: '',
+        updatedAt: f.updatedAt ? new Date(f.updatedAt).toLocaleDateString() : '',
+      }));
+      files = (contentData.files ?? []).map((f: ApiFile) => ({
+        ...f,
+        name: f.filename || f.file_name,
+        type: 'file' as const,
+        fileType: f.fileType || f.file_type || 'File',
+        size: formatFileSize(f.size || f.file_size),
+        updatedAt: f.updatedAt ? new Date(f.updatedAt).toLocaleDateString() : (f.createdAt ? new Date(f.createdAt).toLocaleDateString() : ''),
+      }));
+    }
+
+    const allItems = [...folders, ...files].filter(item => {
+      const matchesSearch = searchQuery === '' || item.name.toLowerCase().includes(searchQuery.toLowerCase());
       
       let matchesFilter = true;
       if (filterType === 'pdf') {
-        matchesFilter = item.type === 'file' && item.file_type?.toUpperCase() === 'PDF';
+        matchesFilter = item.type === 'file' && item.fileType?.toUpperCase() === 'PDF';
       } else if (filterType === 'spreadsheet') {
-        matchesFilter = item.type === 'file' && (item.file_type?.toUpperCase() === 'XLSX' || item.file_type?.toUpperCase() === 'CSV');
+        matchesFilter = item.type === 'file' && (item.fileType?.toUpperCase() === 'XLSX' || item.fileType?.toUpperCase() === 'CSV');
       } else if (filterType === 'document') {
-        matchesFilter = item.type === 'file' && (item.file_type?.toUpperCase() === 'DOCX' || item.file_type?.toUpperCase() === 'DOC');
+        matchesFilter = item.type === 'file' && (item.fileType?.toUpperCase() === 'DOCX' || item.fileType?.toUpperCase() === 'DOC');
       }
 
-      return matchesFolder && matchesSearch && matchesFilter;
+      return matchesSearch && matchesFilter;
     });
 
-    const normalized = filtered.map(item => {
-      const name = item.type === 'folder' ? item.folder_name : item.file_name;
-      const fileType = item.type === 'file' ? item.file_type : 'Folder';
-      const size = item.type === 'file' ? formatFileSize(item.file_size) : '';
-      const updatedAtStr = item.type === 'folder' ? item.updatedAt : item.createdAt;
-      
-      return {
-        ...item,
-        name,
-        fileType,
-        size,
-        updatedAt: new Date(updatedAtStr).toLocaleDateString(),
-        parentId: item.type === 'folder' ? item.parentId : item.folderId,
-      };
-    });
-
-    normalized.sort((a, b) => {
+    allItems.sort((a, b) => {
       let comparison = 0;
       if (sortConfig.field === 'name') {
-        comparison = a.name.localeCompare(b.name);
+        comparison = (a.name || "").localeCompare(b.name || "");
       } else if (sortConfig.field === 'type') {
-        comparison = a.fileType.localeCompare(b.fileType);
+        comparison = (a.fileType || "").localeCompare(b.fileType || "");
       } else if (sortConfig.field === 'size') {
-        comparison = a.size.localeCompare(b.size);
+        const sizeA = a.file_size || 0;
+        const sizeB = b.file_size || 0;
+        comparison = sizeA - sizeB;
       }
       return sortConfig.order === 'asc' ? comparison : -comparison;
     });
 
-    return normalized;
-  }, [currentFolderId, searchQuery, sortConfig, filterType]);
+    return allItems as LibraryItem[];
+  }, [currentFolderId, rootFolders, rootFiles, contentData, searchQuery, sortConfig, filterType]);
 
-  const rootFolders = useMemo(() => {
-    return mockLibraryData
-      .filter(item => item.type === 'folder' && item.parentId === null)
-      .map(folder => ({
-        ...folder,
-        name: folder.type === 'folder' ? folder.folder_name : '',
-      }));
-  }, []);
+  // Breadcrumbs logic - this would ideally come from the API or be managed via state
+  // For now, we'll maintain a simple stack or rely on the current folder's parent
+  const [breadcrumbStack, setBreadcrumbStack] = useState<LibraryItem[]>([]);
 
   const handleFolderClick = (id: string | null) => {
-    setCurrentFolderId(id);
+    if (id === null) {
+      setCurrentFolderId(null);
+      setBreadcrumbStack([]);
+    } else {
+      const folder = currentItems.find(i => i.id === id && i.type === 'folder');
+      if (folder) {
+        setBreadcrumbStack(prev => [...prev, folder]);
+      }
+      setCurrentFolderId(id);
+    }
     setSelectedItems([]);
     setContextMenu(null);
   };
 
   const handleBack = () => {
-    if (currentFolderId) {
-      const current = mockLibraryData.find(item => item.id === currentFolderId);
-      setCurrentFolderId(current?.parentId || null);
-      setSelectedItems([]);
-      setContextMenu(null);
+    if (breadcrumbStack.length > 0) {
+      const newStack = [...breadcrumbStack];
+      newStack.pop();
+      setBreadcrumbStack(newStack);
+      const parent = newStack[newStack.length - 1];
+      setCurrentFolderId(parent ? parent.id : null);
+    } else {
+      setCurrentFolderId(null);
     }
+    setSelectedItems([]);
+    setContextMenu(null);
   };
 
   const handleDoubleClick = (item: LibraryItem) => {
     if (item.type === 'folder') {
       handleFolderClick(item.id);
-    } else {
-      const isExcel = item.fileType?.toUpperCase() === 'XLSX' || item.fileType?.toUpperCase() === 'CSV';
-      if (isExcel) {
-        handleDownload(item);
-      } else if (item.url) {
-        window.open(item.url, '_blank');
-      }
+    } else if (item.url) {
+      window.open(item.url, '_blank');
     }
   };
 
   const handleDownload = async (item?: LibraryItem) => {
-    let itemsToDownload: LibraryItem[] = [];
-    let isZip = false;
-    let zipName = "library_export.zip";
+    const itemsToDownload = item ? [item] : currentItems.filter(i => selectedItems.includes(i.id));
     
-    if (item) {
-      itemsToDownload = [item];
-      if (item.type === 'folder') {
-        isZip = true;
-        zipName = `${item.name}.zip`;
-      }
-    } else if (selectedItems.length > 0) {
-      itemsToDownload = mockLibraryData.filter(i => selectedItems.includes(i.id));
-      if (itemsToDownload.length > 1 || itemsToDownload.some(i => i.type === 'folder')) {
-        isZip = true;
-      }
-    } else {
-      itemsToDownload = currentItems;
-      isZip = true;
-      const folderName = currentFolderId 
-        ? mockLibraryData.find(i => i.id === currentFolderId)?.name 
-        : "Root";
-      zipName = `${folderName}_all_files.zip`;
-    }
-
-    if (isZip) {
-      console.log(`Simulating Zip Creation: ${zipName}`);
-      // In a real app, we'd use JSZip here. For mock, we'll simulate a zip download.
-      // We use a dummy blob to trigger the browser's download dialog with the correct name.
-      const blob = new Blob(["This is a simulated ZIP file content for " + zipName], { type: 'application/zip' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = zipName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      return;
-    }
-
-    // Single file download logic
-    const filesToDownload = itemsToDownload.filter(i => i.type === 'file' && i.url);
-    for (const i of filesToDownload) {
-      const itemName = i.type === 'folder' ? i.folder_name : i.file_name;
-      const itemUrl = i.type === 'file' ? i.url : undefined;
-
-      if (itemUrl) {
-        console.log(`Downloading ${itemName}...`);
-        try {
-          const response = await fetch(itemUrl);
-          const blob = await response.blob();
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = itemName;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(url);
-        } catch {
-          // Fallback: open in new tab if download fails
-          const link = document.createElement('a');
-          link.href = itemUrl;
-          link.setAttribute('download', itemName);
-          link.setAttribute('target', '_blank');
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }
+    for (const i of itemsToDownload) {
+      if (i.type === 'file' && i.url) {
+        const link = document.createElement('a');
+        link.href = i.url;
+        link.download = i.name;
+        link.setAttribute('target', '_blank');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       }
     }
   };
@@ -266,7 +342,7 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
         prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
       );
     } else {
-      setSelectedItems(prev => (prev.length === 1 && prev[0] === id) ? [] : [id]);
+      setSelectedItems([id]);
     }
   };
 
@@ -285,7 +361,27 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
+  const handleCreateFolder = async (name: string) => {
+    await createFolderMutation.mutateAsync(name);
+  };
+
+  const handleUpload = async (files: FileList) => {
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+        formData.append('files', files[i]);
+    }
+    if (currentFolderId) formData.append('folderId', currentFolderId);
+    if (engagementId) formData.append('engagementId', engagementId);
+    
+    await uploadFileMutation.mutateAsync(formData);
+  };
+
+  const handleDelete = async (item: LibraryItem) => {
+    await deleteItemMutation.mutateAsync(item);
+  };
+
   const value = {
+    engagementId,
     viewMode, setViewMode,
     currentFolderId,
     searchQuery, setSearchQuery,
@@ -296,7 +392,7 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     isLoading,
     isMobileSidebarOpen,
     setIsMobileSidebarOpen,
-    breadcrumbs,
+    breadcrumbs: breadcrumbStack,
     currentItems,
     rootFolders,
     handleFolderClick,
@@ -306,7 +402,10 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     handleSort,
     handleContextMenu,
     closeContextMenu,
-    handleDownload
+    handleDownload,
+    handleCreateFolder,
+    handleUpload,
+    handleDelete
   };
 
   return <LibraryContext.Provider value={value}>{children}</LibraryContext.Provider>;

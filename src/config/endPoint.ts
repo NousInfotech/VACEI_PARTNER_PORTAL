@@ -22,13 +22,20 @@ export const endPoints = {
   ENGAGEMENTS: {
     GET_ALL: '/engagements',
     GET_BY_ID: (engagementId: string) => `/engagements/${engagementId}`,
-    CHECKLISTS: (engagementId: string) => `/engagements/${engagementId}/checklists`,
-    COMPLIANCES: (engagementId: string) => `/engagements/${engagementId}/compliances`,
+    CHECKLISTS: (id: string) => `/engagements/${id}/checklists`,
+    CHECKLIST_BY_ID: (engId: string, checklistId: string) => `/engagements/${engId}/checklists/${checklistId}`,
+    CHECKLIST_STATUS: (engId: string, checklistId: string) => `/engagements/${engId}/checklists/${checklistId}/status`,
+    COMPLIANCES: (id: string) => `/engagements/${id}/compliances`,
     TEAM: (engagementId: string) => `/engagements/${engagementId}/team`,
     CHAT_ROOM: (engagementId: string) => `/engagements/${engagementId}/chat-room`,
+    MILESTONES: (engagementId: string) => `/engagements/${engagementId}/milestones`,
+    LIBRARY_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library`,
   },
   ENGAGEMENT_UPDATES: '/engagement-updates',
   DOCUMENT_REQUESTS: '/document-requests',
+  REQUESTED_DOCUMENTS: (requestId: string) => `/document-requests/${requestId}/documents`,
+  REQUESTED_DOCUMENT_BY_ID: (requestId: string, docId: string) => `/document-requests/${requestId}/documents/${docId}`,
+  REQUESTED_DOCUMENT_UPLOAD: (requestId: string, docId: string) => `/document-requests/${requestId}/documents/${docId}/upload`,
   CHAT: {
     ROOMS: '/chat/rooms',
     ROOM_BY_ID: (roomId: string) => `/chat/rooms/${roomId}`,
@@ -37,5 +44,9 @@ export const endPoints = {
   LIBRARY: {
     FOLDERS_ROOTS: '/library/folders/roots',
     FOLDER_CONTENT: (folderId: string) => `/library/folders/${folderId}/content`,
+    FOLDER_CREATE: '/library/folders',
+    FILE_UPLOAD: '/library/files/upload',
+    FILE_DELETE: (fileId: string) => `/library/files/${fileId}`,
+    FOLDER_DELETE: (folderId: string) => `/library/folders/${folderId}`,
   },
 };

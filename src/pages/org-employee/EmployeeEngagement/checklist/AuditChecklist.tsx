@@ -1,207 +1,174 @@
 import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Filter, PieChart } from 'lucide-react';
-import { type ChecklistPhase, type ChecklistTask, type ChecklistTaskStatus } from './types';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Filter, PieChart, Plus, X } from 'lucide-react';
+import { 
+    ChecklistStatus, 
+    type ChecklistItem,
+    type CreateChecklistDto,
+    type UpdateChecklistDto 
+} from './types';
 import ChecklistPhaseComponent from './components/ChecklistPhase';
 import ChecklistProgressBar from './components/ChecklistProgressBar';
 import { ShadowCard } from '../../../../ui/ShadowCard';
-import { apiGet } from '../../../../config/base';
-import { endPoints } from '../../../../config/endPoint';
-
-interface ApiResponse<T> {
-  data: T;
-  message?: string;
-}
-
-interface ChecklistItem {
-  id: string;
-  title: string;
-  status: string;
-  category?: string | null;
-  deadline?: string | null;
-  level?: number;
-  children?: ChecklistItem[];
-}
-
-// CONSTANT MOCK DATA
-const INITIAL_DATA: ChecklistPhase[] = [
-    {
-        id: 'pre_audit',
-        title: '1. Pre-Audit Phase',
-        sections: [
-            {
-                id: 'engagement_setup',
-                title: 'Engagement Setup',
-                tasks: [
-                    { id: 'eng_letter', title: 'Signed Engagement Letter by Client', type: 'checkbox', status: 'not_started' },
-                    { id: 'independence_check', title: 'Independence & Conflict Check', type: 'checkbox', status: 'not_started', notes: 'Partner sign-off required' },
-                    { id: 'budget_alloc', title: 'Assign Audit Team & Budget', type: 'text', status: 'not_started' }
-                ]
-            }
-        ]
-    },
-    {
-        id: 'planning',
-        title: '2. Audit Planning Phase',
-        sections: [
-            {
-                id: 'risk_assess',
-                title: 'Risk Assessment',
-                tasks: [
-                    { id: 'fraud_risk', title: 'Fraud Risk Inquiry', type: 'select', selectOptions: ['Low', 'Medium', 'High'], status: 'not_started' },
-                    { id: 'materiality', title: 'Determine Materiality Threshold', type: 'text', status: 'not_started' }
-                ]
-            }
-        ]
-    },
-    {
-        id: 'fieldwork',
-        title: '3. Fieldwork Phase',
-        sections: [
-            {
-                id: 'testing',
-                title: 'Substantive Testing',
-                tasks: [
-                    { id: 'revenue_test', title: 'Revenue Recognition Testing', type: 'checkbox', status: 'not_started' },
-                    { id: 'expense_vouch', title: 'Expense Vouching (Sample Size: 25)', type: 'checkbox', status: 'not_started' }
-                ]
-            }
-        ]
-    },
-    {
-        id: 'finalization',
-        title: '4. Finalization Phase',
-        sections: [
-            {
-                id: 'review',
-                title: 'Review',
-                tasks: [
-                    { id: 'fin_stmt_review', title: 'Financial Statement Review', type: 'checkbox', status: 'not_started' }
-                ]
-            }
-        ]
-    },
-    {
-        id: 'post_audit_docs',
-        title: '5. Post-Audit Letters & Documentation',
-        sections: [
-            {
-                id: 'reps',
-                title: 'Representations',
-                tasks: [
-                    { id: 'rep_letter', title: 'Management Representation Letter', type: 'date', status: 'not_started' }
-                ]
-            }
-        ]
-    },
-    {
-        id: 'post_audit',
-        title: '6. Post-Audit Phase',
-        sections: [
-            {
-                id: 'debrief',
-                title: 'Debrief',
-                tasks: [
-                    { id: 'internal_debrief', title: 'Internal Team Debrief', type: 'checkbox', status: 'not_started' }
-                ]
-            }
-        ]
-    },
-    {
-        id: 'conclusion',
-        title: '7. Conclusion',
-        sections: [
-            {
-                id: 'archiving',
-                title: 'Archiving',
-                tasks: [
-                    { id: 'archive_file', title: 'Archive Audit File', type: 'checkbox', status: 'not_started' }
-                ]
-            }
-        ]
-    }
-];
+import { checklistService } from './checklistService';
+import CreateEditChecklistModal from './components/CreateEditChecklistModal';
 
 export default function AuditChecklist({ engagementId }: { engagementId?: string }) {
-    const [data, setData] = useState<ChecklistPhase[]>(INITIAL_DATA);
-    const [expandedPhaseId, setExpandedPhaseId] = useState<string | null>('pre_audit');
     const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
+    const [expandedPhaseId, setExpandedPhaseId] = useState<string | null>(null);
+    
+    // Modal state
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [selectedItem, setSelectedItem] = useState<ChecklistItem | undefined>(undefined);
+    const [parentItem, setParentItem] = useState<ChecklistItem | undefined>(undefined);
 
-    const { data: apiChecklists } = useQuery({
+    const queryClient = useQueryClient();
+
+    const { data: rawChecklists, isLoading } = useQuery({
         queryKey: ['engagement-checklists', engagementId],
         enabled: !!engagementId,
-        queryFn: async () => {
-            if (!engagementId) return [];
-            const res = await apiGet<ApiResponse<ChecklistItem[]>>(
-                endPoints.ENGAGEMENTS.CHECKLISTS(engagementId)
-            );
-            return (res?.data ?? []) as ChecklistItem[];
-        },
+        queryFn: () => checklistService.list(engagementId!),
     });
 
-    const apiItems = (apiChecklists ?? []) as ChecklistItem[];
-
-    // Helper to flatten tasks for calculations
-    const getAllTasks = (phases: ChecklistPhase[]): ChecklistTask[] => {
-        return phases.flatMap(p => p.sections.flatMap(s => s.tasks));
+    const mutationOptions = {
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['engagement-checklists', engagementId] });
+            setIsCreateModalOpen(false);
+            setSelectedItem(undefined);
+            setParentItem(undefined);
+        },
+        onError: (err: Error) => {
+            console.error(err.message || 'Operation failed');
+        }
     };
 
-    const handleTaskUpdate = (taskId: string, updates: Partial<ChecklistTask>) => {
-        setData(prev => prev.map(phase => ({
-            ...phase,
-            sections: phase.sections.map(section => ({
-                ...section,
-                tasks: section.tasks.map(task =>
-                    task.id === taskId ? { ...task, ...updates } : task
-                )
-            }))
-        })));
-    };
+    const createMutation = useMutation({
+        mutationFn: (data: CreateChecklistDto) => checklistService.create(engagementId!, data),
+        ...mutationOptions
+    });
 
-    const handleStatusChange = (taskId: string, status: ChecklistTaskStatus) => {
-        handleTaskUpdate(taskId, { status });
-    };
+    const statusMutation = useMutation({
+        mutationFn: (args: { id: string, status: ChecklistStatus, reason?: string }) => 
+            checklistService.patchStatus(engagementId!, args.id, { status: args.status, reason: args.reason }),
+        onMutate: async (newStatusObj) => {
+            // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+            await queryClient.cancelQueries({ queryKey: ['engagement-checklists', engagementId] });
+
+            // Snapshot the previous value
+            const previousChecklists = queryClient.getQueryData(['engagement-checklists', engagementId]);
+
+            // Optimistically update to the new value
+            queryClient.setQueryData(['engagement-checklists', engagementId], (old: ChecklistItem[] | undefined) => {
+                if (!old) return [];
+                return old.map(item => item.id === newStatusObj.id ? { ...item, status: newStatusObj.status } : item);
+            });
+
+            // Return a context object with the snapshotted value
+            return { previousChecklists };
+        },
+        onError: (err: Error, _newStatus, context) => {
+            // Rollback if error
+            if (context?.previousChecklists) {
+                queryClient.setQueryData(['engagement-checklists', engagementId], context.previousChecklists);
+            }
+            console.error(err.message || 'Status update failed');
+        },
+        onSettled: () => {
+             // Always refetch after error or success to ensure we are in sync with server
+             queryClient.invalidateQueries({ queryKey: ['engagement-checklists', engagementId] });
+        }
+    });
+
+    const updateMutation = useMutation({
+        mutationFn: (args: { id: string, data: UpdateChecklistDto }) => 
+            checklistService.update(engagementId!, args.id, args.data),
+        ...mutationOptions
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: (id: string) => checklistService.delete(engagementId!, id),
+        ...mutationOptions
+    });
+
+    const isWorking = createMutation.isPending || statusMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
+
+    // Hierarchical transformation: The backend returns items with .children if fetched correctly, 
+    // but the service list returns a flat list (with level info). 
+    // Let's build a tree from the flat list if children aren't already nested.
+    const { checklistTree, flatList } = useMemo(() => {
+        if (!rawChecklists) return { checklistTree: [], flatList: [] };
+        
+        const items = [...rawChecklists];
+        const map: Record<string, ChecklistItem> = {};
+        const roots: ChecklistItem[] = [];
+
+        items.forEach(item => {
+            map[item.id] = { ...item, children: [] };
+        });
+
+        items.forEach(item => {
+            if (item.parentId && map[item.parentId]) {
+                map[item.parentId].children!.push(map[item.id]);
+            } else if (item.level === 1) {
+                roots.push(map[item.id]);
+            }
+        });
+
+        return { checklistTree: roots, flatList: Object.values(map) };
+    }, [rawChecklists]);
+
+    // Available parents for dropdown (level 1 or 2)
+    const availableParents = useMemo(() => 
+        flatList.filter(item => item.level < 3),
+    [flatList]);
 
     // Filter Logic
-    const filteredData = useMemo(() => {
-        if (filter === 'all') return data;
-        return data.map(phase => ({
-            ...phase,
-            sections: phase.sections.map(section => ({
-                ...section,
-                tasks: section.tasks.filter(t => {
-                    if (filter === 'completed') return t.status === 'completed' || t.status === 'not_applicable';
-                    if (filter === 'pending') return t.status === 'not_started' || t.status === 'in_progress';
-                    return true;
-                })
-            })).filter(s => s.tasks.length > 0)
-        })).filter(p => p.sections.length > 0);
-    }, [data, filter]);
+    const filteredTree = useMemo(() => {
+        if (filter === 'all') return checklistTree;
+        
+        const filterItem = (item: ChecklistItem): boolean => {
+            const matches = filter === 'completed' 
+                ? (item.status === ChecklistStatus.COMPLETED || item.status === ChecklistStatus.IGNORED)
+                : (item.status === ChecklistStatus.TO_DO || item.status === ChecklistStatus.IN_PROGRESS);
+            
+            if (item.children && item.children.length > 0) {
+                const filteredChildren = item.children.filter(filterItem);
+                return matches || filteredChildren.length > 0;
+            }
+            return matches;
+        };
+
+        return checklistTree.filter(filterItem);
+    }, [checklistTree, filter]);
 
     // Progress Stats
-    const allTasks = getAllTasks(data);
+    const allTasks = useMemo(() => 
+        flatList.filter(item => item.level === 3),
+    [flatList]);
+
     const totalTasks = allTasks.length;
-    const completedTasks = allTasks.filter(t => t.status === 'completed' || t.status === 'not_applicable').length;
+    const completedTasks = allTasks.filter(t => t.status === ChecklistStatus.COMPLETED || t.status === ChecklistStatus.IGNORED).length;
+
+    const handleCreateSubmit = (data: CreateChecklistDto | UpdateChecklistDto) => {
+        if (selectedItem) {
+            updateMutation.mutate({ id: selectedItem.id, data });
+        } else {
+            createMutation.mutate(data as CreateChecklistDto);
+        }
+    };
+
+    const handleDelete = (id: string) => {
+        if (window.confirm('Are you sure you want to delete this checklist item? All sub-items will also be deleted.')) {
+            deleteMutation.mutate(id);
+        }
+    };
+
+    if (isLoading) {
+        return <div className="p-8 text-center text-gray-500">Loading checklists...</div>;
+    }
 
     return (
-        <div className="space-y-6 pb-20">
-            {/* Engagement checklists from API (when available) */}
-            {engagementId && apiItems.length > 0 && (
-                <ShadowCard className="p-6">
-                    <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Engagement checklist</h3>
-                    <ul className="space-y-2">
-                        {apiItems.map((item) => (
-                            <li key={item.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                                <span className="font-medium text-gray-900">{item.title}</span>
-                                <span className="text-xs font-semibold px-2 py-1 rounded-lg bg-gray-100 text-gray-600">
-                                    {item.status}
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
-                </ShadowCard>
-            )}
-
+        <div className="space-y-6 pb-20 font-inter">
             {/* Header / Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <ShadowCard className="md:col-span-2 p-6 flex flex-col justify-center">
@@ -220,36 +187,110 @@ export default function AuditChecklist({ engagementId }: { engagementId?: string
             </div>
 
             {/* Filters */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2">
-                <Filter size={16} className="text-gray-400 ml-1" />
-                {(['all', 'pending', 'completed'] as const).map(f => (
-                    <button
-                        key={f}
-                        onClick={() => setFilter(f)}
-                        className={`px-4 py-2 rounded-full text-xs font-bold capitalize transition-colors ${filter === f
-                            ? 'bg-gray-900 text-white'
-                            : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-                            }`}
-                    >
-                        {f}
-                    </button>
-                ))}
+            <div className="flex items-center justify-between gap-4 overflow-x-auto pb-2">
+                <div className="flex items-center gap-2">
+                    <Filter size={16} className="text-gray-400 ml-1" />
+                    {(['all', 'pending', 'completed'] as const).map(f => (
+                        <button
+                            key={f}
+                            onClick={() => setFilter(f)}
+                            className={`px-4 py-2 rounded-full text-xs font-bold capitalize transition-colors ${filter === f
+                                ? 'bg-gray-900 text-white'
+                                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                                }`}
+                        >
+                            {f}
+                        </button>
+                    ))}
+                </div>
+                
+                <button 
+                    disabled={isWorking}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => {
+                        setSelectedItem(undefined);
+                        setParentItem(undefined);
+                        setIsCreateModalOpen(true);
+                    }}
+                >
+                    <Plus size={16} />
+                    Add Phase
+                </button>
             </div>
 
             {/* Content Accordion */}
-            <div className="space-y-4">
-                {filteredData.map(phase => (
-                    <ChecklistPhaseComponent
-                        key={phase.id}
-                        phase={phase}
-                        allTasks={getAllTasks([data.find(p => p.id === phase.id)!])}
-                        isExpanded={expandedPhaseId === phase.id}
-                        onToggle={() => setExpandedPhaseId(expandedPhaseId === phase.id ? null : phase.id)}
-                        onTaskUpdate={handleTaskUpdate}
-                        onTaskStatusChange={handleStatusChange}
-                    />
-                ))}
+            <div className={`space-y-4 ${isWorking ? 'pointer-events-none opacity-80' : ''}`}>
+                {filteredTree.length > 0 ? (
+                    filteredTree.map(phase => (
+                        <div key={phase.id} className="group relative">
+                            <ChecklistPhaseComponent
+                                phase={phase}
+                                isExpanded={expandedPhaseId === phase.id}
+                                onToggle={() => setExpandedPhaseId(expandedPhaseId === phase.id ? null : phase.id)}
+                                onTaskUpdate={(taskId, updates) => updateMutation.mutate({ id: taskId, data: updates })}
+                                onTaskStatusChange={(taskId, status) => {
+                                    statusMutation.mutate({ id: taskId, status });
+                                }}
+                                onAddSubItem={(parent) => { setParentItem(parent); setIsCreateModalOpen(true); }}
+                                onEditItem={(item) => { setSelectedItem(item); setIsCreateModalOpen(true); }}
+                                onDeleteItem={handleDelete}
+                                isDisabled={isWorking}
+                            />
+                            
+                            {/* Action Buttons Overlay for Phase */}
+                            <div className="absolute top-4 right-14 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button 
+                                    disabled={isWorking}
+                                    onClick={() => { setSelectedItem(phase); setIsCreateModalOpen(true); }}
+                                    className="p-1.5 bg-white shadow-sm border border-gray-100 rounded text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 disabled:opacity-50"
+                                    title="Edit Phase"
+                                >
+                                    <Plus size={14} className="rotate-45" />
+                                </button>
+                                <button 
+                                    disabled={isWorking}
+                                    onClick={() => { setParentItem(phase); setIsCreateModalOpen(true); }}
+                                    className="p-1.5 bg-white shadow-sm border border-gray-100 rounded text-gray-400 hover:text-green-600 hover:bg-green-50 disabled:opacity-50"
+                                    title="Add Section"
+                                >
+                                    <Plus size={14} />
+                                </button>
+                                <button 
+                                    disabled={isWorking}
+                                    onClick={() => handleDelete(phase.id)}
+                                    className="p-1.5 bg-white shadow-sm border border-gray-100 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-50"
+                                    title="Delete Phase"
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
+                        </div>
+                    ))
+                ) : (
+                    <ShadowCard className="p-12 text-center">
+                        <p className="text-gray-500">No checklists found for this engagement.</p>
+                        <button 
+                            disabled={isWorking}
+                            className="mt-4 text-indigo-600 font-bold hover:underline disabled:opacity-50"
+                            onClick={() => { setIsCreateModalOpen(true); }}
+                        >
+                            Create your first checklist phase
+                        </button>
+                    </ShadowCard>
+                )}
             </div>
+
+            {/* Modals */}
+            <CreateEditChecklistModal 
+                key={`${selectedItem?.id || 'new'}-${parentItem?.id || 'none'}-${isCreateModalOpen}`}
+                isOpen={isCreateModalOpen}
+                onClose={() => { setIsCreateModalOpen(false); setSelectedItem(undefined); setParentItem(undefined); }}
+                onSubmit={handleCreateSubmit}
+                initialData={selectedItem}
+                parentItem={parentItem}
+                availableParents={availableParents}
+                isLoading={isWorking}
+            />
         </div>
     );
 }

@@ -1,35 +1,49 @@
 import { ChevronDown, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { cn } from '../../../../../lib/utils';
-import { type ChecklistPhase, type ChecklistTask, type ChecklistTaskStatus } from '../types';
+import { ChecklistStatus, type ChecklistItem } from '../types';
 import ChecklistSectionComponent from './ChecklistSection';
 import ChecklistProgressBar from './ChecklistProgressBar';
 
 interface ChecklistPhaseProps {
-    phase: ChecklistPhase;
-    allTasks: ChecklistTask[]; // Need flattened list to calc progress
+    phase: ChecklistItem;
     isExpanded: boolean;
     onToggle: () => void;
-    onTaskUpdate: (taskId: string, updates: Partial<ChecklistTask>) => void;
-    onTaskStatusChange: (taskId: string, status: ChecklistTaskStatus) => void;
+    onTaskUpdate: (taskId: string, updates: Partial<ChecklistItem>) => void;
+    onTaskStatusChange: (taskId: string, status: ChecklistStatus) => void;
+    onAddSubItem: (parent: ChecklistItem) => void;
+    onEditItem: (item: ChecklistItem) => void;
+    onDeleteItem: (id: string) => void;
+    isDisabled?: boolean;
 }
 
 export default function ChecklistPhaseComponent({
     phase,
-    allTasks, // Passed in derived from parent or filtered
     isExpanded,
     onToggle,
     onTaskUpdate,
-    onTaskStatusChange
+    onTaskStatusChange,
+    onAddSubItem,
+    onEditItem,
+    onDeleteItem,
+    isDisabled = false
 }: ChecklistPhaseProps) {
-    // Calculate progress for this phase
-    const phaseTasks = allTasks.filter(t =>
-        phase.sections.some(s => s.tasks.some(pt => pt.id === t.id))
-    );
+    // Calculate progress for this phase - level 3 items belonging to this tree
+    const getFlattenedTasks = (item: ChecklistItem): ChecklistItem[] => {
+        let tasks: ChecklistItem[] = [];
+        if (item.level === 3) tasks.push(item);
+        if (item.children) {
+            item.children.forEach(child => {
+                tasks = [...tasks, ...getFlattenedTasks(child)];
+            });
+        }
+        return tasks;
+    };
 
-    // Valid tasks to count (exclude N/A from denominator if desired, but std is completed/total)
-    // User requirement: "Tasks marked Completed or Not Applicable count toward progress"
+    const phaseTasks = getFlattenedTasks(phase);
     const totalCount = phaseTasks.length;
-    const completedCount = phaseTasks.filter(t => t.status === 'completed' || t.status === 'not_applicable').length;
+    const completedCount = phaseTasks.filter(t => 
+        t.status === ChecklistStatus.COMPLETED || t.status === ChecklistStatus.IGNORED
+    ).length;
 
     const isComplete = totalCount > 0 && totalCount === completedCount;
 
@@ -37,10 +51,11 @@ export default function ChecklistPhaseComponent({
         <div className="border border-gray-200 rounded-xl bg-white overflow-hidden transition-all duration-300 shadow-sm hover:shadow-md">
             {/* Header / Accordion Trigger */}
             <button
+                disabled={isDisabled}
                 onClick={onToggle}
                 className={cn(
-                    "w-full flex items-center justify-between p-4 transition-colors",
-                    isExpanded ? "bg-gray-50" : "bg-white hover:bg-gray-50"
+                    "w-full text-left p-4 pr-16 rounded-xl border transition-all duration-300 relative group flex items-start gap-4 disabled:opacity-80 disabled:cursor-not-allowed",
+                    isExpanded ? "bg-white border-indigo-200 shadow-lg shadow-indigo-50" : "bg-white border-gray-100 hover:border-indigo-100 hover:shadow-md"
                 )}
             >
                 <div className="flex items-center gap-4">
@@ -49,7 +64,7 @@ export default function ChecklistPhaseComponent({
                         isComplete ? "bg-green-100 text-green-600" : "bg-indigo-100 text-indigo-600"
                     )}>
                         {isComplete ? <CheckCircle2 size={18} /> :
-                            <span className="text-xs font-bold">{Math.round((completedCount / totalCount) * 100) || 0}%</span>
+                            <span className="text-xs font-bold">{totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0}%</span>
                         }
                     </div>
                     <div className="text-left">
@@ -73,12 +88,16 @@ export default function ChecklistPhaseComponent({
                     />
 
                     <div className="space-y-6">
-                        {phase.sections.map(section => (
+                        {phase.children?.map(section => (
                             <ChecklistSectionComponent
                                 key={section.id}
                                 section={section}
                                 onTaskUpdate={onTaskUpdate}
                                 onTaskStatusChange={onTaskStatusChange}
+                                onAddSubItem={onAddSubItem}
+                                onEditItem={onEditItem}
+                                onDeleteItem={onDeleteItem}
+                                isDisabled={isDisabled}
                             />
                         ))}
                     </div>

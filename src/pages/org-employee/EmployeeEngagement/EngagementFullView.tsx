@@ -19,6 +19,7 @@ import {
   PieChart,
   Landmark,
   Building2,
+  ShieldCheck,
 } from "lucide-react";
 import { ShadowCard } from "../../../ui/ShadowCard";
 import { Button } from "../../../ui/Button";
@@ -36,12 +37,15 @@ import VATCycleView from "./status-cycles/VATCycleView";
 import PayrollCycleView from "./status-cycles/PayrollCycleView";
 import MBRView from "./mbr/MBRView";
 import TaxView from "./tax/TaxView";
-import MessagesView from "./messages/MessagesView";
+// import MessagesView from "./messages/MessagesView";
 import DocumentRequestsView from "./document-requests/DocumentRequestsView";
 import TeamsView from "./teams/TeamsView";
 import CFOView from "./cfo/CFOView";
 import CSPView from "./csp/CSPView";
 import AuditChecklist from "./checklist/AuditChecklist";
+import EngagementUpdatesView from "./updates/EngagementUpdatesView";
+import ComplianceView from "./compliance/ComplianceView";
+import MilestonesView from "./milestones/MilestonesView";
 import CFOEngagementsTable from "./cfo/CFOEngagementsTable";
 import CSPCoverageTable from "./csp/CSPCoverageTable";
 import Messages from "../../messages/Messages";
@@ -58,6 +62,8 @@ const ENGAGEMENT_TABS = [
   { id: 'csp', label: 'CSP', icon: Building2 },
   { id: 'library', label: 'Library', icon: Library },
   { id: 'todo', label: 'Todo/Checklists', icon: CheckSquare },
+  { id: 'compliance', label: 'Compliance', icon: ShieldCheck },
+  { id: 'milestones', label: 'Milestones', icon: Landmark },
   { id: 'updates', label: 'Updates', icon: MessageSquare },
   { id: 'chat', label: 'Chat', icon: MessageSquare },
   { id: 'teams', label: 'Team', icon: Users },
@@ -131,7 +137,7 @@ export default function EngagementFullView() {
     const activeServiceTab = serviceMap[selectedService];
 
     const tabs = ENGAGEMENT_TABS.filter(tab => {
-      if (['dashboard', 'requests', 'library', 'todo', 'updates', 'chat', 'teams'].includes(tab.id)) {
+      if (['dashboard', 'requests', 'library', 'todo', 'compliance', 'milestones', 'updates', 'chat', 'teams'].includes(tab.id)) {
         return true;
       }
       if (tab.id === 'services-coverage' && (activeServiceTab === 'cfo' || activeServiceTab === 'csp')) {
@@ -422,13 +428,17 @@ export default function EngagementFullView() {
             <div className="p-8 text-center text-gray-500">Select CFO or CSP to view services.</div>
           )
         ) : activeTab === 'updates' ? (
-          <MessagesView engagementId={engagementId ?? undefined} />
+          <EngagementUpdatesView engagementId={engagementId ?? undefined} />
         ) : activeTab === 'chat' ? (
           <Messages isSingleChat={true} contextualChatId="engagement-chat" engagementId={engagementId ?? undefined} />
         ) : activeTab === 'teams' ? (
           <TeamsView engagementId={engagementId ?? undefined} />
         ) : activeTab === 'todo' ? (
           <AuditChecklist engagementId={engagementId ?? undefined} />
+        ) : activeTab === 'compliance' ? (
+          <ComplianceView engagementId={engagementId ?? undefined} />
+        ) : activeTab === 'milestones' ? (
+          <MilestonesView engagementId={engagementId ?? undefined} />
         ) : activeTab === 'requests' ? (
           <DocumentRequestsView engagementId={engagementId ?? undefined} />
         ) : (

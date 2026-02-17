@@ -1,13 +1,10 @@
 "use client"
 
 import React, { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { FolderIcon } from 'lucide-react';
 import { cn } from '../../../../lib/utils';
 import { ScrollArea } from '../../../../ui/scroll-area';
 import { useLibrary, LibraryProvider } from '../../../../context/LibraryContext';
-import { apiGet } from '../../../../config/base';
-import { endPoints } from '../../../../config/endPoint';
 
 // Modular Components
 import { Toolbar } from './components/Toolbar';
@@ -95,13 +92,9 @@ const LibraryContent: React.FC = () => {
 };
 
 export function LibraryExplorer({ className, engagementId }: LibraryExplorerProps) {
-  useQuery({
-    queryKey: ['library-folders-roots', engagementId],
-    queryFn: () => apiGet<{ data: unknown }>(endPoints.LIBRARY.FOLDERS_ROOTS),
-  });
   return (
     <div className={cn("flex flex-col h-[600px] md:h-[700px] lg:h-[800px] bg-white border border-gray-200 rounded-2xl overflow-hidden", className)}>
-      <LibraryProvider>
+      <LibraryProvider engagementId={engagementId}>
         <LibraryContent />
       </LibraryProvider>
     </div>
