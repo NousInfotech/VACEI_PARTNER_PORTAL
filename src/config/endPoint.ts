@@ -19,7 +19,23 @@ export const endPoints = {
   NOTICE: {
     GET_TODAY: '/notices/today',
   },
-  ENGAGEMENT: {
+  ENGAGEMENTS: {
     GET_ALL: '/engagements',
+    GET_BY_ID: (engagementId: string) => `/engagements/${engagementId}`,
+    CHECKLISTS: (engagementId: string) => `/engagements/${engagementId}/checklists`,
+    COMPLIANCES: (engagementId: string) => `/engagements/${engagementId}/compliances`,
+    TEAM: (engagementId: string) => `/engagements/${engagementId}/team`,
+    CHAT_ROOM: (engagementId: string) => `/engagements/${engagementId}/chat-room`,
+  },
+  ENGAGEMENT_UPDATES: '/engagement-updates',
+  DOCUMENT_REQUESTS: '/document-requests',
+  CHAT: {
+    ROOMS: '/chat/rooms',
+    ROOM_BY_ID: (roomId: string) => `/chat/rooms/${roomId}`,
+    MESSAGES: (roomId: string) => `/chat/rooms/${roomId}/messages`,
+  },
+  LIBRARY: {
+    FOLDERS_ROOTS: '/library/folders/roots',
+    FOLDER_CONTENT: (folderId: string) => `/library/folders/${folderId}/content`,
   },
 };

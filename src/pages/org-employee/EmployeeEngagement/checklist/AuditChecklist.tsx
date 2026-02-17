@@ -1,9 +1,27 @@
 import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Filter, PieChart } from 'lucide-react';
 import { type ChecklistPhase, type ChecklistTask, type ChecklistTaskStatus } from './types';
 import ChecklistPhaseComponent from './components/ChecklistPhase';
 import ChecklistProgressBar from './components/ChecklistProgressBar';
 import { ShadowCard } from '../../../../ui/ShadowCard';
+import { apiGet } from '../../../../config/base';
+import { endPoints } from '../../../../config/endPoint';
+
+interface ApiResponse<T> {
+  data: T;
+  message?: string;
+}
+
+interface ChecklistItem {
+  id: string;
+  title: string;
+  status: string;
+  category?: string | null;
+  deadline?: string | null;
+  level?: number;
+  children?: ChecklistItem[];
+}
 
 // CONSTANT MOCK DATA
 const INITIAL_DATA: ChecklistPhase[] = [
@@ -104,10 +122,24 @@ const INITIAL_DATA: ChecklistPhase[] = [
     }
 ];
 
-export default function AuditChecklist() {
+export default function AuditChecklist({ engagementId }: { engagementId?: string }) {
     const [data, setData] = useState<ChecklistPhase[]>(INITIAL_DATA);
     const [expandedPhaseId, setExpandedPhaseId] = useState<string | null>('pre_audit');
     const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
+
+    const { data: apiChecklists } = useQuery({
+        queryKey: ['engagement-checklists', engagementId],
+        enabled: !!engagementId,
+        queryFn: async () => {
+            if (!engagementId) return [];
+            const res = await apiGet<ApiResponse<ChecklistItem[]>>(
+                endPoints.ENGAGEMENTS.CHECKLISTS(engagementId)
+            );
+            return (res?.data ?? []) as ChecklistItem[];
+        },
+    });
+
+    const apiItems = (apiChecklists ?? []) as ChecklistItem[];
 
     // Helper to flatten tasks for calculations
     const getAllTasks = (phases: ChecklistPhase[]): ChecklistTask[] => {
@@ -153,6 +185,23 @@ export default function AuditChecklist() {
 
     return (
         <div className="space-y-6 pb-20">
+            {/* Engagement checklists from API (when available) */}
+            {engagementId && apiItems.length > 0 && (
+                <ShadowCard className="p-6">
+                    <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Engagement checklist</h3>
+                    <ul className="space-y-2">
+                        {apiItems.map((item) => (
+                            <li key={item.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                                <span className="font-medium text-gray-900">{item.title}</span>
+                                <span className="text-xs font-semibold px-2 py-1 rounded-lg bg-gray-100 text-gray-600">
+                                    {item.status}
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                </ShadowCard>
+            )}
+
             {/* Header / Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <ShadowCard className="md:col-span-2 p-6 flex flex-col justify-center">

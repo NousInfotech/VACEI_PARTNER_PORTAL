@@ -1,7 +1,24 @@
+import { useQuery } from "@tanstack/react-query";
 import { MessageSquare, Bell, CheckCircle2, Clock } from "lucide-react";
 import { ShadowCard } from "../../../../ui/ShadowCard";
+import { Skeleton } from "../../../../ui/Skeleton";
 import { useAuth } from "../../../../context/auth-context-core";
+import { apiGet } from "../../../../config/base";
+import { endPoints } from "../../../../config/endPoint";
 import { cn } from "../../../../lib/utils";
+
+interface EngagementUpdateItem {
+  id: string;
+  message: string;
+  title?: string | null;
+  createdAt: string;
+  creator?: { firstName?: string; lastName?: string } | null;
+}
+
+interface ApiResponse<T> {
+  data: T;
+  message?: string;
+}
 
 const NOTIFICATION_TRIGGERS = [
     "New updates are available",
@@ -31,9 +48,26 @@ const MOCK_MESSAGES = [
     }
 ];
 
-export default function MessagesView() {
-    const { selectedServiceLabel } = useAuth();
-    const serviceName = selectedServiceLabel;
+export default function MessagesView({ engagementId }: { engagementId?: string }) {
+    const { selectedService, selectedServiceLabel } = useAuth();
+    const serviceName = selectedServiceLabel || selectedService?.replace(/_/g, " ") || "Engagement";
+
+    const { data, isLoading } = useQuery({
+        queryKey: ["engagement-updates", engagementId],
+        enabled: !!engagementId,
+        queryFn: async () => {
+            const res = await apiGet<ApiResponse<EngagementUpdateItem[]>>(
+                endPoints.ENGAGEMENT_UPDATES,
+                { engagementId } as Record<string, unknown>
+            );
+            return (res?.data ?? []) as EngagementUpdateItem[];
+        },
+    });
+
+    const updates = (data ?? []) as EngagementUpdateItem[];
+    const displayUpdates = engagementId && updates.length > 0
+        ? updates
+        : MOCK_MESSAGES.map((m) => ({ id: String(m.id), content: m.content, date: m.date, isUnread: m.isUnread }));
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -79,40 +113,49 @@ export default function MessagesView() {
 
                     {/* Messages List */}
                     <div className="space-y-4">
-                        {MOCK_MESSAGES.map((message) => (
-                            <div
-                                key={message.id}
-                                className={cn(
-                                    "group relative rounded-2xl p-6 transition-all duration-300 border",
-                                    message.isUnread
-                                        ? "bg-white border-primary/20 shadow-sm hover:shadow-md hover:border-primary/30"
-                                        : "bg-gray-50/50 border-gray-100"
-                                )}
-                            >
-                                {/* Unread Indicator */}
-                                {message.isUnread && (
-                                    <div className="absolute top-6 right-6 flex items-center gap-2">
-                                        <span className="flex h-2 w-2">
-                                            <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-primary opacity-75"></span>
-                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                                        </span>
-                                    </div>
-                                )}
+                        {engagementId && isLoading ? (
+                            [1, 2, 3].map((i) => (
+                                <Skeleton key={i} className="h-28 w-full rounded-2xl" />
+                            ))
+                        ) : (
+                            (displayUpdates as Array<{ id: string; content?: string; message?: string; date?: string; createdAt?: string; isUnread?: boolean }>).map((message) => {
+                                const content = message.content ?? message.message ?? "";
+                                const date = message.date ?? (message.createdAt ? new Date(message.createdAt).toLocaleDateString() : "");
+                                return (
+                                    <div
+                                        key={message.id}
+                                        className={cn(
+                                            "group relative rounded-2xl p-6 transition-all duration-300 border",
+                                            message.isUnread
+                                                ? "bg-white border-primary/20 shadow-sm hover:shadow-md hover:border-primary/30"
+                                                : "bg-gray-50/50 border-gray-100"
+                                        )}
+                                    >
+                                        {message.isUnread && (
+                                            <div className="absolute top-6 right-6 flex items-center gap-2">
+                                                <span className="flex h-2 w-2">
+                                                    <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-primary opacity-75"></span>
+                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                                                </span>
+                                            </div>
+                                        )}
 
-                                <div className="flex flex-col gap-3">
-                                    <p className="text-gray-900 font-medium text-[15px] leading-relaxed max-w-3xl">
-                                        {message.content}
-                                    </p>
+                                        <div className="flex flex-col gap-3">
+                                            <p className="text-gray-900 font-medium text-[15px] leading-relaxed max-w-3xl">
+                                                {content}
+                                            </p>
 
-                                    <div className="flex items-center gap-4 text-xs font-medium text-gray-400">
-                                        <div className="flex items-center gap-1.5">
-                                            <Clock className="h-3.5 w-3.5" />
-                                            {message.date}
+                                            <div className="flex items-center gap-4 text-xs font-medium text-gray-400">
+                                                <div className="flex items-center gap-1.5">
+                                                    <Clock className="h-3.5 w-3.5" />
+                                                    {date}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                        ))}
+                                );
+                            })
+                        )}
                     </div>
                 </div>
             </ShadowCard>
