@@ -6,28 +6,34 @@ import CreateEmployee from "./CreateEmployee";
 import AssignServices from "./AssignServices";
 import axiosInstance from "@/config/axiosConfig";
 import { endPoints } from "@/config/endPoint";
+import { AVAILABLE_SERVICES } from "@/lib/types";
 
 interface Employee {
     id: string;
     firstName: string;
     lastName: string;
     services: string[];
+    serviceNames: string[];
     email: string;
     role: string;
 }
 
-interface OrganizationMemberResponse {
+interface CustomServiceCycle {
     id: string;
-    role: string;
-    allowedServices: string[];
+    title: string;
+}
+
+interface EmployeeResponseItem {
+    id: string;
     user: {
         firstName: string;
         lastName: string;
         email: string;
-        role: string;
     };
+    role: string;
+    allowedServices: string[];
+    allowedCustomServiceCycles: CustomServiceCycle[];
 }
-
 
 export default function EmployeeManagement() {
     const [employees, setEmployees] = useState<Employee[]>([]);
@@ -57,14 +63,25 @@ export default function EmployeeManagement() {
             });
 
             if (response.data.success) {
-                const mappedEmployees: Employee[] = response.data.data.map((item: OrganizationMemberResponse) => ({
-                    id: item.id,
-                    firstName: item.user.firstName,
-                    lastName: item.user.lastName,
-                    email: item.user.email,
-                    role: item.role,
-                    services: item.allowedServices || []
-                }));
+                const mappedEmployees: Employee[] = response.data.data.map((item: EmployeeResponseItem) => {
+                    const standardServices = item.allowedServices || [];
+                    const customServices = item.allowedCustomServiceCycles || [];
+
+                    const standardLabels = standardServices.map((id: string) =>
+                        AVAILABLE_SERVICES.find(s => s.id === id)?.label || id
+                    );
+                    const customLabels = customServices.map((s: CustomServiceCycle) => s.title || s.id);
+
+                    return {
+                        id: item.id,
+                        firstName: item.user.firstName,
+                        lastName: item.user.lastName,
+                        email: item.user.email,
+                        role: item.role,
+                        services: [...standardServices, ...customServices.map((s: CustomServiceCycle) => s.id)],
+                        serviceNames: [...standardLabels, ...customLabels]
+                    };
+                });
                 setEmployees(mappedEmployees);
             }
         } catch (error) {
@@ -176,10 +193,10 @@ export default function EmployeeManagement() {
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <div className="flex flex-wrap gap-2 justify-center">
-                                                {emp.services && emp.services.length > 0 ? (
-                                                    emp.services.map((service, i) => (
+                                                {emp.serviceNames && emp.serviceNames.length > 0 ? (
+                                                    emp.serviceNames.map((name, i) => (
                                                         <span key={i} className="px-2 py-1 rounded border border-gray-200 text-xs font-medium text-gray-600 bg-white">
-                                                            {service}
+                                                            {name}
                                                         </span>
                                                     ))
                                                 ) : (
@@ -214,7 +231,7 @@ export default function EmployeeManagement() {
 
             {/* Create Dialog */}
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Add New Employee</DialogTitle>
                     </DialogHeader>
@@ -224,7 +241,7 @@ export default function EmployeeManagement() {
 
             {/* Assign Services Dialog */}
             <Dialog open={isAssignServicesOpen} onOpenChange={setIsAssignServicesOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Assign Services</DialogTitle>
                     </DialogHeader>

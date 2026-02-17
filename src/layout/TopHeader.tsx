@@ -4,6 +4,7 @@ import { PanelLeft, PanelLeftClose, Search, Bell, LogOut, Settings } from "lucid
 import { Button } from "../ui/Button";
 import { useAuth } from "../context/auth-context-core";
 import { Select } from "../ui/Select";
+import { AVAILABLE_SERVICES } from "../lib/types";
 
 interface TopHeaderProps {
     onSidebarToggle: () => void;
@@ -19,7 +20,7 @@ export default function TopHeader({
     role
 }: TopHeaderProps) {
     const navigate = useNavigate();
-    const { logout, organizationMember, selectedService, setSelectedService } = useAuth();
+    const { logout, organizationMember, setSelectedService, selectedServiceLabel } = useAuth();
 
     const handleLogout = () => {
         logout();
@@ -28,15 +29,27 @@ export default function TopHeader({
 
     const services = useMemo(() => {
         const allowedServices = organizationMember?.allowedServices || [];
+        const allowedCustomServiceCycles = organizationMember?.allowedCustomServiceCycles || [];
 
-        return allowedServices.map(service => ({
-            id: service,
-            label: service.replace(/_/g, " "),
-            onClick: () => {
-                setSelectedService(service);
-            }
+        const standardItems = allowedServices.map(serviceId => {
+            const serviceInfo = AVAILABLE_SERVICES.find(s => s.id === serviceId);
+            return {
+                id: serviceId,
+                label: serviceInfo?.label || serviceId.replace(/_/g, " "),
+                onClick: () => setSelectedService(serviceId)
+            };
+        });
+
+        const customItems = allowedCustomServiceCycles.map(cycle => ({
+            id: cycle.id,
+            label: cycle.title,
+            onClick: () => setSelectedService(cycle.id)
         }));
-    }, [organizationMember?.allowedServices, setSelectedService]);
+
+        return [...standardItems, ...customItems];
+    }, [organizationMember?.allowedServices, organizationMember?.allowedCustomServiceCycles, setSelectedService]);
+
+    const currentServiceLabel = selectedServiceLabel;
 
     return (
         <header
@@ -74,7 +87,7 @@ export default function TopHeader({
                         <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest whitespace-nowrap">Service:</p>
                         <div className="relative group">
                             <Select
-                                label={selectedService?.replace(/_/g, " ") || "Select Service"}
+                                label={currentServiceLabel}
                                 items={services}
                                 className="w-auto"
                                 contentClassName="w-64"

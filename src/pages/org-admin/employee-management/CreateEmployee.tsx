@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/ui/Button";
+import { Skeleton } from "@/ui/Skeleton";
 import axiosInstance from "@/config/axiosConfig";
 import { endPoints } from "@/config/endPoint";
 import { AVAILABLE_SERVICES } from "@/lib/types";
@@ -21,6 +23,22 @@ export default function CreateEmployee({ onSuccess, onCancel }: CreateEmployeePr
         allowedServices: [] as string[]
     });
 
+    const { data: customServices = [], isLoading: isServicesLoading } = useQuery({
+        queryKey: ['activeCustomServices'],
+        queryFn: async () => {
+            const response = await axiosInstance.get(endPoints.CUSTOM_SERVICE.GET_ACTIVE);
+            if (response.data.success) {
+                return response.data.data.map((s: { id: string; title: string }) => ({
+                    id: s.id,
+                    label: s.title
+                }));
+            }
+            return [];
+        }
+    });
+
+    const allAvailableServices = [...AVAILABLE_SERVICES, ...customServices];
+
     const toggleService = (serviceId: string) => {
         if (formData.allowedServices.includes(serviceId)) {
             setFormData({
@@ -39,8 +57,18 @@ export default function CreateEmployee({ onSuccess, onCancel }: CreateEmployeePr
         e.preventDefault();
         setLoading(true);
         try {
-            console.log("Creating employee...", formData);
-            const response = await axiosInstance.post(endPoints.ORGANIZATION.CREATE_MEMBER, formData);
+            const standardServiceIds = AVAILABLE_SERVICES.map(s => s.id);
+            const standardSelected = formData.allowedServices.filter(id => standardServiceIds.includes(id));
+            const customSelected = formData.allowedServices.filter(id => !standardServiceIds.includes(id));
+
+            const submissionData = {
+                ...formData,
+                allowedServices: standardSelected,
+                allowedCustomServiceCycleIds: customSelected
+            };
+
+            console.log("Creating employee...", submissionData);
+            const response = await axiosInstance.post(endPoints.ORGANIZATION.CREATE_MEMBER, submissionData);
 
             if (response.data.success) {
                 onSuccess(response.data.data);
@@ -126,17 +154,26 @@ export default function CreateEmployee({ onSuccess, onCancel }: CreateEmployeePr
             <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Allowed Services</label>
                 <div className="grid grid-cols-2 gap-2">
-                    {AVAILABLE_SERVICES.map(service => (
-                        <label key={service.id} className="flex items-center space-x-2 text-sm text-gray-700 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-                                checked={formData.allowedServices.includes(service.id)}
-                                onChange={() => toggleService(service.id)}
-                            />
-                            <span>{service.label}</span>
-                        </label>
-                    ))}
+                    {isServicesLoading ? (
+                        Array.from({ length: 6 }).map((_, i) => (
+                            <div key={i} className="flex items-center space-x-2 py-1">
+                                <Skeleton className="w-4 h-4 rounded" />
+                                <Skeleton className="h-4 w-24 rounded" />
+                            </div>
+                        ))
+                    ) : (
+                        allAvailableServices.map(service => (
+                            <label key={service.id} className="flex items-center space-x-2 text-sm text-gray-700 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                                    checked={formData.allowedServices.includes(service.id)}
+                                    onChange={() => toggleService(service.id)}
+                                />
+                                <span>{service.label}</span>
+                            </label>
+                        ))
+                    )}
                 </div>
             </div>
 

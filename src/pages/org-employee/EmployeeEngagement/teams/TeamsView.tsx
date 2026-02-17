@@ -64,8 +64,8 @@ const MOCK_TEAM_MEMBERS = [
 ];
 
 export default function TeamsView({ engagementId }: { engagementId?: string }) {
-    const { selectedService } = useAuth();
-    const serviceName = selectedService?.replace(/_/g, " ") || "Engagement";
+    const { selectedService, selectedServiceLabel } = useAuth();
+    const serviceName = selectedServiceLabel || selectedService?.replace(/_/g, " ") || "Engagement";
 
     const { data, isLoading } = useQuery({
         queryKey: ["engagement-team", engagementId],

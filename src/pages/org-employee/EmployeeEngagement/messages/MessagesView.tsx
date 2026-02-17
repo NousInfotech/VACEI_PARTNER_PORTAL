@@ -49,8 +49,8 @@ const MOCK_MESSAGES = [
 ];
 
 export default function MessagesView({ engagementId }: { engagementId?: string }) {
-    const { selectedService } = useAuth();
-    const serviceName = selectedService?.replace(/_/g, " ") || "Engagement";
+    const { selectedService, selectedServiceLabel } = useAuth();
+    const serviceName = selectedServiceLabel || selectedService?.replace(/_/g, " ") || "Engagement";
 
     const { data, isLoading } = useQuery({
         queryKey: ["engagement-updates", engagementId],
