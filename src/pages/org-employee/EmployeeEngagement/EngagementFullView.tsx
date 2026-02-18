@@ -29,6 +29,8 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { useTabQuery } from "../../../hooks/useTabQuery";
 import { useAuth } from "../../../context/auth-context-core";
 import { cn } from "../../../lib/utils";
+import { apiGet } from '../../../config/base';
+import { endPoints } from '../../../config/endPoint';
 import PageHeader from "../../common/PageHeader";
 import { LibraryExplorer } from "./library/LibraryExplorer";
 import AuditContent from "./audit/AuditContent";
@@ -150,11 +152,9 @@ export default function EngagementFullView() {
   }, [selectedService]);
 
   const { isLoading: loading } = useQuery({
-    queryKey: ['engagement-view', activeTab],
-    queryFn: async () => {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return true;
-    }
+    queryKey: ['engagement-view', engagementId],
+    enabled: !!engagementId,
+    queryFn: () => apiGet<any>(endPoints.ENGAGEMENTS.GET_BY_ID(engagementId!)),
   });
 
   return (

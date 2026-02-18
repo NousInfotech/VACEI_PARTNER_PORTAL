@@ -111,11 +111,11 @@ export default function CreateTeamModal({ isOpen, onClose, engagementId, current
                       "h-10 w-10 rounded-xl flex items-center justify-center text-sm font-bold",
                       selectedIds.includes(member.id) ? "bg-primary text-white" : "bg-gray-100 text-gray-500"
                     )}>
-                      {member.user.firstName[0]}{member.user.lastName[0]}
+                      {(member.user?.firstName?.[0] || 'U')}{(member.user?.lastName?.[0] || '')}
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-gray-900">{member.user.firstName} {member.user.lastName}</p>
-                      <p className="text-[11px] text-gray-500">{member.user.email}</p>
+                      <p className="text-sm font-bold text-gray-900">{member.user?.firstName || 'Unknown'} {member.user?.lastName || 'User'}</p>
+                      <p className="text-[11px] text-gray-500">{member.user?.email || 'No email'}</p>
                     </div>
                   </div>
                   {selectedIds.includes(member.id) && (

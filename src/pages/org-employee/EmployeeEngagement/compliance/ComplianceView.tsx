@@ -10,7 +10,6 @@ import {
     AlertCircle,
     CheckCircle2,
     Clock,
-    ExternalLink
 } from 'lucide-react';
 import { ShadowCard } from '../../../../ui/ShadowCard';
 import { Button } from '../../../../ui/Button';
@@ -20,18 +19,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../../../config/base';
 import { endPoints } from '../../../../config/endPoint';
 import { cn } from '../../../../lib/utils';
+import { useAuth } from '../../../../context/auth-context-core';
 
-type ComplianceStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'OVERDUE' | 'WAIVED';
+type ComplianceStatus = 'ACTION_REQUIRED' | 'ACTION_TAKEN' | 'COMPLETED';
+type ComplianceType = 'DOCUMENT_REQUEST' | 'CHAT' | 'REQUESTED_DOCUMENT' | 'CUSTOM';
 
 interface ComplianceItem {
     id: string;
     title: string;
     description: string | null;
+    customerComment: string | null;
     startDate: string;
     deadline: string;
     status: ComplianceStatus;
+    type: ComplianceType;
     cta: string;
     service: string;
+    moduleId: string | null;
 }
 
 interface ApiResponse<T> {
@@ -41,6 +45,7 @@ interface ApiResponse<T> {
 
 export default function ComplianceView({ engagementId }: { engagementId?: string }) {
     const queryClient = useQueryClient();
+    const { selectedService } = useAuth();
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<ComplianceItem | null>(null);
     const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
@@ -49,8 +54,8 @@ export default function ComplianceView({ engagementId }: { engagementId?: string
         description: '',
         startDate: '',
         deadline: '',
-        cta: 'Action Required',
-        service: 'AUDITING' // default
+        service: selectedService || 'AUDITING',
+        type: 'CUSTOM' as ComplianceType
     });
 
     const { data: compliances = [], isLoading } = useQuery({
@@ -66,7 +71,7 @@ export default function ComplianceView({ engagementId }: { engagementId?: string
     });
 
     const createMutation = useMutation({
-        mutationFn: async (payload: { title: string; description: string; startDate: string; deadline: string; cta: string; service: string }) => {
+        mutationFn: async (payload: any) => {
             return apiPost(endPoints.ENGAGEMENTS.COMPLIANCES(engagementId!), payload);
         },
         onSuccess: () => {
@@ -77,7 +82,7 @@ export default function ComplianceView({ engagementId }: { engagementId?: string
     });
 
     const updateMutation = useMutation({
-        mutationFn: async ({ id, payload }: { id: string; payload: { title: string; description: string; startDate: string; deadline: string; cta: string; service: string } }) => {
+        mutationFn: async ({ id, payload }: { id: string; payload: any }) => {
             return apiPatch(`${endPoints.ENGAGEMENTS.COMPLIANCES(engagementId!)}/${id}`, payload);
         },
         onSuccess: () => {
@@ -103,8 +108,8 @@ export default function ComplianceView({ engagementId }: { engagementId?: string
             description: '',
             startDate: '',
             deadline: '',
-            cta: 'Action Required',
-            service: 'AUDITING'
+            service: selectedService || 'AUDITING',
+            type: 'CUSTOM'
         });
     };
 
@@ -125,18 +130,17 @@ export default function ComplianceView({ engagementId }: { engagementId?: string
     const getStatusColor = (status: ComplianceStatus) => {
         switch (status) {
             case 'COMPLETED': return 'bg-green-100 text-green-700 border-green-200';
-            case 'IN_PROGRESS': return 'bg-blue-100 text-blue-700 border-blue-200';
-            case 'OVERDUE': return 'bg-red-100 text-red-700 border-red-200';
-            case 'WAIVED': return 'bg-gray-100 text-gray-700 border-gray-200';
-            default: return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+            case 'ACTION_TAKEN': return 'bg-blue-100 text-blue-700 border-blue-200';
+            case 'ACTION_REQUIRED': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+            default: return 'bg-gray-100 text-gray-700 border-gray-200';
         }
     };
 
     const getStatusIcon = (status: ComplianceStatus) => {
         switch (status) {
             case 'COMPLETED': return <CheckCircle2 size={14} />;
-            case 'IN_PROGRESS': return <Clock size={14} />;
-            case 'OVERDUE': return <AlertCircle size={14} />;
+            case 'ACTION_TAKEN': return <Clock size={14} />;
+            case 'ACTION_REQUIRED': return <AlertCircle size={14} />;
             default: return <Clock size={14} />;
         }
     };
@@ -189,8 +193,8 @@ export default function ComplianceView({ engagementId }: { engagementId?: string
                                                 description: item.description || '',
                                                 startDate: item.startDate.split('T')[0],
                                                 deadline: item.deadline.split('T')[0],
-                                                cta: item.cta,
-                                                service: item.service
+                                                service: item.service,
+                                                type: item.type
                                             });
                                             setIsAddModalOpen(true);
                                         }}>
@@ -202,7 +206,14 @@ export default function ComplianceView({ engagementId }: { engagementId?: string
                                     </div>
                                 </div>
                                 <h3 className="text-base font-bold text-gray-900 mb-1">{item.title}</h3>
-                                <p className="text-xs text-gray-500 mb-4 line-clamp-2">{item.description || 'No description provided.'}</p>
+                                <div className="space-y-2 mb-4">
+                                    <p className="text-xs text-gray-500 line-clamp-2">{item.description || 'No description provided.'}</p>
+                                    {item.customerComment && (
+                                        <div className="p-2 bg-amber-50 rounded border border-amber-100 italic text-[10px] text-amber-700">
+                                            <strong>Note:</strong> {item.customerComment}
+                                        </div>
+                                    )}
+                                </div>
                                 
                                 <div className="space-y-2 mt-auto">
                                     <div className="flex items-center justify-between text-xs">
@@ -215,9 +226,6 @@ export default function ComplianceView({ engagementId }: { engagementId?: string
                             </div>
                             <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between mt-auto rounded-b-xl">
                                 <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">{item.service}</span>
-                                <Button variant="ghost" size="sm" className="h-8 text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50">
-                                    {item.cta} <ExternalLink size={12} className="ml-1" />
-                                </Button>
                             </div>
                         </ShadowCard>
                     ))}
@@ -237,17 +245,32 @@ export default function ComplianceView({ engagementId }: { engagementId?: string
                         <div className="grid grid-cols-1 gap-4">
                             <div className="space-y-2">
                                 <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Service Category</label>
-                                <select 
-                                    className="w-full h-10 px-3 rounded-md border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    value={formData.service}
-                                    onChange={(e) => setFormData({...formData, service: e.target.value})}
-                                >
-                                    <option value="AUDITING">Auditing</option>
-                                    <option value="VAT">VAT</option>
-                                    <option value="PAYROLL">Payroll</option>
-                                    <option value="TAX">Tax</option>
-                                    <option value="MBR">MBR</option>
-                                </select>
+                                {selectedService ? (
+                                    <div className="w-full h-10 px-3 flex items-center rounded-md border border-gray-100 bg-gray-50 text-sm font-medium text-gray-700">
+                                        {selectedService}
+                                    </div>
+                                ) : (
+                                    <select 
+                                        className="w-full h-10 px-3 rounded-md border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        value={formData.service}
+                                        onChange={(e) => setFormData({...formData, service: e.target.value})}
+                                    >
+                                        <option value="ACCOUNTING">Accounting</option>
+                                        <option value="AUDITING">Auditing</option>
+                                        <option value="VAT">VAT</option>
+                                        <option value="CFO">CFO</option>
+                                        <option value="CSP">CSP</option>
+                                        <option value="LEGAL">Legal</option>
+                                        <option value="PAYROLL">Payroll</option>
+                                        <option value="PROJECTS_TRANSACTIONS">Projects & Transactions</option>
+                                        <option value="TECHNOLOGY">Technology</option>
+                                        <option value="GRANTS_AND_INCENTIVES">Grants & Incentives</option>
+                                        <option value="INCORPORATION">Incorporation</option>
+                                        <option value="MBR">MBR</option>
+                                        <option value="TAX">Tax</option>
+                                        <option value="CUSTOM">Custom</option>
+                                    </select>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Title</label>
@@ -264,7 +287,7 @@ export default function ComplianceView({ engagementId }: { engagementId?: string
                                     placeholder="Add details about this requirement..." 
                                     value={formData.description}
                                     onChange={(e) => setFormData({...formData, description: e.target.value})}
-                                    className="min-h-[80px]"
+                                    className="min-h-[60px]"
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
@@ -286,14 +309,6 @@ export default function ComplianceView({ engagementId }: { engagementId?: string
                                         required
                                     />
                                 </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Action Label (CTA)</label>
-                                <Input 
-                                    placeholder="e.g. Upload Files, Approve Draft" 
-                                    value={formData.cta}
-                                    onChange={(e) => setFormData({...formData, cta: e.target.value})}
-                                />
                             </div>
                         </div>
                         <DialogFooter>

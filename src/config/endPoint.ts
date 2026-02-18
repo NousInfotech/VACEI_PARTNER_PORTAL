@@ -30,6 +30,7 @@ export const endPoints = {
     CHAT_ROOM: (engagementId: string) => `/engagements/${engagementId}/chat-room`,
     MILESTONES: (engagementId: string) => `/engagements/${engagementId}/milestones`,
     LIBRARY_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library`,
+    LIBRARY_FOLDER_BY_TYPE: (engagementId: string, type: string) => `/engagements/${engagementId}/library?type=${type}`,
   },
   ENGAGEMENT_UPDATES: '/engagement-updates',
   DOCUMENT_REQUESTS: '/document-requests',
@@ -39,7 +40,12 @@ export const endPoints = {
   CHAT: {
     ROOMS: '/chat/rooms',
     ROOM_BY_ID: (roomId: string) => `/chat/rooms/${roomId}`,
+    MEMBERS: (roomId: string) => `/chat/rooms/${roomId}/members`,
+    MEMBER_DELETE: (roomId: string, userId: string) => `/chat/rooms/${roomId}/members/${userId}`,
     MESSAGES: (roomId: string) => `/chat/rooms/${roomId}/messages`,
+    MARK_READ: (roomId: string) => `/chat/rooms/${roomId}/read`,
+    UNREAD_SUMMARY: '/chat/unread-summary',
+    UPLOAD: '/chat/upload',
   },
   LIBRARY: {
     FOLDERS_ROOTS: '/library/folders/roots',

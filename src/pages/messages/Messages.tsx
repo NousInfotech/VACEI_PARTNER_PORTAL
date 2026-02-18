@@ -6,14 +6,17 @@ import { NewGroupSidebar } from './components/NewGroupSidebar';
 import { MessageSearchPane } from './components/MessageSearchPane';
 import { MediaPreviewModal } from './components/MediaPreviewModal';
 import { GroupInfoPane } from './components/GroupInfoPane';
+import { AddMemberModal } from './components/AddMemberModal';
 import { EmojiPicker } from './components/EmojiPicker';
 import { ConfirmModal } from './components/ConfirmModal';
-import { mockChats, users as mockUsers } from './mockData';
 import type { Chat, Message } from './types';
 import { Inbox, X, Copy, Forward, Trash2, Check, Users } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { apiGet } from '../../config/base';
+import { MessageSquare, Plus, Loader2 } from 'lucide-react';
+import { useAuth } from '../../context/auth-context-core';
+import { apiGet, apiPost, apiDelete } from '../../config/base';
 import { endPoints } from '../../config/endPoint';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 type RightPaneMode = 'search' | 'info' | null;
 type SidebarView = 'chats' | 'create-group';
@@ -24,16 +27,89 @@ interface MessagesProps {
   engagementId?: string;
 }
 
-const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, contextualChatId, engagementId }) => {
-  useQuery({
+const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId }) => {
+  const { organizationMember } = useAuth();
+  const queryClient = useQueryClient();
+  const isOrgAdmin = organizationMember?.role === 'ORG_ADMIN' || organizationMember?.role === 'OWNER';
+
+  const { data: roomsResponse, isLoading: roomsLoading } = useQuery({
     queryKey: ['chat-rooms', engagementId],
-    enabled: !!engagementId,
-    queryFn: () => apiGet<{ data: unknown }>(endPoints.CHAT.ROOMS),
+    queryFn: () => apiGet<{ data: any[] }>(endPoints.CHAT.ROOMS),
   });
-  const [chats, setChats] = useState<Chat[]>(mockChats);
-  const [activeChatId, setActiveChatId] = useState<string | undefined>(mockChats[0]?.id);
+
+  const createRoomMutation = useMutation({
+    mutationFn: () => apiPost(endPoints.ENGAGEMENTS.CHAT_ROOM(engagementId!)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chat-rooms', engagementId] });
+      queryClient.invalidateQueries({ queryKey: ['engagement-view', engagementId] });
+    },
+    onError: (error: any) => {
+      console.error(error.response?.data?.message || 'Failed to create chat room');
+    }
+  });
+
+  const addMemberMutation = useMutation({
+    mutationFn: ({ roomId, userIds }: { roomId: string; userIds: string[] }) => 
+      apiPost(endPoints.CHAT.MEMBERS(roomId), { userIds }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chat-rooms'] });
+      queryClient.invalidateQueries({ queryKey: ['chat-rooms', engagementId] });
+      setIsAddMemberModalOpen(false);
+    },
+    onError: (error: any) => {
+      console.error(error.response?.data?.message || 'Failed to add members to group');
+    }
+  });
+
+  const removeMemberMutation = useMutation({
+    mutationFn: ({ roomId, userId }: { roomId: string; userId: string }) => 
+      apiDelete(endPoints.CHAT.MEMBER_DELETE(roomId, userId)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chat-rooms'] });
+      queryClient.invalidateQueries({ queryKey: ['chat-rooms', engagementId] });
+    },
+    onError: (error: any) => {
+      console.error(error.response?.data?.message || 'Failed to remove member');
+    }
+  });
+
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [activeChatId, setActiveChatId] = useState<string | undefined>();
+
+  React.useEffect(() => {
+    if (roomsResponse?.data) {
+      // Map backend rooms to frontend Chat type
+      const mappedChats: Chat[] = roomsResponse.data.map((room: any) => ({
+        id: room.id,
+        type: room.contextType === 'DIRECT' ? 'INDIVIDUAL' : 'GROUP',
+        name: room.title || 'Chat',
+        participants: room.members?.map((m: any) => ({
+          id: m.userId,
+          name: `${m.user?.firstName} ${m.user?.lastName}`,
+          email: m.user?.email,
+          role: m.user?.role,
+          isOnline: false,
+        })) || [],
+        unreadCount: room.unreadCount || 0,
+        messages: [],
+        contextId: room.contextId,
+      }));
+
+      setChats(mappedChats);
+
+      if (isSingleChat && engagementId) {
+        const engRoom = mappedChats.find(c => (c as any).contextId === engagementId);
+        if (engRoom) {
+          setActiveChatId(engRoom.id);
+        }
+      } else if (!activeChatId && mappedChats.length > 0) {
+        setActiveChatId(mappedChats[0].id);
+      }
+    }
+  }, [roomsResponse, isSingleChat, engagementId, activeChatId]);
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [sidebarWidth, setSidebarWidth] = useState(380); // Default width
+  const [sidebarWidth, setSidebarWidth] = useState(380);
   const [isResizing, setIsResizing] = useState(false);
   const [sidebarView, setSidebarView] = useState<SidebarView>('chats');
   const [rightPaneMode, setRightPaneMode] = useState<RightPaneMode>(null);
@@ -46,18 +122,14 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, contextualCha
   const [emojiPickerMessageId, setEmojiPickerMessageId] = useState<string | null>(null);
   const [confirmState, setConfirmState] = useState<{ 
     isOpen: boolean; 
-    type: 'message' | 'bulk-message' | 'clear-chat'; 
-    messageId?: string; 
+    type: 'message' | 'bulk-message' | 'clear-chat' | 'remove-member'; 
+    messageId?: string;
+    userId?: string;
   }>({ isOpen: false, type: 'message' });
   const [forwardingMessages, setForwardingMessages] = useState<Message[]>([]);
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [selectedForwardChatIds, setSelectedForwardChatIds] = useState<string[]>([]);
   const containerRef = React.useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    if (isSingleChat && contextualChatId) {
-      setActiveChatId(contextualChatId);
-    }
-  }, [isSingleChat, contextualChatId]);
 
   React.useEffect(() => {
     setRightPaneMode(null);
@@ -73,21 +145,8 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, contextualCha
     setScrollTargetId(messageId);
   };
 
-  const handleCreateGroup = (name: string, participantIds: string[]) => {
-    const selectedParticipants = mockUsers.filter(u => participantIds.includes(u.id));
-    
-    const newGroup: Chat = {
-      id: Date.now().toString(),
-      type: 'GROUP',
-      name,
-      participants: selectedParticipants,
-      unreadCount: 0,
-      messages: [],
-    };
-
-    setChats(prev => [newGroup, ...prev]);
-    setActiveChatId(newGroup.id);
-    setSidebarView('chats');
+  const handleCreateGroup = (_name: string, _participantIds: string[]) => {
+    // Create group functionality can be implemented later with real API
   };
 
   const handleTogglePin = (chatId: string) => {
@@ -110,10 +169,22 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, contextualCha
     setConfirmState({ isOpen: true, type: 'clear-chat' });
   };
 
+  const handleRemoveMemberRequest = (userId: string) => {
+    setConfirmState({ isOpen: true, type: 'remove-member', userId });
+  };
+
 
   const confirmDelete = () => {
-    const { messageId, type } = confirmState;
+    const { messageId, type, userId } = confirmState;
     if (!activeChatId) return;
+
+    if (type === 'remove-member') {
+      if (userId) {
+        removeMemberMutation.mutate({ roomId: activeChatId, userId });
+      }
+      setConfirmState({ isOpen: false, type: 'message' });
+      return;
+    }
 
     if (type === 'clear-chat') {
       setChats(prev => prev.map(chat => 
@@ -389,6 +460,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, contextualCha
                 <NewGroupSidebar 
                   onBack={() => setSidebarView('chats')}
                   onCreateGroup={handleCreateGroup}
+                  users={[]} // TODO: Populate with organization members
                 />
               )}
             </div>
@@ -472,17 +544,65 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, contextualCha
                     onClose={() => setRightPaneMode(null)}
                     onMessageClick={handleSearchMessageClick}
                   />
-                ) : (
+                ) : rightPaneMode === 'info' && activeChat ? (
                   <GroupInfoPane
                     name={activeChat.name}
                     type={activeChat.type}
                     participants={activeChat.participants}
                     onClose={() => setRightPaneMode(null)}
+                    onAddMember={activeChat.type === 'GROUP' ? () => setIsAddMemberModalOpen(true) : undefined}
+                    onRemoveMember={handleRemoveMemberRequest}
                   />
-                )}
+                ) : null}
               </div>
             </div>
+            {activeChat && (
+              <AddMemberModal
+                isOpen={isAddMemberModalOpen}
+                onClose={() => setIsAddMemberModalOpen(false)}
+                isAdding={addMemberMutation.isPending}
+                onAddMembers={(userIds) => {
+                  if (activeChatId) {
+                    addMemberMutation.mutate({ roomId: activeChatId, userIds });
+                  }
+                }}
+                existingParticipantIds={activeChat?.participants.map(p => p.id) || []}
+              />
+            )}
           </>
+        ) : isSingleChat ? (
+          <div className="h-full flex-1 flex flex-col items-center justify-center bg-[#f0f2f5] p-8 text-center border-l border-gray-200">
+             {roomsLoading ? (
+                <Loader2 className="w-12 h-12 text-primary animate-spin" />
+             ) : (
+                <div className="max-w-md flex flex-col items-center">
+                  <div className="w-48 h-48 relative mb-8 opacity-40">
+                    <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl"></div>
+                    <MessageSquare className="w-full h-full text-primary relative z-10" />
+                  </div>
+                  <h2 className="text-3xl font-light text-gray-700 mb-4">No Chat Room Found</h2>
+                  <p className="text-gray-500 text-sm leading-relaxed mb-8">
+                    {isOrgAdmin 
+                      ? "This engagement doesn't have a chat room yet. Create one to start communicating with the client."
+                      : "This engagement doesn't have a chat room yet. Please contact your administrator to create one."}
+                  </p>
+                  {isOrgAdmin && (
+                    <button 
+                      onClick={() => createRoomMutation.mutate()}
+                      disabled={createRoomMutation.isPending}
+                      className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100"
+                    >
+                      {createRoomMutation.isPending ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Plus className="w-5 h-5" />
+                      )}
+                      Create Chat Room
+                    </button>
+                  )}
+                </div>
+             )}
+          </div>
         ) : (
           <div className="h-full flex-1 flex flex-col items-center justify-center bg-[#f0f2f5] p-8 text-center border-l border-gray-200">
             <div className="max-w-md flex flex-col items-center">
@@ -596,15 +716,22 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, contextualCha
         title={
           confirmState.type === 'clear-chat' ? "Clear this chat?" :
           confirmState.type === 'bulk-message' ? "Delete selected messages?" : 
+          confirmState.type === 'remove-member' ? "Remove member?" :
           "Delete message?"
         }
         message={
           confirmState.type === 'clear-chat' ? "This will delete all messages in this chat. This action cannot be undone." :
           confirmState.type === 'bulk-message' 
             ? `Are you sure you want to delete these ${selectedMessageIds.length} messages? This action cannot be undone.` 
+            : confirmState.type === 'remove-member'
+            ? "Are you sure you want to remove this member from the group? They will no longer be able to see or send messages."
             : "Are you sure you want to delete this message? This action cannot be undone."
         }
-        confirmLabel={confirmState.type === 'clear-chat' ? "Clear chat" : "Delete"}
+        confirmLabel={
+          confirmState.type === 'clear-chat' ? "Clear chat" : 
+          confirmState.type === 'remove-member' ? "Remove" : 
+          "Delete"
+        }
         cancelLabel="Cancel"
         variant="danger"
         onConfirm={confirmDelete}

@@ -3,7 +3,8 @@ export type UserRole = 'ORG_ADMIN' | 'ORG_EMPLOYEE';
 export interface User {
   id: string;
   name: string;
-  role: UserRole;
+  email?: string;
+  role: UserRole | string;
   isOnline: boolean;
   lastSeen?: string;
 }

@@ -35,8 +35,8 @@ export const apiPatch = async <T>(url: string, data?: unknown): Promise<T> => {
 /**
  * Generic DELETE method
  */
-export const apiDelete = async <T>(url: string): Promise<T> => {
-  const response = await axiosInstance.delete<T>(url);
+export const apiDelete = async <T>(url: string, data?: unknown): Promise<T> => {
+  const response = await axiosInstance.delete<T>(url, { data });
   return response.data;
 };
 

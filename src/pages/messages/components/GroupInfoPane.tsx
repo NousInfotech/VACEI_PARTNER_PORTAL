@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Users, Mail, Info } from 'lucide-react';
+import { X, Users, Mail, Info, UserPlus, Trash2 } from 'lucide-react';
 import type { User } from '../types';
 import { cn } from '../../../lib/utils';
 
@@ -8,6 +8,8 @@ interface GroupInfoPaneProps {
   type: 'INDIVIDUAL' | 'GROUP';
   participants: User[];
   onClose: () => void;
+  onAddMember?: () => void;
+  onRemoveMember?: (userId: string) => void;
 }
 
 export const GroupInfoPane: React.FC<GroupInfoPaneProps> = ({
@@ -15,6 +17,8 @@ export const GroupInfoPane: React.FC<GroupInfoPaneProps> = ({
   type,
   participants,
   onClose,
+  onAddMember,
+  onRemoveMember,
 }) => {
   return (
     <div className="w-[400px] bg-[#f0f2f5] h-full border-l border-gray-100 flex flex-col animate-in slide-in-from-right duration-300 shadow-xl z-20 overflow-hidden">
@@ -72,18 +76,44 @@ export const GroupInfoPane: React.FC<GroupInfoPaneProps> = ({
         {/* Participants Section */}
         {type === 'GROUP' && (
           <div className="bg-white shadow-sm pt-4 pb-2">
-            <h3 className="px-8 text-[14px] text-gray-500 mb-4">{participants.length} members</h3>
+            <div className="flex items-center justify-between px-8 mb-4">
+              <h3 className="text-[14px] text-gray-500">{participants.length} members</h3>
+              {onAddMember && (
+                <button 
+                  onClick={onAddMember}
+                  className="p-1.5 hover:bg-gray-100 rounded-full text-primary transition-colors hover:scale-110 active:scale-95"
+                  title="Add Member"
+                >
+                  <UserPlus className="w-5 h-5" />
+                </button>
+              )}
+            </div>
             
             <div className="divide-y divide-gray-50">
               {participants.map((member) => (
                 <div key={member.id} className="px-8 py-3 flex items-center gap-4 hover:bg-[#f5f6f6] cursor-pointer transition-colors group">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs uppercase">
-                    {member.name.substring(0, 2)}
+                    {(member.name || 'User').substring(0, 2)}
                   </div>
                   <div className="flex-1 flex flex-col border-b border-gray-50 transition-colors group-hover:border-transparent pb-0.5">
-                    <span className="text-[15px] font-normal text-gray-900">{member.name}</span>
-                    <span className="text-[13px] text-gray-500">{member.role || 'Member'}</span>
+                    <span className="text-[15px] font-normal text-gray-900">{member.name || 'Unknown User'}</span>
+                    <div className="flex items-center gap-2">
+                       <span className="uppercase tracking-wider text-[10px] font-semibold text-gray-500">{member.role?.replace('_', ' ') || 'Member'}</span>
+                       {member.email && <span className="text-[11px] text-gray-400 truncate tracking-normal normal-case font-normal">• {member.email}</span>}
+                    </div>
                   </div>
+                  {onRemoveMember && member.id !== 'me' && (
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemoveMember(member.id);
+                      }}
+                      className="p-2 opacity-0 group-hover:opacity-100 hover:bg-red-50 text-red-400 hover:text-red-500 rounded-lg transition-all"
+                      title="Remove Member"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

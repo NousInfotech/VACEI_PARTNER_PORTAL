@@ -1,23 +1,29 @@
 import React, { useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, Search, Users, X } from 'lucide-react';
-import { users as mockUsers } from '../mockData';
+import { ArrowLeft, ArrowRight, Check, Search, Users as UsersIcon, X } from 'lucide-react';
 import { cn } from '../../../lib/utils';
+import type { User } from '../types';
 
 interface NewGroupSidebarProps {
   onBack: () => void;
-  onCreateGroup: (name: string, participantIds: string[]) => void;
+  onCreateGroup?: (name: string, participantIds: string[]) => void;
+  onAddMembers?: (participantIds: string[]) => void;
+  users: User[];
+  isAddMembership?: boolean;
 }
 
 export const NewGroupSidebar: React.FC<NewGroupSidebarProps> = ({
   onBack,
   onCreateGroup,
+  onAddMembers,
+  users,
+  isAddMembership = false
 }) => {
   const [step, setStep] = useState<1 | 2>(1);
   const [groupName, setGroupName] = useState('');
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredUsers = mockUsers.filter(user => 
+  const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -29,18 +35,25 @@ export const NewGroupSidebar: React.FC<NewGroupSidebarProps> = ({
     );
   };
 
-  const handleCreate = () => {
-    if (groupName.trim() && selectedParticipants.length > 0) {
-      onCreateGroup(groupName.trim(), selectedParticipants);
-      onBack();
+  const handleAction = () => {
+    if (isAddMembership) {
+      if (selectedParticipants.length > 0 && onAddMembers) {
+        onAddMembers(selectedParticipants);
+        onBack();
+      }
+    } else {
+      if (groupName.trim() && selectedParticipants.length > 0 && onCreateGroup) {
+        onCreateGroup(groupName.trim(), selectedParticipants);
+        onBack();
+      }
     }
   };
 
-  const selectedUsersData = mockUsers.filter(u => selectedParticipants.includes(u.id));
+  const selectedUsersData = users.filter(u => selectedParticipants.includes(u.id));
 
   return (
     <div className="flex flex-col h-full bg-white animate-in slide-in-from-left duration-300">
-      {/* Dynamic Header based on Step */}
+      {/* Header */}
       <div className="h-16 bg-[#f0f2f5] flex items-center gap-4 px-4 border-b shrink-0">
         <button 
           type="button"
@@ -51,9 +64,9 @@ export const NewGroupSidebar: React.FC<NewGroupSidebarProps> = ({
         </button>
         <div className="flex flex-col">
           <h2 className="text-[16px] font-semibold text-gray-800 leading-tight">
-            {step === 1 ? 'Add group participants' : 'New group'}
+            {isAddMembership ? 'Add members' : (step === 1 ? 'Add group participants' : 'New group')}
           </h2>
-          {step === 1 && selectedParticipants.length > 0 && (
+          {selectedParticipants.length > 0 && (step === 1 || isAddMembership) && (
             <span className="text-[12px] text-gray-500">{selectedParticipants.length} selected</span>
           )}
         </div>
@@ -120,17 +133,17 @@ export const NewGroupSidebar: React.FC<NewGroupSidebarProps> = ({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[15px] font-normal text-gray-900 truncate">{user.name}</p>
-                    <p className="text-sm text-gray-500 truncate lowercase">{user.role.replace('_', ' ')}</p>
+                    <p className="text-sm text-gray-500 truncate lowercase">{user.role?.replace('_', ' ')}</p>
                   </div>
                 </button>
               ))}
             </div>
 
-            {/* Step 1 Floating Ab: NEXT */}
+            {/* Footer Action Button */}
             <div className="p-6 bg-white shrink-0 flex justify-center animate-in slide-in-from-bottom-4 duration-300">
               <button
                 type="button"
-                onClick={() => setStep(2)}
+                onClick={isAddMembership ? handleAction : () => setStep(2)}
                 disabled={selectedParticipants.length === 0}
                 className={cn(
                   "w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-lg",
@@ -139,7 +152,7 @@ export const NewGroupSidebar: React.FC<NewGroupSidebarProps> = ({
                     : "bg-gray-200 text-gray-400 cursor-not-allowed"
                 )}
               >
-                <ArrowRight className="w-6 h-6" />
+                {isAddMembership ? <Check className="w-6 h-6" /> : <ArrowRight className="w-6 h-6" />}
               </button>
             </div>
           </>
@@ -148,7 +161,7 @@ export const NewGroupSidebar: React.FC<NewGroupSidebarProps> = ({
             {/* Step 2 UI: Group Name */}
             <div className="flex flex-col items-center space-y-8">
               <div className="w-24 h-24 rounded-full bg-[#dfe5e7] flex items-center justify-center text-[#54656f] shrink-0">
-                <Users className="w-10 h-10" />
+                <UsersIcon className="w-10 h-10" />
               </div>
 
               <div className="w-full space-y-2">
@@ -167,11 +180,11 @@ export const NewGroupSidebar: React.FC<NewGroupSidebarProps> = ({
               </div>
             </div>
 
-            {/* Step 2 Floating Ab: CREATE */}
+            {/* Step 2 Footer: CREATE */}
             <div className="mt-auto pb-4 flex justify-center">
               <button
                 type="button"
-                onClick={handleCreate}
+                onClick={handleAction}
                 disabled={groupName.trim().length === 0}
                 className={cn(
                   "w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-lg",
