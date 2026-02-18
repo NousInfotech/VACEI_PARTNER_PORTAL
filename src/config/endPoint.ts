@@ -55,4 +55,8 @@ export const endPoints = {
     FILE_DELETE: (fileId: string) => `/library/files/${fileId}`,
     FOLDER_DELETE: (folderId: string) => `/library/folders/${folderId}`,
   },
+  COMPANY: {
+    BASE: '/companies',
+    GET_BY_ID: (id: string) => `/companies/${id}`,
+  },
 };
