@@ -59,4 +59,7 @@ export const endPoints = {
     BASE: '/companies',
     GET_BY_ID: (id: string) => `/companies/${id}`,
   },
+  INCORPORATION: {
+    GET_BY_COMPANY: (companyId: string) => `/incorporation/company/${companyId}`,
+  },
 };

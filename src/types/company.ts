@@ -1,6 +1,6 @@
 export type ShareClass = 'CLASS_A' | 'CLASS_B' | 'CLASS_C' | 'ORDINARY' | 'A' | 'B' | 'C' | string;
 export type RepresentationRole = 'DIRECTOR' | 'SHAREHOLDER' | 'LEGAL_REPRESENTATIVE' | 'SECRETARY';
-export type IncorporationStatus = 'PENDING' | 'IN_PROGRESS' | 'APPROVED' | 'REJECTED';
+export type IncorporationStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'REJECTED';
 export type KYCStatus = 'PENDING' | 'SUBMITTED' | 'VERIFIED' | 'REJECTED';
 
 export interface CompanyShareClass {
@@ -57,6 +57,7 @@ export interface IncorporationCycle {
   status: IncorporationStatus;
   startedAt: string;
   completedAt: string | null;
+  documentRequests?: any[];
 }
 
 export interface KycCycle {
