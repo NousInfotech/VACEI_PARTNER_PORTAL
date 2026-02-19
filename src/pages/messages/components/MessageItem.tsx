@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Check, CheckCheck, FileText, ChevronDown } from 'lucide-react';
+import { Check, CheckCheck, FileText, ChevronDown, Clock } from 'lucide-react';
 import type { Message, User } from '../types';
 import { cn } from '../../../lib/utils';
 import { MessageOptions } from './MessageOptions';
@@ -85,9 +85,9 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   };
 
   return (
-    <div 
+    <div
       className={cn(
-        "flex mb-4 group/item relative", 
+        "flex mb-4 group/item relative",
         isMe ? "flex-row-reverse" : "flex-row",
         isSelectMode && "cursor-pointer"
       )}
@@ -111,15 +111,16 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             {sender.name}
           </span>
         )}
-      
+
         <div
           className={cn(
             "relative shadow-sm px-3 py-1.5 min-w-[120px] max-w-full group/bubble",
-            isMe 
-              ? "bg-primary text-white rounded-lg rounded-tr-none" 
+            isMe
+              ? "bg-primary text-white rounded-lg rounded-tr-none"
               : "bg-white text-gray-800 rounded-lg rounded-tl-none border border-[#e2e8f0]/30",
             message.type === 'gif' ? "p-1" : "",
-            message.isDeleted && "bg-gray-50/50 border-gray-100 text-gray-400"
+            message.isDeleted && "bg-gray-50/50 border-gray-100 text-gray-400",
+            message.status === 'sending' && "opacity-70" // Visual cue for optimistic send
           )}
         >
           {/* Reply Preview */}
@@ -161,8 +162,8 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             </button>
           )}
 
-          <MessageOptions 
-            isOpen={showOptions} 
+          <MessageOptions
+            isOpen={showOptions}
             onClose={() => onToggleOptions?.(false)}
             onAction={handleAction}
             isMe={isMe}
@@ -172,23 +173,23 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           />
 
           {message.type === 'image' ? (
-            <div 
+            <div
               className="overflow-hidden rounded-xl mb-1 cursor-pointer hover:opacity-95 transition-opacity bg-black/5"
               onClick={() => onMediaClick?.(message)}
             >
-              <img 
-                src={message.fileUrl} 
-                alt={message.fileName} 
-                className="w-[300px] h-full object-cover" 
+              <img
+                src={message.fileUrl}
+                alt={message.fileName}
+                className="w-[300px] h-full object-cover"
                 onLoad={onImageLoad}
               />
             </div>
           ) : message.type === 'document' ? (
-            <div 
+            <div
               className={cn(
                 "flex items-center gap-3 p-3 rounded-lg mb-1 border group cursor-pointer transition-colors",
-                isMe 
-                  ? "bg-white/10 border-white/10 hover:bg-white/20" 
+                isMe
+                  ? "bg-white/10 border-white/10 hover:bg-white/20"
                   : "bg-black/5 border-black/5 hover:bg-black/10"
               )}
               onClick={() => {
@@ -234,17 +235,21 @@ export const MessageItem: React.FC<MessageItemProps> = ({
               )}
             </p>
           )}
-          
+
           <div className={cn(
             "absolute bottom-1 right-2 flex items-center gap-1.5",
             isMe ? "text-white/60" : "text-gray-400",
             message.type === 'gif' && "bg-black/20 backdrop-blur-sm px-1.5 py-0.5 rounded text-white/90"
           )}>
-            <span className="text-[10px] font-medium tracking-tight whitespace-nowrap">{message.timestamp}</span>
+            <span className="text-[10px] font-medium tracking-tight whitespace-nowrap">
+              {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
             {isMe && (
               <span className="flex items-center shrink-0">
                 {message.status === 'read' ? (
                   <CheckCheck className="w-3.5 h-3.5 text-white stroke-[2.5]" />
+                ) : message.status === 'sending' ? (
+                  <Clock className="w-3 h-3 text-white/70" />
                 ) : (
                   <Check className="w-3.5 h-3.5 stroke-[2.5]" />
                 )}
@@ -255,15 +260,15 @@ export const MessageItem: React.FC<MessageItemProps> = ({
 
         {/* Reactions Display */}
         {!message.isDeleted && message.reactions && Object.keys(message.reactions).length > 0 && (
-          <div 
+          <div
             ref={reactionContainerRef}
             className={cn(
-            "flex flex-wrap gap-1 -mt-2.5 relative z-20",
-            isMe ? "justify-end mr-4" : "justify-start ml-4"
-          )}>
+              "flex flex-wrap gap-1 -mt-2.5 relative z-20",
+              isMe ? "justify-end mr-4" : "justify-start ml-4"
+            )}>
             {Object.entries(message.reactions).map(([emoji, userIds]) => (
               userIds.length > 0 && (
-                <button 
+                <button
                   key={emoji}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -281,7 +286,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             ))}
 
             {showReactionDetails && message.reactions && (
-              <ReactionDetailsModal 
+              <ReactionDetailsModal
                 reactions={message.reactions}
                 users={mockUsers}
                 isMe={isMe}

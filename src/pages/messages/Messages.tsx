@@ -49,7 +49,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
   });
 
   const addMemberMutation = useMutation({
-    mutationFn: ({ roomId, userIds }: { roomId: string; userIds: string[] }) => 
+    mutationFn: ({ roomId, userIds }: { roomId: string; userIds: string[] }) =>
       apiPost(endPoints.CHAT.MEMBERS(roomId), { userIds }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chat-rooms'] });
@@ -62,7 +62,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
   });
 
   const removeMemberMutation = useMutation({
-    mutationFn: ({ roomId, userId }: { roomId: string; userId: string }) => 
+    mutationFn: ({ roomId, userId }: { roomId: string; userId: string }) =>
       apiDelete(endPoints.CHAT.MEMBER_DELETE(roomId, userId)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chat-rooms'] });
@@ -120,9 +120,9 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([]);
   const [emojiPickerMessageId, setEmojiPickerMessageId] = useState<string | null>(null);
-  const [confirmState, setConfirmState] = useState<{ 
-    isOpen: boolean; 
-    type: 'message' | 'bulk-message' | 'clear-chat' | 'remove-member'; 
+  const [confirmState, setConfirmState] = useState<{
+    isOpen: boolean;
+    type: 'message' | 'bulk-message' | 'clear-chat' | 'remove-member';
     messageId?: string;
     userId?: string;
   }>({ isOpen: false, type: 'message' });
@@ -150,13 +150,13 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
   };
 
   const handleTogglePin = (chatId: string) => {
-    setChats(prev => prev.map(chat => 
+    setChats(prev => prev.map(chat =>
       chat.id === chatId ? { ...chat, isPinned: !chat.isPinned } : chat
     ));
   };
 
   const handleToggleMute = (chatId: string) => {
-    setChats(prev => prev.map(chat => 
+    setChats(prev => prev.map(chat =>
       chat.id === chatId ? { ...chat, isMuted: !chat.isMuted } : chat
     ));
   };
@@ -187,7 +187,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
     }
 
     if (type === 'clear-chat') {
-      setChats(prev => prev.map(chat => 
+      setChats(prev => prev.map(chat =>
         chat.id === activeChatId ? { ...chat, messages: [] } : chat
       ));
       setConfirmState({ isOpen: false, type: 'message' });
@@ -203,7 +203,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
             ...chat,
             messages: chat.messages
               .filter(m => !selectedMessageIds.includes(m.id) || !m.isDeleted)
-              .map(m => 
+              .map(m =>
                 selectedMessageIds.includes(m.id) ? { ...m, isDeleted: true, text: undefined, type: 'text', reactions: {} } : m
               )
           };
@@ -211,7 +211,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
 
         if (messageId) {
           const isAlreadyDeleted = chat.messages.find(m => m.id === messageId)?.isDeleted;
-          
+
           if (isAlreadyDeleted) {
             return {
               ...chat,
@@ -221,7 +221,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
 
           return {
             ...chat,
-            messages: chat.messages.map(m => 
+            messages: chat.messages.map(m =>
               m.id === messageId ? { ...m, isDeleted: true, text: undefined, type: 'text', reactions: {} } : m
             )
           };
@@ -249,7 +249,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
               } else {
                 const reactions = { ...(m.reactions || {}) };
                 const alreadyHasThisReaction = (reactions[emoji] || []).includes('me');
-                
+
                 Object.keys(reactions).forEach(key => {
                   reactions[key] = reactions[key].filter(id => id !== 'me');
                   if (reactions[key].length === 0) delete reactions[key];
@@ -259,7 +259,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
                   const userReactions = reactions[emoji] || [];
                   reactions[emoji] = [...userReactions, 'me'];
                 }
-                
+
                 return { ...m, reactions };
               }
               return m;
@@ -307,14 +307,14 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
   };
 
   const activeChat = chats.find(c => c.id === activeChatId);
-  
+
   const sortedChats = [...chats].sort((a, b) => {
     if (a.isPinned && !b.isPinned) return -1;
     if (!a.isPinned && b.isPinned) return 1;
     return 0;
   });
 
-  const filteredChats = sortedChats.filter(c => 
+  const filteredChats = sortedChats.filter(c =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -349,13 +349,13 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
     };
   }, [resize, stopResizing]);
 
-  const handleSendMessage = (content: { 
-    text?: string; 
-    gifUrl?: string; 
-    fileUrl?: string; 
-    fileName?: string; 
+  const handleSendMessage = (content: {
+    text?: string;
+    gifUrl?: string;
+    fileUrl?: string;
+    fileName?: string;
     fileSize?: string;
-    type: 'text' | 'gif' | 'image' | 'document' 
+    type: 'text' | 'gif' | 'image' | 'document'
   }) => {
     if (!activeChatId) return;
 
@@ -364,8 +364,8 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
         if (chat.id === activeChatId) {
           return {
             ...chat,
-            messages: chat.messages.map(m => 
-              m.id === editingMessage.id 
+            messages: chat.messages.map(m =>
+              m.id === editingMessage.id
                 ? { ...m, text: content.text, isEdited: true }
                 : m
             )
@@ -407,7 +407,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
   };
 
   const handleToggleSelectMessage = (messageId: string) => {
-    setSelectedMessageIds(prev => 
+    setSelectedMessageIds(prev =>
       prev.includes(messageId) ? prev.filter(id => id !== messageId) : [...prev, messageId]
     );
   };
@@ -434,14 +434,14 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
   };
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className="flex h-[calc(100vh-140px)] bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 relative"
     >
       {!isSingleChat && (
         <>
-          <div 
-            style={{ width: `${sidebarWidth}px` }} 
+          <div
+            style={{ width: `${sidebarWidth}px` }}
             className="shrink-0 h-full overflow-hidden flex flex-col"
           >
             <div className="flex-1 overflow-hidden">
@@ -457,7 +457,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
                   onToggleMute={handleToggleMute}
                 />
               ) : (
-                <NewGroupSidebar 
+                <NewGroupSidebar
                   onBack={() => setSidebarView('chats')}
                   onCreateGroup={handleCreateGroup}
                   users={[]} // TODO: Populate with organization members
@@ -504,6 +504,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
                 selectedMessageIds={selectedMessageIds}
                 onSelectMessage={handleToggleSelectMessage}
                 onEnterSelectMode={() => setIsSelectMode(true)}
+                currentUserId={organizationMember?.userId || ''}
               />
             </div>
             {isSelectMode && (
@@ -530,7 +531,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
                 </div>
               </div>
             )}
-            <div 
+            <div
               className={cn(
                 "h-full border-l border-gray-200 transition-all duration-300 ease-in-out overflow-hidden shrink-0",
                 rightPaneMode ? "w-[400px]" : "w-0 border-transparent"
@@ -572,36 +573,36 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
           </>
         ) : isSingleChat ? (
           <div className="h-full flex-1 flex flex-col items-center justify-center bg-[#f0f2f5] p-8 text-center border-l border-gray-200">
-             {roomsLoading ? (
-                <Loader2 className="w-12 h-12 text-primary animate-spin" />
-             ) : (
-                <div className="max-w-md flex flex-col items-center">
-                  <div className="w-48 h-48 relative mb-8 opacity-40">
-                    <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl"></div>
-                    <MessageSquare className="w-full h-full text-primary relative z-10" />
-                  </div>
-                  <h2 className="text-3xl font-light text-gray-700 mb-4">No Chat Room Found</h2>
-                  <p className="text-gray-500 text-sm leading-relaxed mb-8">
-                    {isOrgAdmin 
-                      ? "This engagement doesn't have a chat room yet. Create one to start communicating with the client."
-                      : "This engagement doesn't have a chat room yet. Please contact your administrator to create one."}
-                  </p>
-                  {isOrgAdmin && (
-                    <button 
-                      onClick={() => createRoomMutation.mutate()}
-                      disabled={createRoomMutation.isPending}
-                      className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100"
-                    >
-                      {createRoomMutation.isPending ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                      ) : (
-                        <Plus className="w-5 h-5" />
-                      )}
-                      Create Chat Room
-                    </button>
-                  )}
+            {roomsLoading ? (
+              <Loader2 className="w-12 h-12 text-primary animate-spin" />
+            ) : (
+              <div className="max-w-md flex flex-col items-center">
+                <div className="w-48 h-48 relative mb-8 opacity-40">
+                  <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl"></div>
+                  <MessageSquare className="w-full h-full text-primary relative z-10" />
                 </div>
-             )}
+                <h2 className="text-3xl font-light text-gray-700 mb-4">No Chat Room Found</h2>
+                <p className="text-gray-500 text-sm leading-relaxed mb-8">
+                  {isOrgAdmin
+                    ? "This engagement doesn't have a chat room yet. Create one to start communicating with the client."
+                    : "This engagement doesn't have a chat room yet. Please contact your administrator to create one."}
+                </p>
+                {isOrgAdmin && (
+                  <button
+                    onClick={() => createRoomMutation.mutate()}
+                    disabled={createRoomMutation.isPending}
+                    className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100"
+                  >
+                    {createRoomMutation.isPending ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Plus className="w-5 h-5" />
+                    )}
+                    Create Chat Room
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <div className="h-full flex-1 flex flex-col items-center justify-center bg-[#f0f2f5] p-8 text-center border-l border-gray-200">
@@ -625,10 +626,10 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
       </div>
 
       {previewMessage && (
-        <MediaPreviewModal 
-          message={previewMessage} 
-          onClose={() => setPreviewMessage(null)} 
-          />
+        <MediaPreviewModal
+          message={previewMessage}
+          onClose={() => setPreviewMessage(null)}
+        />
       )}
 
       {forwardingMessages.length > 0 && (
@@ -639,7 +640,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
                 <h3 className="font-bold text-gray-800 text-[15px]">Forward message</h3>
                 <p className="text-xs text-gray-500 mt-0.5">{forwardingMessages.length} message{forwardingMessages.length > 1 ? 's' : ''} selected</p>
               </div>
-              <button 
+              <button
                 onClick={() => setForwardingMessages([])}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
@@ -654,7 +655,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
                   <button
                     key={chat.id}
                     onClick={() => {
-                      setSelectedForwardChatIds(prev => 
+                      setSelectedForwardChatIds(prev =>
                         isSelected ? prev.filter(id => id !== chat.id) : [...prev, chat.id]
                       );
                     }}
@@ -666,10 +667,10 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
                     <div className="relative shrink-0">
                       <div className={cn(
                         "w-10 h-10 rounded-full flex items-center justify-center transition-all",
-                        isSelected 
-                          ? "bg-primary text-white scale-95" 
-                          : chat.type === 'GROUP' 
-                            ? "bg-[#dfe5e7] text-[#54656f]" 
+                        isSelected
+                          ? "bg-primary text-white scale-95"
+                          : chat.type === 'GROUP'
+                            ? "bg-[#dfe5e7] text-[#54656f]"
                             : "bg-primary/10 text-primary font-bold"
                       )}>
                         {chat.type === 'GROUP' ? <Users className="w-5 h-5" /> : chat.name.substring(0, 2).toUpperCase()}
@@ -698,8 +699,8 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
                 onClick={handleForwardMessages}
                 className={cn(
                   "w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2",
-                  selectedForwardChatIds.length > 0 
-                    ? "bg-primary text-white shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98]" 
+                  selectedForwardChatIds.length > 0
+                    ? "bg-primary text-white shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98]"
                     : "bg-gray-200 text-gray-400 cursor-not-allowed"
                 )}
               >
@@ -711,26 +712,26 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
         </div>
       )}
 
-      <ConfirmModal 
+      <ConfirmModal
         isOpen={confirmState.isOpen}
         title={
           confirmState.type === 'clear-chat' ? "Clear this chat?" :
-          confirmState.type === 'bulk-message' ? "Delete selected messages?" : 
-          confirmState.type === 'remove-member' ? "Remove member?" :
-          "Delete message?"
+            confirmState.type === 'bulk-message' ? "Delete selected messages?" :
+              confirmState.type === 'remove-member' ? "Remove member?" :
+                "Delete message?"
         }
         message={
           confirmState.type === 'clear-chat' ? "This will delete all messages in this chat. This action cannot be undone." :
-          confirmState.type === 'bulk-message' 
-            ? `Are you sure you want to delete these ${selectedMessageIds.length} messages? This action cannot be undone.` 
-            : confirmState.type === 'remove-member'
-            ? "Are you sure you want to remove this member from the group? They will no longer be able to see or send messages."
-            : "Are you sure you want to delete this message? This action cannot be undone."
+            confirmState.type === 'bulk-message'
+              ? `Are you sure you want to delete these ${selectedMessageIds.length} messages? This action cannot be undone.`
+              : confirmState.type === 'remove-member'
+                ? "Are you sure you want to remove this member from the group? They will no longer be able to see or send messages."
+                : "Are you sure you want to delete this message? This action cannot be undone."
         }
         confirmLabel={
-          confirmState.type === 'clear-chat' ? "Clear chat" : 
-          confirmState.type === 'remove-member' ? "Remove" : 
-          "Delete"
+          confirmState.type === 'clear-chat' ? "Clear chat" :
+            confirmState.type === 'remove-member' ? "Remove" :
+              "Delete"
         }
         cancelLabel="Cancel"
         variant="danger"
@@ -740,18 +741,18 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
       {emojiPickerMessageId && (
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/20 backdrop-blur-[2px]">
           <div className="bg-white rounded-2xl shadow-2xl relative animate-in zoom-in-95 duration-200">
-            <button 
+            <button
               onClick={() => setEmojiPickerMessageId(null)}
               className="absolute -top-10 right-0 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors"
             >
               <X className="w-5 h-5 text-gray-500" />
             </button>
             <div className="p-2">
-              <EmojiPicker 
+              <EmojiPicker
                 onSelect={(emoji) => {
                   handleReactToMessage(activeChatId!, emojiPickerMessageId, emoji);
                   setEmojiPickerMessageId(null);
-                }} 
+                }}
                 onClose={() => setEmojiPickerMessageId(null)}
               />
             </div>
