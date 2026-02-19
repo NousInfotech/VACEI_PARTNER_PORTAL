@@ -13,9 +13,16 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const companyId = typeof window !== 'undefined' ? localStorage.getItem('vacei-active-company') : null;
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    if (companyId) {
+      config.headers['X-Company-Id'] = companyId;
+    }
+
     return config;
   },
   (error) => {

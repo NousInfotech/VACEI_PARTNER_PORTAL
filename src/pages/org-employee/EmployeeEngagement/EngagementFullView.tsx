@@ -50,8 +50,8 @@ import ComplianceView from "./compliance/ComplianceView";
 import MilestonesView from "./milestones/MilestonesView";
 import CFOEngagementsTable from "./cfo/CFOEngagementsTable";
 import CSPCoverageTable from "./csp/CSPCoverageTable";
-import Messages from "../../messages/Messages";
 import ViewCompanySection from "../../common/view-company/ViewCompanySection";
+import EngagementChatTab from "./chat/EngagementChatTab";
 
 const ENGAGEMENT_TABS = [
   { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -176,6 +176,12 @@ export default function EngagementFullView() {
   const engagement = engagementResponse?.data || engagementResponse;
   const organizationId = engagement?.organizationId || engagement?.organization?._id;
 
+  React.useEffect(() => {
+    if (engagement) {
+      console.log('EngagementFullView: Loaded engagement', engagement);
+    }
+  }, [engagement]);
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8 animate-in fade-in duration-500">
       <div className="max-w-[1600px] mx-auto space-y-6 md:space-y-8">
@@ -184,9 +190,9 @@ export default function EngagementFullView() {
           actions={
             <div className="flex items-center gap-3">
               {organizationId && (
-                <Button 
-                   variant="header" 
-                   onClick={toggleCompanySection}
+                <Button
+                  variant="header"
+                  onClick={toggleCompanySection}
                 >
                   <Building2 size={14} />
                   {showCompanySection ? "Hide Company" : "View Company"}
@@ -212,9 +218,9 @@ export default function EngagementFullView() {
 
         {showCompanySection ? (
           <div className="mt-6 md:mt-8 animate-in slide-in-from-bottom-4 duration-500">
-            <ViewCompanySection 
-              companyId={engagement?.companyId} 
-              engagementId={engagementId} 
+            <ViewCompanySection
+              companyId={engagement?.companyId}
+              engagementId={engagementId}
             />
           </div>
         ) : (
@@ -472,7 +478,7 @@ export default function EngagementFullView() {
             ) : activeTab === 'updates' ? (
               <EngagementUpdatesView engagementId={engagementId ?? undefined} />
             ) : activeTab === 'chat' ? (
-              <Messages isSingleChat={true} contextualChatId="engagement-chat" engagementId={engagementId ?? undefined} />
+              <EngagementChatTab engagementId={engagementId || ''} companyId={engagement?.companyId} chatRoomId={engagement?.chatRoomId} />
             ) : activeTab === 'teams' ? (
               <TeamsView engagementId={engagementId ?? undefined} />
             ) : activeTab === 'todo' ? (

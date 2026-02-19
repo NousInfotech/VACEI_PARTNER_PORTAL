@@ -19,7 +19,7 @@ export interface Message {
   fileName?: string;
   fileSize?: string;
   timestamp: string;
-  status: 'sent' | 'delivered' | 'read';
+  status: 'sent' | 'delivered' | 'read' | 'sending';
   replyToId?: string;
   isEdited?: boolean;
   reactions?: Record<string, string[]>; // emoji -> array of userIds

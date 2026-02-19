@@ -7,13 +7,13 @@ import { MessageInput } from './MessageInput';
 
 interface ChatWindowProps {
   chat: Chat;
-  onSendMessage: (content: { 
-    text?: string; 
-    gifUrl?: string; 
-    fileUrl?: string; 
-    fileName?: string; 
+  onSendMessage: (content: {
+    text?: string;
+    gifUrl?: string;
+    fileUrl?: string;
+    fileName?: string;
     fileSize?: string;
-    type: 'text' | 'gif' | 'image' | 'document' 
+    type: 'text' | 'gif' | 'image' | 'document'
   }) => void;
   onSearchToggle: () => void;
   onInfoToggle: () => void;
@@ -36,12 +36,13 @@ interface ChatWindowProps {
   selectedMessageIds: string[];
   onSelectMessage: (messageId: string) => void;
   onEnterSelectMode: () => void;
+  currentUserId: string; // Add currentUserId prop
 }
 
-export const ChatWindow: React.FC<ChatWindowProps> = ({ 
-  chat, 
-  onSendMessage, 
-  onSearchToggle, 
+export const ChatWindow: React.FC<ChatWindowProps> = ({
+  chat,
+  onSendMessage,
+  onSearchToggle,
   onInfoToggle,
   onMute,
   onClearChat,
@@ -61,7 +62,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   isSelectMode,
   selectedMessageIds,
   onSelectMessage,
-  onEnterSelectMode
+  onEnterSelectMode,
+  currentUserId // Destructure currentUserId
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [highlightedId, setHighlightedId] = React.useState<string | null>(null);
@@ -77,12 +79,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         requestAnimationFrame(() => {
           setHighlightedId(scrollToMessageId);
         });
-        
+
         const timer = setTimeout(() => {
           setHighlightedId(null);
           onScrollComplete?.();
         }, 800);
-        
+
         return () => clearTimeout(timer);
       }
     }
@@ -108,23 +110,23 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   return (
     <div className="flex flex-col h-full bg-[#efeae2] relative overflow-hidden">
       {/* Background Pattern - WhatsApp style */}
-      <div 
+      <div
         className="absolute inset-0 opacity-[0.06] pointer-events-none"
-        style={{ 
+        style={{
           backgroundImage: 'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")',
           backgroundSize: '400px'
         }}
       />
 
-      <ChatHeader 
-        chat={chat} 
+      <ChatHeader
+        chat={chat}
         onSearchToggle={onSearchToggle}
         onInfoToggle={onInfoToggle}
         onMute={onMute}
         onClearChat={onClearChat}
         onSelectMessages={onSelectMessages}
       />
-      
+
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4 relative z-10 custom-scrollbar"
@@ -136,13 +138,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         </div>
 
         {chat.messages.map((msg) => {
-          const isMe = msg.senderId === 'me';
+          const isMe = msg.senderId === 'me' || msg.senderId === currentUserId; // Check against currentUserId
           const sender = chat.participants.find(p => p.id === msg.senderId);
           const showSenderName = chat.type === 'GROUP' && !isMe;
 
           return (
-            <div 
-              key={msg.id} 
+            <div
+              key={msg.id}
               id={`msg-${msg.id}`}
               className={cn(
                 "transition-all duration-300 rounded-lg -mx-4 px-4",
@@ -177,8 +179,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         })}
       </div>
 
-      <MessageInput 
-        onSendMessage={onSendMessage} 
+      <MessageInput
+        onSendMessage={onSendMessage}
         replyingTo={replyingTo}
         editingMessage={editingMessage}
         onCancelReply={onCancelReply}

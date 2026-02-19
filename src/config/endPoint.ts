@@ -28,7 +28,7 @@ export const endPoints = {
     CHECKLIST_STATUS: (engId: string, checklistId: string) => `/engagements/${engId}/checklists/${checklistId}/status`,
     COMPLIANCES: (id: string) => `/engagements/${id}/compliances`,
     TEAM: (engagementId: string) => `/engagements/${engagementId}/team`,
-    CHAT_ROOM: (engagementId: string) => `/engagements/${engagementId}/chat-room`,
+    CHAT_ROOM: (engagementId: string) => `/chat/engagements/${engagementId}/room`,
     MILESTONES: (engagementId: string) => `/engagements/${engagementId}/milestones`,
     LIBRARY_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library`,
     LIBRARY_FOLDER_BY_TYPE: (engagementId: string, type: string) => `/engagements/${engagementId}/library?type=${type}`,
@@ -69,5 +69,8 @@ export const endPoints = {
     GET_TRIAL_BALANCE_WITH_ACCOUNTS: (auditCycleId: string, trialBalanceId: string) => `/audit-cycles/${auditCycleId}/trial-balances/${trialBalanceId}/with-accounts`,
     GET_CLASSIFICATION_MAP: '/classifications/map',
     UPDATE_TRIAL_BALANCE_ACCOUNTS: (auditCycleId: string, trialBalanceId: string) => `/audit-cycles/${auditCycleId}/trial-balances/${trialBalanceId}/accounts`,
+  },
+  INCORPORATION: {
+    GET_BY_COMPANY: (companyId: string) => `/incorporation/company/${companyId}`,
   },
 };
