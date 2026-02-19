@@ -27,7 +27,7 @@ export const endPoints = {
     CHECKLIST_STATUS: (engId: string, checklistId: string) => `/engagements/${engId}/checklists/${checklistId}/status`,
     COMPLIANCES: (id: string) => `/engagements/${id}/compliances`,
     TEAM: (engagementId: string) => `/engagements/${engagementId}/team`,
-    CHAT_ROOM: (engagementId: string) => `/engagements/${engagementId}/chat-room`,
+    CHAT_ROOM: (engagementId: string) => `/chat/engagements/${engagementId}/room`,
     MILESTONES: (engagementId: string) => `/engagements/${engagementId}/milestones`,
     LIBRARY_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library`,
     LIBRARY_FOLDER_BY_TYPE: (engagementId: string, type: string) => `/engagements/${engagementId}/library?type=${type}`,
