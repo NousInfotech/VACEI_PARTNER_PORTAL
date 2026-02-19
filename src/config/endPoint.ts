@@ -22,6 +22,7 @@ export const endPoints = {
   ENGAGEMENTS: {
     GET_ALL: '/engagements',
     GET_BY_ID: (engagementId: string) => `/engagements/${engagementId}`,
+    UPDATE_STATUS: (engagementId: string) => `/engagements/${engagementId}/status`,
     CHECKLISTS: (id: string) => `/engagements/${id}/checklists`,
     CHECKLIST_BY_ID: (engId: string, checklistId: string) => `/engagements/${engId}/checklists/${checklistId}`,
     CHECKLIST_STATUS: (engId: string, checklistId: string) => `/engagements/${engId}/checklists/${checklistId}/status`,
@@ -58,5 +59,15 @@ export const endPoints = {
   COMPANY: {
     BASE: '/companies',
     GET_BY_ID: (id: string) => `/companies/${id}`,
+  },
+  AUDIT: {
+    CREATE_CYCLE: '/audit-cycles',
+    GET_CYCLE: (id: string) => `/audit-cycles/${id}`,
+    GET_CYCLES: '/audit-cycles',
+    UPLOAD_TRIAL_BALANCE: (auditCycleId: string) => `/uploadapi/v1/services/audit/${auditCycleId}/trial-balance`,
+    GET_TRIAL_BALANCES: (auditCycleId: string) => `/audit-cycles/${auditCycleId}/trial-balances`,
+    GET_TRIAL_BALANCE_WITH_ACCOUNTS: (auditCycleId: string, trialBalanceId: string) => `/audit-cycles/${auditCycleId}/trial-balances/${trialBalanceId}/with-accounts`,
+    GET_CLASSIFICATION_MAP: '/classifications/map',
+    UPDATE_TRIAL_BALANCE_ACCOUNTS: (auditCycleId: string, trialBalanceId: string) => `/audit-cycles/${auditCycleId}/trial-balances/${trialBalanceId}/accounts`,
   },
 };

@@ -448,7 +448,7 @@ export default function EngagementFullView() {
             ) : activeTab === 'library' ? (
               <LibraryExplorer engagementId={engagementId ?? undefined} />
             ) : activeTab === 'audit' ? (
-              <AuditContent />
+              <AuditContent engagementId={engagementId ?? undefined} />
             ) : activeTab === 'vat' ? (
               <VATCycleView />
             ) : activeTab === 'payroll' ? (
