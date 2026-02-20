@@ -46,10 +46,23 @@ export default function Engagement() {
   });
 
   const handleViewDetails = (engagement: OrgEngagement) => {
-    window.open(
-      `/engagement-view/${engagement.id}?service=${encodeURIComponent(engagement.serviceType)}`,
-      "_blank"
-    );
+    const targetUrl = `/engagement-view/${engagement.id}?service=${encodeURIComponent(engagement.serviceType)}`;
+    const targetName = `engagement_view_${engagement.id}`;
+
+    const win = window.open("", targetName);
+    if (win) {
+      try {
+        // If the tab is just opened (about:blank), navigate to the target URL
+        // Otherwise, it's already open, so we just focus it (window.open already brings it to front in most browsers)
+        if (win.location.href === "about:blank" || win.location.href === "") {
+          win.location.href = targetUrl;
+        }
+      } catch (e) {
+        // Cross-origin or other errors - fallback to standard reload if we can't check
+        win.location.href = targetUrl;
+      }
+      win.focus();
+    }
   };
 
   return (
