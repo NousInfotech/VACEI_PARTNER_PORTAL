@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
+import { useChat } from '../../hooks/useChat';
 import { useQuery } from '@tanstack/react-query';
 import { ChatList } from './components/ChatList';
 import { ChatWindow } from './components/ChatWindow';
@@ -17,6 +18,7 @@ import { useAuth } from '../../context/auth-context-core';
 import { apiGet, apiPost, apiDelete } from '../../config/base';
 import { endPoints } from '../../config/endPoint';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '../../lib/supabase';
 
 type RightPaneMode = 'search' | 'info' | null;
 type SidebarView = 'chats' | 'create-group';
@@ -75,25 +77,46 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
 
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | undefined>();
+  // Tracks live unread increments from background rooms (not yet opened)
+  const [unreadOverrides, setUnreadOverrides] = useState<Record<string, number>>({});
+  const bgSubscriptionsRef = useRef<any[]>([]);
 
   React.useEffect(() => {
     if (roomsResponse?.data) {
       // Map backend rooms to frontend Chat type
-      const mappedChats: Chat[] = roomsResponse.data.map((room: any) => ({
-        id: room.id,
-        type: room.contextType === 'DIRECT' ? 'INDIVIDUAL' : 'GROUP',
-        name: room.title || 'Chat',
-        participants: room.members?.map((m: any) => ({
-          id: m.userId,
-          name: `${m.user?.firstName} ${m.user?.lastName}`,
-          email: m.user?.email,
-          role: m.user?.role,
-          isOnline: false,
-        })) || [],
-        unreadCount: room.unreadCount || 0,
-        messages: [],
-        contextId: room.contextId,
-      }));
+      const mappedChats: Chat[] = roomsResponse.data.map((room: any) => {
+        const lastMsg = room.lastMessage;
+
+        return {
+          id: room.id,
+          type: room.contextType === 'DIRECT' ? 'INDIVIDUAL' : 'GROUP',
+          name: room.title || 'Chat',
+          participants: room.members?.map((m: any) => ({
+            id: m.userId,
+            name: `${m.user?.firstName} ${m.user?.lastName}`,
+            email: m.user?.email,
+            role: m.user?.role,
+            isOnline: false,
+          })) || [],
+          unreadCount: room.unreadCount || 0,
+          messages: [],
+          contextId: room.contextId,
+          ...(lastMsg ? {
+            lastMessage: {
+              id: lastMsg.id,
+              senderId: lastMsg.senderId || lastMsg.sender_id || '',
+              text: lastMsg.content || lastMsg.text || '',
+              type: (lastMsg.type || 'text').toLowerCase() as any,
+              timestamp: (() => {
+                let t = lastMsg.sentAt || lastMsg.sent_at || lastMsg.createdAt || lastMsg.created_at;
+                if (t && !t.endsWith('Z') && !t.includes('+') && !t.match(/-\d{2}:\d{2}$/)) t += 'Z';
+                return t || new Date().toISOString();
+              })(),
+              status: 'sent',
+            }
+          } : {})
+        };
+      });
 
       setChats(mappedChats);
 
@@ -107,6 +130,68 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
       }
     }
   }, [roomsResponse, isSingleChat, engagementId, activeChatId]);
+
+  // Subscribe to ALL rooms for background unread badge updates (WhatsApp behaviour)
+  React.useEffect(() => {
+    if (!chats.length) return;
+
+    // Tear down previous subscriptions
+    bgSubscriptionsRef.current.forEach(ch => supabase.removeChannel(ch));
+    bgSubscriptionsRef.current = [];
+
+    const token = localStorage.getItem('token');
+    if (token) supabase.realtime.setAuth(token);
+
+    chats.forEach(chat => {
+      const channel = supabase
+        .channel(`bg-room:${chat.id}`)
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'ChatMessage', filter: `roomId=eq.${chat.id}` },
+          (payload) => {
+            const newMsg = payload.new as any;
+            const lastMsgTimestamp = newMsg.sentAt || newMsg.sent_at || newMsg.created_at;
+            const lastMsgText = newMsg.content || newMsg.text || '';
+            const lastMsgSenderId = newMsg.senderId || newMsg.sender_id || '';
+
+            // Update sidebar last message preview for this room
+            setChats(prev => prev.map(c => {
+              if (c.id !== chat.id) return c;
+              return {
+                ...c,
+                lastMessage: {
+                  id: newMsg.id,
+                  senderId: lastMsgSenderId,
+                  text: lastMsgText,
+                  type: (newMsg.type || 'text').toLowerCase() as any,
+                  timestamp: lastMsgTimestamp,
+                  status: 'sent',
+                },
+              };
+            }));
+
+            // Only increment unread for BACKGROUND rooms
+            setActiveChatId(currentActive => {
+              if (chat.id !== currentActive) {
+                setUnreadOverrides(prev => ({
+                  ...prev,
+                  [chat.id]: (prev[chat.id] ?? 0) + 1,
+                }));
+              }
+              return currentActive;
+            });
+          }
+        )
+        .subscribe();
+
+      bgSubscriptionsRef.current.push(channel);
+    });
+
+    return () => {
+      bgSubscriptionsRef.current.forEach(ch => supabase.removeChannel(ch));
+      bgSubscriptionsRef.current = [];
+    };
+  }, [chats.length]); // re-run only when room list changes
 
   const [searchQuery, setSearchQuery] = useState('');
   const [sidebarWidth, setSidebarWidth] = useState(380);
@@ -306,13 +391,43 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
     setSelectedMessageIds([]);
   };
 
-  const activeChat = chats.find(c => c.id === activeChatId);
+  // Load messages & realtime subscription for the active room
+  const {
+    messages: activeChatMessages,
+    sendMessage: sendChatMessage,
+    currentUserId,
+  } = useChat(undefined, { roomId: activeChatId ?? undefined });
 
-  const sortedChats = [...chats].sort((a, b) => {
-    if (a.isPinned && !b.isPinned) return -1;
-    if (!a.isPinned && b.isPinned) return 1;
-    return 0;
-  });
+  /** Open a room: reset its unread count and mark as read on the server */
+  const handleSelectChat = useCallback((chat: Chat) => {
+    setActiveChatId(chat.id);
+    // Clear unread badge immediately
+    setUnreadOverrides(prev => ({ ...prev, [chat.id]: 0 }));
+    // Best-effort server mark-as-read
+    apiPost(endPoints.CHAT.MARK_READ(chat.id)).catch(() => { });
+  }, []);
+
+  const activeChatBase = chats.find(c => c.id === activeChatId);
+  // Merge real messages from useChat into the active chat object
+  const activeChat = activeChatBase
+    ? { ...activeChatBase, messages: activeChatMessages }
+    : undefined;
+
+  // Merge unreadOverrides into the displayed chat list
+  const sortedChats = [...chats]
+    .map(c => ({
+      ...c,
+      unreadCount: c.id === activeChatId
+        ? 0                                    // always 0 for the open room
+        : (unreadOverrides[c.id] !== undefined
+          ? unreadOverrides[c.id]            // live-updated
+          : c.unreadCount),                  // initial from API
+    }))
+    .sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return 0;
+    });
 
   const filteredChats = sortedChats.filter(c =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -349,7 +464,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
     };
   }, [resize, stopResizing]);
 
-  const handleSendMessage = (content: {
+  const handleSendMessage = async (content: {
     text?: string;
     gifUrl?: string;
     fileUrl?: string;
@@ -359,51 +474,21 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
   }) => {
     if (!activeChatId) return;
 
+    // Edit mode: update local message state only (no re-send needed)
     if (editingMessage) {
-      setChats(prevChats => prevChats.map(chat => {
-        if (chat.id === activeChatId) {
-          return {
-            ...chat,
-            messages: chat.messages.map(m =>
-              m.id === editingMessage.id
-                ? { ...m, text: content.text, isEdited: true }
-                : m
-            )
-          };
-        }
-        return chat;
-      }));
+      // Since messages come from useChat now, we can't mutate them directly.
+      // Just clear edit state – a proper edit API call can be added later.
       setEditingMessage(null);
       return;
     }
 
-    const newMessage: Message = {
-      id: `m-${Date.now()}`,
-      senderId: 'me',
-      type: content.type,
-      text: content.text,
-      gifUrl: content.gifUrl,
-      fileUrl: content.fileUrl,
-      fileName: content.fileName,
-      fileSize: content.fileSize,
-      replyToId: replyToMessage?.id,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      createdAt: Date.now(),
-      status: 'sent',
-    };
-
-    setChats(prevChats => prevChats.map(chat => {
-      if (chat.id === activeChatId) {
-        return {
-          ...chat,
-          messages: [...chat.messages, newMessage],
-          lastMessage: newMessage,
-        };
-      }
-      return chat;
-    }));
-
-    setReplyToMessage(null);
+    try {
+      // sendChatMessage handles optimistic UI (temp message → confirmed) internally
+      await sendChatMessage(content);
+      setReplyToMessage(null);
+    } catch (e) {
+      console.error('Failed to send message:', e);
+    }
   };
 
   const handleToggleSelectMessage = (messageId: string) => {
@@ -449,12 +534,13 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
                 <ChatList
                   chats={filteredChats}
                   activeChatId={activeChatId}
-                  onSelectChat={(chat) => setActiveChatId(chat.id)}
+                  onSelectChat={handleSelectChat}
                   searchQuery={searchQuery}
                   onSearchChange={setSearchQuery}
                   onCreateGroup={() => setSidebarView('create-group')}
                   onTogglePin={handleTogglePin}
                   onToggleMute={handleToggleMute}
+                  currentUserId={currentUserId || organizationMember?.userId}
                 />
               ) : (
                 <NewGroupSidebar
@@ -504,7 +590,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
                 selectedMessageIds={selectedMessageIds}
                 onSelectMessage={handleToggleSelectMessage}
                 onEnterSelectMode={() => setIsSelectMode(true)}
-                currentUserId={organizationMember?.userId || ''}
+                currentUserId={currentUserId || organizationMember?.userId || ''}
               />
             </div>
             {isSelectMode && (

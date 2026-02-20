@@ -251,7 +251,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                 ) : message.status === 'sending' ? (
                   <Clock className="w-3 h-3 text-white/70" />
                 ) : (
-                  <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <CheckCheck className="w-3.5 h-3.5 stroke-[2.5]" />
                 )}
               </span>
             )}
