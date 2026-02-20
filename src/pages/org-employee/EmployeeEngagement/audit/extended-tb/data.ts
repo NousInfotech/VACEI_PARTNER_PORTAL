@@ -28,7 +28,10 @@ export const financialMockData: any[] = [
         finalBalance: 265769,
         priorYear: 217685,
         classification: "Assets > Non-current > Intangible assets > Intangible assets - Cost",
-
+        group1: "Assets",
+        group2: "Non-current",
+        group3: "Intangible assets",
+        group4: "Intangible assets - Cost",
         actions: [],
         linkedFiles: ["invoice_123.pdf", "receipt_456.png"]
     },
@@ -42,7 +45,10 @@ export const financialMockData: any[] = [
         finalBalance: -5285,
         priorYear: -4285,
         classification: "Equity > Equity > Share capital",
-
+        group1: "Equity",
+        group2: "Equity",
+        group3: "Share capital",
+        group4: null,
         actions: ["Add Level"]
     },
     {
@@ -55,7 +61,10 @@ export const financialMockData: any[] = [
         finalBalance: -14740,
         priorYear: -12852,
         classification: "Equity",
-
+        group1: "Equity",
+        group2: null,
+        group3: null,
+        group4: null,
         actions: ["Add Level"]
     },
     {
@@ -68,7 +77,10 @@ export const financialMockData: any[] = [
         finalBalance: -453816,
         priorYear: -407575,
         classification: "Equity",
-
+        group1: "Equity",
+        group2: null,
+        group3: null,
+        group4: null,
         actions: ["Add Level"]
     },
     {
@@ -81,7 +93,10 @@ export const financialMockData: any[] = [
         finalBalance: -8671,
         priorYear: -8671,
         classification: "Equity",
-
+        group1: "Equity",
+        group2: null,
+        group3: null,
+        group4: null,
         actions: ["Add Level"]
     },
     {
@@ -94,7 +109,10 @@ export const financialMockData: any[] = [
         finalBalance: 216983,
         priorYear: 215938,
         classification: "Equity",
-
+        group1: "Equity",
+        group2: null,
+        group3: null,
+        group4: null,
         actions: ["Add Level"]
     },
     {
@@ -107,7 +125,10 @@ export const financialMockData: any[] = [
         finalBalance: -240,
         priorYear: -240,
         classification: "Equity",
-
+        group1: "Equity",
+        group2: null,
+        group3: null,
+        group4: null,
         actions: ["Add Level"]
     },
     {
@@ -120,7 +141,10 @@ export const financialMockData: any[] = [
         finalBalance: -60000,
         priorYear: 0,
         classification: "Income",
-
+        group1: "Income",
+        group2: null,
+        group3: null,
+        group4: null,
         actions: ["Add Level"]
     },
     {
@@ -133,7 +157,10 @@ export const financialMockData: any[] = [
         finalBalance: 0,
         priorYear: 0,
         classification: "Expenses",
-
+        group1: "Expenses",
+        group2: null,
+        group3: null,
+        group4: null,
         actions: ["Add Level"]
     },
     {
@@ -146,7 +173,10 @@ export const financialMockData: any[] = [
         finalBalance: 385,
         priorYear: 385,
         classification: "Expenses",
-
+        group1: "Expenses",
+        group2: null,
+        group3: null,
+        group4: null,
         actions: ["Add Level"]
     },
     {
@@ -159,7 +189,10 @@ export const financialMockData: any[] = [
         finalBalance: 100,
         priorYear: 100,
         classification: "Expenses",
-
+        group1: "Expenses",
+        group2: null,
+        group3: null,
+        group4: null,
         actions: ["Add Level"]
     },
     {
@@ -172,7 +205,10 @@ export const financialMockData: any[] = [
         finalBalance: 1100,
         priorYear: 1100,
         classification: "Expenses",
-
+        group1: "Expenses",
+        group2: null,
+        group3: null,
+        group4: null,
         actions: ["Add Level"]
     },
     {
@@ -185,7 +221,10 @@ export const financialMockData: any[] = [
         finalBalance: 64962,
         priorYear: 64151,
         classification: "Expenses",
-
+        group1: "Expenses",
+        group2: null,
+        group3: null,
+        group4: null,
         actions: ["Add Level"]
     },
     {
@@ -198,7 +237,10 @@ export const financialMockData: any[] = [
         finalBalance: -4917,
         priorYear: -4073,
         classification: "Income",
-
+        group1: "Income",
+        group2: null,
+        group3: null,
+        group4: null,
         actions: ["Add Level"]
     }
 ];
