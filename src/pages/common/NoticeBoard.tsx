@@ -270,8 +270,8 @@ export const NoticeBoard = () => {
 
       {/* Main Notice Card - VISA Card Style with Parallax Carousel */}
       <div 
-        className="relative w-full overflow-hidden rounded-2xl" 
-        style={{ height: '280px' }}
+        className="relative w-full overflow-hidden rounded-2xl min-h-[180px]" 
+
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
@@ -323,7 +323,10 @@ export const NoticeBoard = () => {
           return (
             <div
               key={notice.id}
-              className="absolute w-full h-full transition-all duration-500 ease-out"
+              className={cn(
+                "transition-all duration-500 ease-out",
+                isCurrent ? "relative w-full h-auto" : "absolute inset-0 w-full h-full"
+              )}
               style={{
                 transform,
                 opacity,
@@ -373,7 +376,7 @@ export const NoticeBoard = () => {
                     <h3 className="text-xl font-bold mb-2 text-white leading-tight tracking-tight">
                       {notice.title}
                     </h3>
-                    <p className="text-white/70 text-sm leading-relaxed line-clamp-3 font-medium">
+                    <p className="text-white/70 text-sm leading-relaxed font-medium">
                       {notice.description}
                     </p>
                   </div>
@@ -382,25 +385,11 @@ export const NoticeBoard = () => {
                   <div className="mt-auto pt-4 border-t border-white/10">
                     <div className="flex items-end justify-between">
                       <div className="flex-1">
-                        <div className="text-[9px] text-white/40 mb-1.5 uppercase tracking-widest font-bold">Release Date</div>
                         <div className="flex items-center gap-2 text-white/90">
-                          <Clock className="h-4 w-4 text-white/30" />
-                          <span className="font-semibold text-[15px] tracking-tight">{noticeFormattedDate} <span className="text-white/40 mx-1">•</span> <span className="text-white/60 text-[13px]">{noticeFormattedTime}</span></span>
+                          <span className="font-semibold text-[13px] tracking-tight text-white/60 uppercase">{noticeFormattedDate}</span>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-[9px] text-white/40 mb-1.5 uppercase tracking-widest font-bold">Privilege</div>
-                        <div className="flex gap-1.5 justify-end">
-                          {notice.roles?.map((role: string) => (
-                            <Badge
-                              key={role}
-                              className="bg-white/10 text-white/80 border-white/10 backdrop-blur-sm capitalize text-[10px] font-semibold px-2 py-0.5"
-                            >
-                              {role}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
+
                     </div>
                   </div>
                 </div>
