@@ -98,7 +98,7 @@ export default function ExtendedTBTable({ data, onUpdateRow, onUpdateGroups, onD
                     <tbody className="divide-y divide-gray-100">
                         {data.map((row) => (
                             <tr key={row.id} className="hover:bg-gray-50/80 transition-colors group">
-                                <td className="py-3 px-4 font-medium text-center align-top">
+                                <td className="py-3 px-4 font-medium text-center align-middle">
                                     {isSectionsView ? (
                                         <div className="px-3 py-2 text-gray-500 font-medium">{row.code}</div>
                                     ) : (
@@ -110,7 +110,7 @@ export default function ExtendedTBTable({ data, onUpdateRow, onUpdateGroups, onD
                                         />
                                     )}
                                 </td>
-                                <td className="py-3 px-4 font-medium text-gray-900 text-left align-top">
+                                <td className="py-3 px-4 font-medium text-gray-900 text-left align-middle">
                                     {isSectionsView ? (
                                         <div className="px-3 py-2 text-gray-900 font-medium wrap-break-word max-w-[300px] bg-white border border-gray-200 rounded-xl leading-relaxed shadow-sm">
                                             {row.accountName}
@@ -123,7 +123,7 @@ export default function ExtendedTBTable({ data, onUpdateRow, onUpdateGroups, onD
                                         />
                                     )}
                                 </td>
-                                <td className="py-3 px-4 text-right font-medium text-gray-700 align-top">
+                                <td className="py-3 px-4 text-right font-medium text-gray-700 align-middle">
                                     {isSectionsView ? (
                                         <div className="px-3 py-2 font-medium text-gray-700">{formatCurrency(row.currentYear)}</div>
                                     ) : (
@@ -135,7 +135,7 @@ export default function ExtendedTBTable({ data, onUpdateRow, onUpdateGroups, onD
                                         />
                                     )}
                                 </td>
-                                <td className="py-3 px-4 text-right text-gray-500 align-top pt-5">
+                                <td className="py-3 px-4 text-right text-gray-500 align-middle">
                                     <div className="flex items-center justify-end gap-2">
                                         <span className="font-medium tabular-nums">
                                             {row.reClassification !== 0 ? formatCurrency(row.reClassification) : '-'}
@@ -151,7 +151,7 @@ export default function ExtendedTBTable({ data, onUpdateRow, onUpdateGroups, onD
                                         )}
                                     </div>
                                 </td>
-                                <td className="py-3 px-4 text-right text-gray-500 align-top pt-5">
+                                <td className="py-3 px-4 text-right text-gray-500 align-middle">
                                     <div className="flex items-center justify-end gap-2">
                                         <span className="font-medium tabular-nums">
                                             {row.adjustments !== 0 ? formatCurrency(row.adjustments) : '-'}
@@ -167,8 +167,8 @@ export default function ExtendedTBTable({ data, onUpdateRow, onUpdateGroups, onD
                                         )}
                                     </div>
                                 </td>
-                                <td className="py-3 px-4 text-right font-bold text-gray-900 align-top pt-5">{formatCurrency(row.finalBalance)}</td>
-                                <td className="py-3 px-4 text-right text-gray-500 align-top">
+                                <td className="py-3 px-4 text-right font-bold text-gray-900 align-middle">{formatCurrency(row.finalBalance)}</td>
+                                <td className="py-3 px-4 text-right text-gray-500 align-middle">
                                     {isSectionsView ? (
                                         <div className="px-3 py-2 text-gray-500">{formatCurrency(row.priorYear)}</div>
                                     ) : (
@@ -181,7 +181,7 @@ export default function ExtendedTBTable({ data, onUpdateRow, onUpdateGroups, onD
                                     )}
                                 </td>
                                 {!isSectionsView && (
-                                    <td className="py-3 px-4 align-top">
+                                    <td className="py-3 px-4 align-middle">
                                         <ClassificationBuilder
                                             value={row.classification}
                                             onChange={(val) => onUpdateRow(row.id, 'classification', val)}
@@ -203,7 +203,7 @@ export default function ExtendedTBTable({ data, onUpdateRow, onUpdateGroups, onD
                                         />
                                     </td>
                                 )}
-                                <td className="py-3 px-4 text-center align-top pt-4 whitespace-nowrap">
+                                <td className="py-3 px-4 text-center align-middle whitespace-nowrap">
                                     {isSectionsView ? (
                                         <div className="flex justify-center">
                                             <div className={`

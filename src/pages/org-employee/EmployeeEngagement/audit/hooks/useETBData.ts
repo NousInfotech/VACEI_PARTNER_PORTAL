@@ -6,32 +6,34 @@ import type { ExtendedTBRow } from "../extended-tb/data";
 import { extractETBData } from "../utils/etbDataProcessor";
 
 interface TrialBalanceWithAccountsResponse {
-  trialBalance: {
-    id: string;
-    year: number;
-    auditCycleId: string;
-    role: string;
-    version: number;
-  };
-  accounts: Array<{
-    id: string;
-    code: string;
-    accountName: string;
-    currentYear: number | '-';
-    priorYear: number | '-';
-    adjustmentAmount: number;
-    reclassificationAmount: number;
-    finalBalance: number;
-    auditEntries: Array<{
+  data: {
+    trialBalance: {
       id: string;
-      auditEntryType: 'ADJUSTMENT' | 'RECLASSIFICATION';
-      value: number;
+      year: number;
+      auditCycleId: string;
+      role: string;
+      version: number;
+    };
+    accounts: Array<{
+      id: string;
+      code: string;
+      accountName: string;
+      currentYear: number | '-';
+      priorYear: number | '-';
+      adjustmentAmount: number;
+      reclassificationAmount: number;
+      finalBalance: number;
+      auditEntries: Array<{
+        id: string;
+        auditEntryType: 'ADJUSTMENT' | 'RECLASSIFICATION';
+        value: number;
+      }>;
+      group1: string | null;
+      group2: string | null;
+      group3: string | null;
+      group4: string | null;
     }>;
-    group1: string | null;
-    group2: string | null;
-    group3: string | null;
-    group4: string | null;
-  }>;
+  };
 }
 
 /**
@@ -40,7 +42,7 @@ interface TrialBalanceWithAccountsResponse {
  */
 export const useETBData = (engagementId?: string) => {
   // Fetch audit cycles
-  const { data: auditCyclesData } = useQuery({
+  const { data: auditCyclesData, isLoading: isLoadingCycles } = useQuery({
     queryKey: ['audit-cycles-by-engagement', engagementId],
     queryFn: () => apiGet<any>(endPoints.AUDIT.GET_CYCLES, { engagementId: engagementId! }),
     enabled: !!engagementId,
@@ -51,7 +53,7 @@ export const useETBData = (engagementId?: string) => {
   const auditCycleId = auditCycle?.id;
 
   // Fetch trial balances
-  const { data: trialBalancesData } = useQuery({
+  const { data: trialBalancesData, isLoading: isLoadingTrialBalances } = useQuery({
     queryKey: ['trial-balances', auditCycleId],
     queryFn: () => apiGet<any>(endPoints.AUDIT.GET_TRIAL_BALANCES(auditCycleId!)),
     enabled: !!auditCycleId,
@@ -63,7 +65,7 @@ export const useETBData = (engagementId?: string) => {
   const trialBalanceId = currentTrialBalance?.id;
 
   // Fetch trial balance with accounts
-  const { data: trialBalanceWithAccountsData, isLoading } = useQuery({
+  const { data: trialBalanceWithAccountsData, isLoading: isLoadingAccounts } = useQuery({
     queryKey: ['trial-balance-with-accounts', auditCycleId, trialBalanceId],
     queryFn: () => apiGet<TrialBalanceWithAccountsResponse>(
       endPoints.AUDIT.GET_TRIAL_BALANCE_WITH_ACCOUNTS(auditCycleId!, trialBalanceId!)
@@ -73,12 +75,13 @@ export const useETBData = (engagementId?: string) => {
 
   // Process the data
   const processedData = React.useMemo(() => {
-    if (!trialBalanceWithAccountsData?.accounts) {
+    // API response structure: { data: { accounts: [...], trialBalance: {...} } }
+    if (!trialBalanceWithAccountsData?.data?.accounts) {
       return null;
     }
 
-    const accounts = trialBalanceWithAccountsData.accounts;
-    const currentYear = trialBalanceWithAccountsData.trialBalance.year;
+    const accounts = trialBalanceWithAccountsData.data.accounts;
+    const currentYear = trialBalanceWithAccountsData.data.trialBalance.year;
 
     // Map backend data to ExtendedTBRow format
     const etbRows: ExtendedTBRow[] = accounts.map((account: any, index: number) => {
@@ -140,6 +143,8 @@ export const useETBData = (engagementId?: string) => {
       rawAccounts: accounts,
     };
   }, [trialBalanceWithAccountsData, trialBalanceId, auditCycleId]);
+
+  const isLoading = isLoadingCycles || isLoadingTrialBalances || isLoadingAccounts;
 
   return {
     data: processedData,

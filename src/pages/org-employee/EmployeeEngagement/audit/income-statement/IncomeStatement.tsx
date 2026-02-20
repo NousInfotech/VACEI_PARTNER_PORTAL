@@ -254,9 +254,9 @@ export default function IncomeStatement({ engagementId }: IncomeStatementProps) 
                         Loading income statement data...
                     </div>
                 ) : !incomeStatement ? (
-                    <div className="flex-1 bg-white p-6 text-center text-gray-400 text-sm">
-                        No data available for display yet.
-                    </div>
+                <div className="flex-1 bg-white p-6 text-center text-gray-400 text-sm">
+                    No data available for display yet.
+                </div>
                 ) : (
                     <div className="flex-1 overflow-y-auto">
                         {/* Revenue */}

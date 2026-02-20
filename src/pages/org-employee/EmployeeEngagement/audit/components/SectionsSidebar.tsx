@@ -7,6 +7,9 @@ import {
     Download,
     PanelLeftClose
 } from 'lucide-react';
+import { useETBData } from '../hooks/useETBData';
+import { extractClassificationGroups, organizeClassificationsByHierarchy } from '../utils/classificationUtils';
+import { useMemo } from 'react';
 
 interface SidebarItem {
     id: string;
@@ -25,20 +28,6 @@ const GENERAL_SECTIONS: SidebarItem[] = [
     { id: 'completion-procedures', label: 'Completion Procedures', icon: FileText, type: 'item' },
 ];
 
-const CLASSIFICATION_SECTIONS: SidebarItem[] = [
-    { id: 'header-classifications', label: 'CLASSIFICATIONS', type: 'header' },
-
-    // Assets Group
-    { id: 'header-assets', label: 'ASSETS', type: 'sub-header' },
-    { id: 'sub-non-current', label: 'NON-CURRENT', type: 'header' },
-    { id: 'intangible-assets', label: 'Intangible assets', type: 'item' },
-
-    // Equity Group
-    { id: 'header-liab-equity', label: 'LIABILITIES & EQUITY', type: 'sub-header' },
-    { id: 'header-equity', label: 'EQUITY', type: 'header' },
-    { id: 'share-capital', label: 'Share capital', type: 'item' },
-];
-
 const PLANNING_SECTIONS: SidebarItem[] = [
     { id: 'header-planning', label: 'PLANNING', type: 'header' },
     { id: 'planning-procedures', label: 'Planning Procedures', icon: Sliders, type: 'item' },
@@ -48,10 +37,70 @@ interface SectionsSidebarProps {
     activeSection: string;
     onSectionChange: (sectionId: string) => void;
     onToggle: () => void;
+    engagementId?: string;
 }
 
-export default function SectionsSidebar({ activeSection, onSectionChange, onToggle }: SectionsSidebarProps) {
+export default function SectionsSidebar({ activeSection, onSectionChange, onToggle, engagementId }: SectionsSidebarProps) {
     const activeColor = 'rgb(253, 230, 138)';
+    
+    // Fetch ETB data to extract classifications
+    const { data: etbData, isLoading } = useETBData(engagementId);
+    
+    // Extract and organize classification groups
+    const classificationItems = useMemo(() => {
+        if (!engagementId) return [];
+        if (isLoading) return [];
+        if (!etbData?.etbRows || etbData.etbRows.length === 0) {
+            return [];
+        }
+        
+        try {
+            const groups = extractClassificationGroups(etbData.etbRows);
+            
+            if (groups.length === 0) {
+                return [];
+            }
+            
+            const organized = organizeClassificationsByHierarchy(groups);
+            
+            const items: SidebarItem[] = [
+                { id: 'header-classifications', label: 'CLASSIFICATIONS', type: 'header' }
+            ];
+            
+            // Iterate through organized structure
+            for (const [group1, group2Map] of Object.entries(organized)) {
+                // Add group1 as sub-header
+                items.push({
+                    id: `header-${group1.toLowerCase().replace(/\s+/g, '-')}`,
+                    label: group1.toUpperCase(),
+                    type: 'sub-header'
+                });
+                
+                // Add group2 as header and group3 items
+                for (const [group2, group3Items] of Object.entries(group2Map)) {
+                    items.push({
+                        id: `header-${group2.toLowerCase().replace(/\s+/g, '-')}`,
+                        label: group2.toUpperCase(),
+                        type: 'header'
+                    });
+                    
+                    // Add each group3 as an item
+                    for (const group of group3Items) {
+                        items.push({
+                            id: `classification-${group.id}`,
+                            label: group.label,
+                            type: 'item'
+                        });
+                    }
+                }
+            }
+            
+            return items;
+        } catch (error) {
+            console.error('[SectionsSidebar] Error extracting classifications', error);
+            return [];
+        }
+    }, [etbData?.etbRows, engagementId, isLoading]);
 
     const renderItem = (item: SidebarItem) => {
         if (item.type === 'header') {
@@ -120,7 +169,7 @@ export default function SectionsSidebar({ activeSection, onSectionChange, onTogg
 
                 {/* Classifications */}
                 <div className="space-y-1">
-                    {CLASSIFICATION_SECTIONS.map(renderItem)}
+                    {classificationItems.map(renderItem)}
                 </div>
             </nav>
         </div>

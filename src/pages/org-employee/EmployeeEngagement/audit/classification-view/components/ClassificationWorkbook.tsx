@@ -3,6 +3,7 @@ import WorkbookTable from "./WorkbookTable";
 import LinkedWorkbooksCard from "./LinkedWorkbooksCard";
 import UploadWorkbookCard from "./UploadWorkbookCard";
 import type { WorkbookFile } from "../ClassificationView";
+import type { TableRow } from "./ClassificationTable";
 
 interface ClassificationWorkbookProps {
     title: string;
@@ -10,35 +11,13 @@ interface ClassificationWorkbookProps {
     onUpload: (file: WorkbookFile) => void;
     onFileClick: (file: WorkbookFile) => void;
     onDeleteFile: (id: string) => void;
+    classificationRows?: TableRow[];
 }
 
-export default function ClassificationWorkbook({ title, files, onUpload, onFileClick, onDeleteFile }: ClassificationWorkbookProps) {
-    // Mock Data
-    const groupedRows = [
-        {
-            code: "1",
-            accountName: "Cash and cash equivalents",
-            currentYear: 265769,
-            reClassification: 0,
-            adjustments: 0,
-            finalBalance: 265769,
-            priorYear: 217685,
-            linkedFiles: 1
-        }
-    ];
-
-    const ungroupedRows = [
-        {
-            code: "2",
-            accountName: "Accruals",
-            currentYear: 5285,
-            reClassification: 0,
-            adjustments: 0,
-            finalBalance: 5285,
-            priorYear: 4285,
-            linkedFiles: 0
-        }
-    ];
+export default function ClassificationWorkbook({ title, files, onUpload, onFileClick, onDeleteFile, classificationRows = [] }: ClassificationWorkbookProps) {
+    // Use real data if available, otherwise use empty array
+    const groupedRows = classificationRows.filter(row => row.linkedFiles > 0);
+    const ungroupedRows = classificationRows.filter(row => row.linkedFiles === 0);
 
     return (
         <div className="flex flex-col h-full space-y-8">

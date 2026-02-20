@@ -7,20 +7,16 @@ import ClassificationTable, { type TableRow } from "./components/ClassificationT
 import ClassificationEvidence from "./components/ClassificationEvidence";
 import ClassificationProcedures from "./components/ClassificationProcedures";
 import ClassificationWorkbook from "./components/ClassificationWorkbook";
+import { useETBData } from "../hooks/useETBData";
+import { useClassification } from "../hooks/useClassification";
+import { extractClassificationGroups, getRowsForClassification } from "../utils/classificationUtils";
+import { Loader2 } from "lucide-react";
 
 interface ClassificationViewProps {
-    title: string;
+    classificationId?: string;
+    engagementId?: string;
+    title?: string;
     subtitle?: string;
-}
-
-interface ClassificationData {
-    rows: TableRow[];
-    summary?: {
-        currentYear: number;
-        priorYear: number;
-        adjustments: number;
-        finalBalance: number;
-    };
 }
 
 export interface WorkbookFile {
@@ -31,63 +27,73 @@ export interface WorkbookFile {
     date: string;
 }
 
-const DATA: Record<string, ClassificationData> = {
-    "Intangible Assets": {
-        rows: [
-            {
-                code: "1",
-                accountName: "Cash and cash equivalents",
-                currentYear: 265769,
-                reClassification: 0,
-                adjustments: 0,
-                finalBalance: 265769,
-                priorYear: 217685,
-                linkedFiles: 1
-            }
-        ]
-    },
-    "Share Capital": {
-        rows: [
-            {
-                code: "2",
-                accountName: "Accruals",
-                currentYear: 5285,
-                reClassification: 0,
-                adjustments: 0,
-                finalBalance: 5285,
-                priorYear: 4285,
-                linkedFiles: 0
-            }
-        ],
-        summary: {
-            currentYear: -5285,
-            priorYear: -4285,
-            adjustments: 0,
-            finalBalance: -5285
-        }
-    }
-};
-
-export default function ClassificationView({ title }: ClassificationViewProps) {
+export default function ClassificationView({ classificationId, engagementId, title: propTitle }: ClassificationViewProps) {
+    // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
     const [activeTab, setActiveTab] = useState('Lead Sheet');
 
-    // File State Management
+    // File State Management - must be before conditional returns
     const [files, setFiles] = useState<WorkbookFile[]>([
         { id: '1', name: "Unique Ltd.xlsx", user: "Uploaded by User", size: "2.4 MB", date: "2 min ago" },
         { id: '2', name: "Financial_Report_2024.xlsx", user: "Uploaded by Admin", size: "1.8 MB", date: "1 hour ago" }
     ]);
 
-    const data = useMemo(() => DATA[title] || { rows: [] }, [title]);
+    // Fetch ETB data
+    const { data: etbData, isLoading, trialBalanceId } = useETBData(engagementId);
 
+    // Extract classification group and rows
+    const classificationGroup = useMemo(() => {
+        if (!etbData?.etbRows || !classificationId) return null;
+        const groups = extractClassificationGroups(etbData.etbRows);
+        return groups.find(g => `classification-${g.id}` === classificationId);
+    }, [etbData?.etbRows, classificationId]);
+
+    // Get or create classification record from database
+    const { classificationId: dbClassificationId, isLoading: isLoadingClassification } = useClassification(
+        classificationGroup ?? null,
+        trialBalanceId
+    );
+
+    // Get rows for this classification
+    const classificationRows = useMemo(() => {
+        if (!etbData?.etbRows || !classificationGroup) return [];
+        return getRowsForClassification(etbData.etbRows, classificationGroup);
+    }, [etbData?.etbRows, classificationGroup]);
+
+    // Convert to TableRow format
+    const tableRows: TableRow[] = useMemo(() => {
+        return classificationRows.map(row => ({
+            code: row.code,
+            accountName: row.accountName,
+            currentYear: row.currentYear,
+            reClassification: row.reClassification,
+            adjustments: row.adjustments,
+            finalBalance: row.finalBalance,
+            priorYear: row.priorYear,
+            linkedFiles: row.linkedFiles?.length || 0
+        }));
+    }, [classificationRows]);
+
+    // Calculate summary from classification group totals
     const summary = useMemo(() => {
-        if (data.summary) return data.summary;
-        return data.rows.reduce((acc, row) => ({
+        if (classificationGroup?.totals) {
+            return {
+                currentYear: classificationGroup.totals.currentYear,
+                priorYear: classificationGroup.totals.priorYear,
+                adjustments: classificationGroup.totals.adjustments,
+                finalBalance: classificationGroup.totals.finalBalance,
+            };
+        }
+        // Fallback: calculate from rows
+        return tableRows.reduce((acc, row) => ({
             currentYear: acc.currentYear + row.currentYear,
             priorYear: acc.priorYear + row.priorYear,
             adjustments: acc.adjustments + row.adjustments,
             finalBalance: acc.finalBalance + row.finalBalance,
         }), { currentYear: 0, priorYear: 0, adjustments: 0, finalBalance: 0 });
-    }, [data]);
+    }, [classificationGroup, tableRows]);
+
+    // Determine title
+    const title = propTitle || classificationGroup?.label || 'Classification';
 
     // Dynamic Tabs Logic
     const tabs: TabItem[] = [
@@ -109,10 +115,31 @@ export default function ClassificationView({ title }: ClassificationViewProps) {
         setFiles(files.filter(f => f.id !== id));
     };
 
+    // NOW conditional returns are safe
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                    <p className="text-sm text-gray-500">Loading classification data...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!classificationGroup && classificationId) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                    <p className="text-sm text-gray-500">Classification not found</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="p-8 h-full flex flex-col space-y-8 overflow-y-auto">
-            <ClassificationHeader title={title} accountCount={data.rows.length} />
+            <ClassificationHeader title={title} accountCount={tableRows.length} />
             <ClassificationTabs
                 activeTab={activeTab}
                 onTabChange={setActiveTab}
@@ -129,13 +156,18 @@ export default function ClassificationView({ title }: ClassificationViewProps) {
                     />
                     <ClassificationTable
                         title={`${title} - Cost`}
-                        rows={data.rows}
+                        rows={tableRows}
                     />
                 </>
             )}
 
             {activeTab === 'Evidence' && (
-                <ClassificationEvidence />
+                <ClassificationEvidence 
+                    classificationId={dbClassificationId}
+                    engagementId={engagementId}
+                    trialBalanceId={trialBalanceId}
+                    isLoadingClassification={isLoadingClassification}
+                />
             )}
 
             {activeTab === 'Procedures' && (
@@ -150,6 +182,7 @@ export default function ClassificationView({ title }: ClassificationViewProps) {
                     onUpload={handleUpload}
                     onFileClick={handleFileClick}
                     onDeleteFile={handleDeleteFile}
+                    classificationRows={tableRows}
                 />
             )}
         </div>
