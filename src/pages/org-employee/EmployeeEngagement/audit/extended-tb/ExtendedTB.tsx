@@ -16,7 +16,7 @@ import {
 import { Button } from "../../../../../ui/Button";
 import ExtendedTBTable from "./ExtendedTBTable";
 import type { ExtendedTBRow } from "./data";
-import { apiGet, apiPostFormData, apiPost, apiPatch, apiPatch as apiPatchRequest } from "../../../../../config/base";
+import { apiGet, apiPostFormData, apiPost, apiPatch } from "../../../../../config/base";
 import { endPoints } from "../../../../../config/endPoint";
 import AlertMessage from "../../../../common/AlertMessage";
 import CreateAuditCycleDialog from "./CreateAuditCycleDialog";

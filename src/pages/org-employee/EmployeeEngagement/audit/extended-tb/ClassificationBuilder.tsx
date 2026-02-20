@@ -20,7 +20,6 @@ interface ClassificationBuilderProps {
 }
 
 export default function ClassificationBuilder({ 
-    value, 
     onChange, 
     group1: initialGroup1 = null,
     group2: initialGroup2 = null,

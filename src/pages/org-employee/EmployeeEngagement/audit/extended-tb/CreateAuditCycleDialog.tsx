@@ -18,8 +18,6 @@ export default function CreateAuditCycleDialog({
     isOpen,
     onClose,
     onSubmit,
-    engagementId,
-    companyId,
     isLoading = false
 }: CreateAuditCycleDialogProps) {
     // Initialize with default year end date (end of current year)
