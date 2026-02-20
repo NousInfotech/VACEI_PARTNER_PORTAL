@@ -9,7 +9,11 @@ const AUDIT_TABS = [
     { id: 'sections', label: 'Sections', icon: Layers },
 ];
 
-export default function AuditContent() {
+interface AuditContentProps {
+    engagementId?: string;
+}
+
+export default function AuditContent({ engagementId }: AuditContentProps) {
     const [activeTab, setActiveTab] = useState('extended-tb');
 
     return (
@@ -23,7 +27,7 @@ export default function AuditContent() {
             </div>
 
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm min-h-[400px]">
-                {activeTab === 'extended-tb' ? <ExtendedTB /> : <Sections />}
+                {activeTab === 'extended-tb' ? <ExtendedTB engagementId={engagementId} /> : <Sections engagementId={engagementId} />}
             </div>
         </div>
     );

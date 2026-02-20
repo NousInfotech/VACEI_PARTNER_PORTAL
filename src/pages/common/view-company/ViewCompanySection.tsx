@@ -4,7 +4,8 @@ import {
     Building2, 
     Users, 
     PieChart, 
-    Network
+    Network,
+    ClipboardList
 } from 'lucide-react';
 import { ShadowCard } from "../../../ui/ShadowCard";
 import { Skeleton } from "../../../ui/Skeleton";
@@ -18,6 +19,7 @@ import CompanyDetailsTab from './components/CompanyDetailsTab';
 import InvolvementsTab from './components/InvolvementsTab';
 import DistributionTab from './components/DistributionTab';
 import HierarchyTab from './components/HierarchyTab';
+import IncorporationTab from './components/IncorporationTab';
 
 // Skeletons
 import CompanyDetailsSkeleton from './components/skeletons/CompanyDetailsSkeleton';
@@ -33,6 +35,7 @@ const TABS = [
     { id: 'involvements', label: 'Involvements', icon: Users },
     { id: 'distribution', label: 'Distribution', icon: PieChart },
     { id: 'hierarchy', label: 'Hierarchy', icon: Network },
+    { id: 'incorporation', label: 'Incorporation', icon: ClipboardList },
 ];
 
 const ViewCompanySection: React.FC<ViewCompanySectionProps> = ({ companyId: initialCompanyId, engagementId }) => {
@@ -117,6 +120,13 @@ const ViewCompanySection: React.FC<ViewCompanySectionProps> = ({ companyId: init
                             </div>
                          ) : company && <HierarchyTab company={company} />
                     )}
+                     {activeTab === 'incorporation' && (
+                          isCompanyLoading ? (
+                             <div className="space-y-4">
+                                 <Skeleton className="h-[400px] w-full rounded-3xl" />
+                             </div>
+                          ) : company && <IncorporationTab company={company} />
+                     )}
                 </div>
             </div>
         </ShadowCard>

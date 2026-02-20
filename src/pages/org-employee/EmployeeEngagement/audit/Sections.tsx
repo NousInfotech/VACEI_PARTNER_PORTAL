@@ -22,22 +22,26 @@ const SECTIONS = [
     { id: 'completion-procedures', label: 'Completion Procedures' },
 ];
 
-export default function Sections() {
+interface SectionsProps {
+    engagementId?: string;
+}
+
+export default function Sections({ engagementId }: SectionsProps) {
     const [activeSection, setActiveSection] = useState('planning-procedures');
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     const renderContent = () => {
         switch (activeSection) {
             case 'extended-tb':
-                return <ExtendedTB isSectionsView={true} />;
+                return <ExtendedTB isSectionsView={true} engagementId={engagementId} />;
             case 'adjustments':
-                return <Adjustments />;
+                return <Adjustments engagementId={engagementId} />;
             case 'reclassifications':
-                return <Reclassifications />;
+                return <Reclassifications engagementId={engagementId} />;
             case 'income-statement':
-                return <IncomeStatement />;
+                return <IncomeStatement engagementId={engagementId} />;
             case 'balance-sheet':
-                return <BalanceSheet />;
+                return <BalanceSheet engagementId={engagementId} />;
             case 'exports':
                 return <Exports />;
 

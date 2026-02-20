@@ -1,32 +1,27 @@
 import { useState, useRef, useEffect } from "react";
-import { Scale, ChevronDown, Download, ChevronsDown, ChevronsUp, AlertTriangle, ChevronRight } from "lucide-react";
+import { Scale, ChevronDown, Download, ChevronsDown, ChevronsUp, AlertTriangle } from "lucide-react";
 import { Button } from "../../../../../ui/Button";
+import { useETBData } from "../hooks/useETBData";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
-export default function BalanceSheet() {
+interface BalanceSheetProps {
+    engagementId?: string;
+}
+
+export default function BalanceSheet({ engagementId }: BalanceSheetProps) {
     const [isDownloadOpen, setIsDownloadOpen] = useState(false);
     const downloadRef = useRef<HTMLDivElement>(null);
 
-    // State for collapsible sections
-    const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-        "non-current": true,
-        "intangible-assets": true,
-        "equity": true,
-    });
+    // Fetch and process ETB data
+    const { data: etbData, isLoading } = useETBData(engagementId);
+    const balanceSheet = etbData?.balanceSheet;
 
-    const toggleSection = (section: string) => {
-        setOpenSections(prev => ({
-            ...prev,
-            [section]: !prev[section]
-        }));
-    };
-
-    // Mock values
-    const totalAssets = 265769;
-    const totalLiabilities = 0;
-    const totalEquity = 5285;
-    const totalEquityAndLiabilities = totalEquity + totalLiabilities;
+    // Calculate values from data
+    const totalAssets = balanceSheet?.current_year?.totals?.total_assets?.value || 0;
+    const totalEquityAndLiabilities = balanceSheet?.current_year?.totals?.total_equity_and_liabilities?.value || 0;
     const difference = totalAssets - totalEquityAndLiabilities;
-    const isBalanced = difference === 0;
+    const isBalanced = balanceSheet?.current_year?.balanced ?? false;
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -45,8 +40,155 @@ export default function BalanceSheet() {
         return new Intl.NumberFormat('en-US').format(num);
     };
 
-    const renderExapandIcon = (isOpen: boolean) => {
-        return isOpen ? <ChevronDown size={16} className="text-gray-500" /> : <ChevronRight size={16} className="text-gray-400" />;
+    const handleDownloadPDF = (detailed: boolean = false) => {
+        if (!balanceSheet) return;
+
+        setIsDownloadOpen(false);
+
+        try {
+            const pdf = new jsPDF({
+                orientation: "portrait",
+                unit: "mm",
+                format: "a4",
+            });
+
+            const pageWidth = pdf.internal.pageSize.getWidth();
+
+            // Header
+            pdf.setFontSize(16);
+            pdf.setFont("helvetica", "bold");
+            pdf.text("Balance Sheet", pageWidth / 2, 20, { align: "center" });
+
+            pdf.setFontSize(12);
+            pdf.setFont("helvetica", "normal");
+            const yearText = `As at Dec 31, ${balanceSheet.current_year.year}`;
+            pdf.text(yearText, pageWidth / 2, 28, { align: "center" });
+
+            // Build table data
+            const tableData: any[] = [];
+
+            // ASSETS Section
+            tableData.push([
+                { content: "ASSETS", styles: { fontStyle: "bold", fontSize: 11 } },
+                "",
+                "",
+                "",
+            ]);
+            tableData.push([
+                { content: "Assets", styles: { fontStyle: "bold" } },
+                "",
+                formatNumber(balanceSheet.current_year.totals.assets.value),
+                formatNumber(balanceSheet.prior_year.totals.assets.value),
+            ]);
+            tableData.push([
+                { content: "Total Assets", styles: { fontStyle: "bold" } },
+                "",
+                { content: formatNumber(balanceSheet.current_year.totals.total_assets.value), styles: { fontStyle: "bold", halign: "right" } },
+                { content: formatNumber(balanceSheet.prior_year.totals.total_assets.value), styles: { fontStyle: "bold", halign: "right" } },
+            ]);
+
+            // Spacing
+            tableData.push(["", "", "", ""]);
+
+            // EQUITY AND LIABILITIES Section
+            tableData.push([
+                { content: "EQUITY AND LIABILITIES", styles: { fontStyle: "bold", fontSize: 11 } },
+                "",
+                "",
+                "",
+            ]);
+            tableData.push([
+                { content: "LIABILITIES", styles: { fontStyle: "bold" } },
+                "",
+                "",
+                "",
+            ]);
+            tableData.push([
+                { content: "Liabilities", styles: { fontStyle: "bold" } },
+                "",
+                formatNumber(balanceSheet.current_year.totals.liabilities.value),
+                formatNumber(balanceSheet.prior_year.totals.liabilities.value),
+            ]);
+
+            // Spacing
+            tableData.push(["", "", "", ""]);
+
+            // EQUITY
+            tableData.push([
+                { content: "EQUITY", styles: { fontStyle: "bold" } },
+                "",
+                "",
+                "",
+            ]);
+            tableData.push([
+                { content: "Equity", styles: { fontStyle: "bold" } },
+                "",
+                formatNumber(balanceSheet.current_year.totals.equity.value),
+                formatNumber(balanceSheet.prior_year.totals.equity.value),
+            ]);
+            tableData.push([
+                { content: "Total Equity", styles: { fontStyle: "bold" } },
+                "",
+                { content: formatNumber(balanceSheet.current_year.totals.equity.value), styles: { fontStyle: "bold", halign: "right" } },
+                { content: formatNumber(balanceSheet.prior_year.totals.equity.value), styles: { fontStyle: "bold", halign: "right" } },
+            ]);
+            tableData.push([
+                { content: "Total Equity and Liabilities", styles: { fontStyle: "bold" } },
+                "",
+                { content: formatNumber(balanceSheet.current_year.totals.total_equity_and_liabilities.value), styles: { fontStyle: "bold", halign: "right" } },
+                { content: formatNumber(balanceSheet.prior_year.totals.total_equity_and_liabilities.value), styles: { fontStyle: "bold", halign: "right" } },
+            ]);
+
+            // Balance Check
+            const balanceCheckCY = balanceSheet.current_year.totals.total_assets.value - balanceSheet.current_year.totals.total_equity_and_liabilities.value;
+            const balanceCheckPY = balanceSheet.prior_year.totals.total_assets.value - balanceSheet.prior_year.totals.total_equity_and_liabilities.value;
+            const balanceColor = isBalanced ? [200, 255, 200] : [255, 200, 200];
+            tableData.push([
+                { content: "Balance Check (Assets = Liabilities + Equity)", styles: { fontStyle: "bold" } },
+                "",
+                { content: formatNumber(balanceCheckCY), styles: { fontStyle: "bold", halign: "right", fillColor: balanceColor } },
+                { content: formatNumber(balanceCheckPY), styles: { fontStyle: "bold", halign: "right", fillColor: balanceColor } },
+            ]);
+
+            // Generate table using autoTable
+            autoTable(pdf, {
+                startY: 35,
+                head: [[
+                    { content: "Description", styles: { halign: 'left' } },
+                    { content: "Notes", styles: { halign: 'center' } },
+                    { content: String(balanceSheet.current_year.year), styles: { halign: 'right' } },
+                    { content: String(balanceSheet.prior_year.year), styles: { halign: 'right' } },
+                ]],
+                body: tableData,
+                theme: "plain",
+                headStyles: { 
+                    fillColor: [253, 230, 138], 
+                    textColor: [0, 0, 0], 
+                    fontStyle: "bold", 
+                    lineWidth: { bottom: 0 }, 
+                    lineColor: [0, 0, 0] 
+                },
+                styles: { 
+                    fontSize: 9, 
+                    textColor: [0, 0, 0], 
+                    lineColor: [0, 0, 0] 
+                },
+                columnStyles: {
+                    0: { cellWidth: 'auto', textColor: [0, 0, 0] },
+                    1: { cellWidth: 20, halign: 'center', textColor: [0, 0, 0] },
+                    2: { cellWidth: 'auto', halign: 'right', textColor: [0, 0, 0] },
+                    3: { cellWidth: 'auto', halign: 'right', textColor: [0, 0, 0] },
+                },
+            });
+
+            const fileName = detailed 
+                ? `Balance-Sheet-Detailed-${balanceSheet.current_year.year}.pdf`
+                : `Balance-Sheet-${balanceSheet.current_year.year}.pdf`;
+            pdf.save(fileName);
+        } catch (error) {
+            console.error("Error generating PDF:", error);
+            alert("Failed to generate PDF. Please try again.");
+        }
     };
 
     return (
@@ -59,7 +201,11 @@ export default function BalanceSheet() {
                     </div>
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900">Balance Sheet</h2>
-                        <p className="text-gray-500 mt-1">Client Company Test • As at Dec 31, 2026</p>
+                        <p className="text-gray-500 mt-1">
+                            {balanceSheet?.current_year?.year 
+                                ? `As at Dec 31, ${balanceSheet.current_year.year}`
+                                : 'Loading...'}
+                        </p>
                     </div>
                 </div>
                 <div className="flex gap-3">
@@ -84,14 +230,20 @@ export default function BalanceSheet() {
 
                         {isDownloadOpen && (
                             <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 py-3 z-50 animate-in fade-in zoom-in-95 duration-100">
-                                <button className="w-full text-left px-4 py-3 text-sm text-[#0F172A] hover:bg-gray-50 flex items-center gap-3 transition-colors">
+                                <button 
+                                    onClick={() => handleDownloadPDF(true)}
+                                    className="w-full text-left px-4 py-3 text-sm text-[#0F172A] hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                                >
                                     <Scale size={18} className="text-gray-400" />
                                     <span>
                                         Download Balance Sheet<br />
                                         <span className="text-gray-500">(Detailed)</span>
                                     </span>
                                 </button>
-                                <button className="w-full text-left px-4 py-3 text-sm text-[#0F172A] hover:bg-gray-50 flex items-center gap-3 transition-colors">
+                                <button 
+                                    onClick={() => handleDownloadPDF(false)}
+                                    className="w-full text-left px-4 py-3 text-sm text-[#0F172A] hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                                >
                                     <Scale size={18} className="text-gray-400" />
                                     <span>Download Balance Sheet</span>
                                 </button>
@@ -120,152 +272,100 @@ export default function BalanceSheet() {
                 <div className="grid grid-cols-[1fr_80px_120px_120px] bg-[rgb(253,230,138)] font-bold text-gray-900 text-sm">
                     <div className="px-6 py-3">Description</div>
                     <div className="px-6 py-3">Notes</div>
-                    <div className="px-6 py-3 text-right">2026</div>
-                    <div className="px-6 py-3 text-right">2025</div>
-                </div>
-
-                <div className="flex-1 overflow-y-auto">
-                    {/* ASSETS Section */}
-                    <div className="bg-gray-200/50 px-6 py-3 font-bold text-xs text-gray-700 uppercase tracking-wider">
-                        ASSETS
+                    <div className="px-6 py-3 text-right">
+                        {balanceSheet?.current_year?.year || 'Current Year'}
                     </div>
-
-                    <div className="divide-y divide-gray-50">
-                        {/* Non-current Header - Clickable */}
-                        <div
-                            className="grid grid-cols-[1fr_80px_120px_120px] px-6 py-3 text-sm font-medium hover:bg-gray-50 cursor-pointer select-none"
-                            onClick={() => toggleSection('non-current')}
-                        >
-                            <div className="flex items-center gap-2">
-                                {renderExapandIcon(openSections['non-current'])}
-                                Non-current
-                            </div>
-                            <div></div>
-                            <div className="text-right font-bold">{formatNumber(265769)}</div>
-                            <div className="text-right font-bold">{formatNumber(217685)}</div>
-                        </div>
-
-                        {/* Collapsible Content for Non-current */}
-                        {openSections['non-current'] && (
-                            <>
-                                {/* Intangible Assets Group - Clickable */}
-                                <div
-                                    className="grid grid-cols-[1fr_80px_120px_120px] px-6 py-2 text-sm text-gray-600 hover:bg-gray-50 pl-10 cursor-pointer select-none"
-                                    onClick={() => toggleSection('intangible-assets')}
-                                >
-                                    <div className="flex items-center gap-2">
-                                        {renderExapandIcon(openSections['intangible-assets'])}
-                                        Intangible assets
-                                    </div>
-                                    <div></div>
-                                    <div className="text-right">{formatNumber(265769)}</div>
-                                    <div className="text-right">{formatNumber(217685)}</div>
-                                </div>
-
-                                {/* Collapsible Content for Intangible Assets */}
-                                {openSections['intangible-assets'] && (
-                                    <div className="grid grid-cols-[1fr_80px_120px_120px] px-6 py-2 text-sm text-gray-500 hover:bg-gray-50 pl-16">
-                                        <div className="flex items-center gap-2">
-                                            Intangible assets - Cost
-                                        </div>
-                                        <div></div>
-                                        <div className="text-right">{formatNumber(265769)}</div>
-                                        <div className="text-right">{formatNumber(217685)}</div>
-                                    </div>
-                                )}
-
-                                {/* Cash Row */}
-                                <div className="grid grid-cols-[1fr_80px_120px_120px] px-6 py-2 text-sm text-gray-500 hover:bg-gray-50 pl-10">
-                                    <div className="ml-6">Cash and cash equivalents</div>
-                                    <div>1</div>
-                                    <div className="text-right">{formatNumber(285769)}</div>
-                                    <div className="text-right">{formatNumber(217685)}</div>
-                                </div>
-                            </>
-                        )}
-                    </div>
-
-                    {/* Total Assets */}
-                    <div className="grid grid-cols-[1fr_80px_120px_120px] bg-[rgb(253,230,138)] px-6 py-3 text-sm font-bold border-y border-yellow-200">
-                        <div>Total Assets</div>
-                        <div></div>
-                        <div className="text-right">{formatNumber(totalAssets)}</div>
-                        <div className="text-right">{formatNumber(217685)}</div>
-                    </div>
-
-                    {/* EQUITY AND LIABILITIES Section */}
-                    <div className="bg-gray-200/50 px-6 py-3 font-bold text-xs text-gray-700 uppercase tracking-wider mt-4">
-                        EQUITY AND LIABILITIES
-                    </div>
-
-                    <div className="bg-gray-100/50 px-6 py-2 font-bold text-xs text-gray-600 uppercase tracking-wider">
-                        EQUITY
-                    </div>
-
-                    <div className="divide-y divide-gray-50">
-                        {/* Equity Group - Clickable */}
-                        <div
-                            className="grid grid-cols-[1fr_80px_120px_120px] px-6 py-3 text-sm font-medium hover:bg-gray-50 cursor-pointer select-none"
-                            onClick={() => toggleSection('equity')}
-                        >
-                            <div className="flex items-center gap-2">
-                                {renderExapandIcon(openSections['equity'])}
-                                Equity
-                            </div>
-                            <div></div>
-                            <div className="text-right font-bold">{formatNumber(5285)}</div>
-                            <div className="text-right font-bold">{formatNumber(4285)}</div>
-                        </div>
-
-                        {/* Collapsible Content for Equity */}
-                        {openSections['equity'] && (
-                            <>
-                                {/* Share Capital Row */}
-                                <div className="grid grid-cols-[1fr_80px_120px_120px] px-6 py-2 text-sm text-gray-500 hover:bg-gray-50 pl-10">
-                                    <div className="flex items-center gap-2 ml-6">
-                                        Share capital
-                                    </div>
-                                    <div></div>
-                                    <div className="text-right">{formatNumber(5285)}</div>
-                                    <div className="text-right">{formatNumber(4285)}</div>
-                                </div>
-
-                                {/* Accruals Row */}
-                                <div className="grid grid-cols-[1fr_80px_120px_120px] px-6 py-2 text-sm text-gray-500 hover:bg-gray-50 pl-10">
-                                    <div className="ml-6">Accruals</div>
-                                    <div>2</div>
-                                    <div className="text-right">{formatNumber(5285)}</div>
-                                    <div className="text-right">{formatNumber(4285)}</div>
-                                </div>
-                            </>
-                        )}
-                    </div>
-
-                    {/* Total Equity */}
-                    <div className="grid grid-cols-[1fr_80px_120px_120px] bg-[rgb(253,230,138)]/50 px-6 py-3 text-sm font-bold border-y border-yellow-200">
-                        <div>Total Equity</div>
-                        <div></div>
-                        <div className="text-right">{formatNumber(totalEquity)}</div>
-                        <div className="text-right">{formatNumber(4285)}</div>
-                    </div>
-
-                    {/* Total Equity and Liabilities */}
-                    <div className="grid grid-cols-[1fr_80px_120px_120px] bg-[rgb(253,230,138)] px-6 py-3 text-sm font-bold border-y border-yellow-200 mt-4">
-                        <div>Total Equity and Liabilities</div>
-                        <div></div>
-                        <div className="text-right">{formatNumber(totalEquityAndLiabilities)}</div>
-                        <div className="text-right">{formatNumber(4285)}</div>
-                    </div>
-
-                    {/* Balance Check Row */}
-                    <div className={`grid grid-cols-[1fr_80px_120px_120px] px-6 py-3 text-sm font-bold border-t-2 ${isBalanced ? "bg-green-50 border-green-500 text-green-900" : "bg-red-50 border-red-500 text-gray-900"
-                        }`}>
-                        <div>Balance Check (Assets = Liabilities + Equity)</div>
-                        <div></div>
-                        <div className="text-right">{formatNumber(difference)}</div>
-                        <div className="text-right">{formatNumber(213400)}</div>
+                    <div className="px-6 py-3 text-right">
+                        {balanceSheet?.prior_year?.year || 'Prior Year'}
                     </div>
                 </div>
+
+                {isLoading ? (
+                    <div className="flex-1 bg-white p-6 text-center text-gray-400 text-sm">
+                        Loading balance sheet data...
+                    </div>
+                ) : !balanceSheet ? (
+                    <div className="flex-1 bg-white p-6 text-center text-gray-400 text-sm">
+                        No data available for display yet.
+                    </div>
+                ) : (
+                    <div className="flex-1 overflow-y-auto">
+                        {/* ASSETS Section */}
+                        <div className="bg-gray-200/50 px-6 py-3 font-bold text-xs text-gray-700 uppercase tracking-wider">
+                            ASSETS
+                        </div>
+
+                        {/* Assets Total */}
+                        <div className="grid grid-cols-[1fr_80px_120px_120px] px-6 py-2 text-sm text-gray-700">
+                            <div className="font-medium">Assets</div>
+                            <div></div>
+                            <div className="text-right font-bold">{formatNumber(balanceSheet.current_year.totals.assets.value)}</div>
+                            <div className="text-right text-gray-500">{formatNumber(balanceSheet.prior_year.totals.assets.value)}</div>
+                        </div>
+
+                        {/* Total Assets */}
+                        <div className="grid grid-cols-[1fr_80px_120px_120px] bg-[rgb(253,230,138)] px-6 py-3 text-sm font-bold border-y border-yellow-200">
+                            <div>Total Assets</div>
+                            <div></div>
+                            <div className="text-right">{formatNumber(balanceSheet.current_year.totals.total_assets.value)}</div>
+                            <div className="text-right">{formatNumber(balanceSheet.prior_year.totals.total_assets.value)}</div>
+                        </div>
+
+                        {/* EQUITY AND LIABILITIES Section */}
+                        <div className="bg-gray-200/50 px-6 py-3 font-bold text-xs text-gray-700 uppercase tracking-wider mt-4">
+                            EQUITY AND LIABILITIES
+                        </div>
+
+                        {/* LIABILITIES */}
+                        <div className="bg-gray-100/50 px-6 py-2 font-bold text-xs text-gray-600 uppercase tracking-wider">
+                            LIABILITIES
+                        </div>
+
+                        <div className="grid grid-cols-[1fr_80px_120px_120px] px-6 py-2 text-sm text-gray-700">
+                            <div className="font-medium">Liabilities</div>
+                            <div></div>
+                            <div className="text-right font-bold">{formatNumber(balanceSheet.current_year.totals.liabilities.value)}</div>
+                            <div className="text-right text-gray-500">{formatNumber(balanceSheet.prior_year.totals.liabilities.value)}</div>
+                        </div>
+
+                        {/* EQUITY */}
+                        <div className="bg-gray-100/50 px-6 py-2 font-bold text-xs text-gray-600 uppercase tracking-wider mt-4">
+                            EQUITY
+                        </div>
+
+                        <div className="grid grid-cols-[1fr_80px_120px_120px] px-6 py-2 text-sm text-gray-700">
+                            <div className="font-medium">Equity</div>
+                            <div></div>
+                            <div className="text-right font-bold">{formatNumber(balanceSheet.current_year.totals.equity.value)}</div>
+                            <div className="text-right text-gray-500">{formatNumber(balanceSheet.prior_year.totals.equity.value)}</div>
+                        </div>
+
+                        {/* Total Equity */}
+                        <div className="grid grid-cols-[1fr_80px_120px_120px] bg-[rgb(253,230,138)]/50 px-6 py-3 text-sm font-bold border-y border-yellow-200">
+                            <div>Total Equity</div>
+                            <div></div>
+                            <div className="text-right">{formatNumber(balanceSheet.current_year.totals.equity.value)}</div>
+                            <div className="text-right">{formatNumber(balanceSheet.prior_year.totals.equity.value)}</div>
+                        </div>
+
+                        {/* Total Equity and Liabilities */}
+                        <div className="grid grid-cols-[1fr_80px_120px_120px] bg-[rgb(253,230,138)] px-6 py-3 text-sm font-bold border-y border-yellow-200 mt-4">
+                            <div>Total Equity and Liabilities</div>
+                            <div></div>
+                            <div className="text-right">{formatNumber(balanceSheet.current_year.totals.total_equity_and_liabilities.value)}</div>
+                            <div className="text-right">{formatNumber(balanceSheet.prior_year.totals.total_equity_and_liabilities.value)}</div>
+                        </div>
+
+                        {/* Balance Check Row */}
+                        <div className={`grid grid-cols-[1fr_80px_120px_120px] px-6 py-3 text-sm font-bold border-t-2 ${isBalanced ? "bg-green-50 border-green-500 text-green-900" : "bg-red-50 border-red-500 text-gray-900"
+                            }`}>
+                            <div>Balance Check (Assets = Liabilities + Equity)</div>
+                            <div></div>
+                            <div className="text-right">{formatNumber(difference)}</div>
+                            <div className="text-right">{formatNumber(balanceSheet.prior_year.totals.total_assets.value - balanceSheet.prior_year.totals.total_equity_and_liabilities.value)}</div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
