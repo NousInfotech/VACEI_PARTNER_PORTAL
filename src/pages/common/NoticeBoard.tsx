@@ -118,7 +118,7 @@ export const NoticeBoard = () => {
       setLoading(true);
       const response = await apiGet<{ success: boolean; data: ApiNotice[] }>(endPoints.NOTICE?.GET_TODAY || '/notices/today');
       const data = response.data || [];
-      
+
       const mappedNotices: Notice[] = data.map((n: ApiNotice) => ({
         id: n.id,
         title: n.title,
@@ -141,7 +141,7 @@ export const NoticeBoard = () => {
 
   useEffect(() => {
     loadNotices();
-    
+
     // Refresh notices from API every 5 minutes
     const apiInterval = setInterval(loadNotices, 5 * 60 * 1000);
     // Update local time every minute for schedule filtering
@@ -269,9 +269,9 @@ export const NoticeBoard = () => {
       </div>
 
       {/* Main Notice Card - VISA Card Style with Parallax Carousel */}
-      <div 
-        className="relative w-full overflow-hidden rounded-2xl" 
-        style={{ height: '280px' }}
+      <div
+        className="relative w-full overflow-hidden rounded-2xl min-h-[180px]"
+
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
@@ -284,22 +284,18 @@ export const NoticeBoard = () => {
             day: 'numeric',
             year: 'numeric'
           });
-          const noticeFormattedTime = noticeDate.toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit'
-          });
 
           // Calculate position in stack
           const distanceFromCurrent = index - currentIndex;
           const isCurrent = index === currentIndex;
           const isNext = distanceFromCurrent === 1 || (currentIndex === filteredNotices.length - 1 && index === 0);
           const isPrev = distanceFromCurrent === -1 || (currentIndex === 0 && index === filteredNotices.length - 1);
-          
+
           // Calculate transform and opacity based on position
           let transform = '';
           let opacity = 1;
           let zIndex = filteredNotices.length - Math.abs(distanceFromCurrent);
-          
+
           if (isCurrent) {
             transform = 'translateX(0) translateY(0) rotate(0deg) scale(1)';
             opacity = 1;
@@ -323,7 +319,10 @@ export const NoticeBoard = () => {
           return (
             <div
               key={notice.id}
-              className="absolute w-full h-full transition-all duration-500 ease-out"
+              className={cn(
+                "transition-all duration-500 ease-out",
+                isCurrent ? "relative w-full h-auto" : "absolute inset-0 w-full h-full"
+              )}
               style={{
                 transform,
                 opacity,
@@ -343,10 +342,10 @@ export const NoticeBoard = () => {
                 {/* Decorative Background Patterns */}
                 <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full -mr-40 -mt-40 blur-3xl" />
                 <div className="absolute bottom-0 left-0 w-60 h-60 bg-white/5 rounded-full -ml-30 -mb-30 blur-2xl" />
-                
+
                 {/* Card Chip Effect (Top Left) */}
                 <div className="absolute top-6 left-6 w-12 h-10 bg-linear-to-br from-white/20 to-white/5 rounded-md backdrop-blur-sm border border-white/10 shadow-md opacity-40" />
-                
+
                 {/* Contactless Symbol (Top Right) */}
                 <div className="absolute top-6 right-6 flex items-center gap-1 opacity-30">
                   <div className="w-8 h-8 border border-white/30 rounded-full flex items-center justify-center">
@@ -373,7 +372,7 @@ export const NoticeBoard = () => {
                     <h3 className="text-xl font-bold mb-2 text-white leading-tight tracking-tight">
                       {notice.title}
                     </h3>
-                    <p className="text-white/70 text-sm leading-relaxed line-clamp-3 font-medium">
+                    <p className="text-white/70 text-sm leading-relaxed font-medium">
                       {notice.description}
                     </p>
                   </div>
@@ -382,25 +381,11 @@ export const NoticeBoard = () => {
                   <div className="mt-auto pt-4 border-t border-white/10">
                     <div className="flex items-end justify-between">
                       <div className="flex-1">
-                        <div className="text-[9px] text-white/40 mb-1.5 uppercase tracking-widest font-bold">Release Date</div>
                         <div className="flex items-center gap-2 text-white/90">
-                          <Clock className="h-4 w-4 text-white/30" />
-                          <span className="font-semibold text-[15px] tracking-tight">{noticeFormattedDate} <span className="text-white/40 mx-1">•</span> <span className="text-white/60 text-[13px]">{noticeFormattedTime}</span></span>
+                          <span className="font-semibold text-[13px] tracking-tight text-white/60 uppercase">{noticeFormattedDate}</span>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-[9px] text-white/40 mb-1.5 uppercase tracking-widest font-bold">Privilege</div>
-                        <div className="flex gap-1.5 justify-end">
-                          {notice.roles?.map((role: string) => (
-                            <Badge
-                              key={role}
-                              className="bg-white/10 text-white/80 border-white/10 backdrop-blur-sm capitalize text-[10px] font-semibold px-2 py-0.5"
-                            >
-                              {role}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
+
                     </div>
                   </div>
                 </div>

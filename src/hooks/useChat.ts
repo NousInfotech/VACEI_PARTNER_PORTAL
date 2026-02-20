@@ -100,19 +100,24 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
                 // Fetch initial messages
                 const msgs = await chatService.getMessages(roomId);
                 if (msgs?.data) {
-                    const mappedMessages = msgs.data.map((msg: any) => ({
-                        id: msg.id,
-                        senderId: msg.senderId || msg.sender_id,
-                        text: msg.content || msg.text,
-                        fileUrl: msg.fileUrl || msg.file_url,
-                        fileName: msg.fileName || msg.file_name,
-                        fileSize: msg.fileSize || msg.file_size,
-                        type: (msg.type || 'text').toLowerCase(),
-                        timestamp: msg.sentAt || msg.sent_at || msg.created_at,
-                        status: 'sent', // Default to sent for history
-                        createdAt: new Date(msg.sentAt || msg.sent_at || msg.created_at || new Date()).getTime(),
-                        // Map other fields if necessary
-                    }));
+                    const mappedMessages = msgs.data.map((msg: any) => {
+                        let t = msg.sentAt || msg.sent_at || msg.created_at;
+                        if (t && !t.endsWith('Z') && !t.includes('+') && !t.match(/-\d{2}:\d{2}$/)) t += 'Z';
+
+                        return {
+                            id: msg.id,
+                            senderId: msg.senderId || msg.sender_id,
+                            text: msg.content || msg.text,
+                            fileUrl: msg.fileUrl || msg.file_url,
+                            fileName: msg.fileName || msg.file_name,
+                            fileSize: msg.fileSize || msg.file_size,
+                            type: (msg.type || 'text').toLowerCase(),
+                            timestamp: t,
+                            status: 'sent', // Default to sent for history
+                            createdAt: new Date(t || new Date()).getTime(),
+                            // Map other fields if necessary
+                        };
+                    });
 
                     // Ensure messages are sorted by timestamp
                     const sorted = (mappedMessages as Message[]).sort((a, b) =>
@@ -146,6 +151,9 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
                             const newMsg = payload.new as any; // Cast to avoid type issues with raw payload
 
                             // Map payload to Message type (handling both snake_case and camelCase)
+                            let t = newMsg.sentAt || newMsg.sent_at || newMsg.created_at;
+                            if (t && !t.endsWith('Z') && !t.includes('+') && !t.match(/-\d{2}:\d{2}$/)) t += 'Z';
+
                             const mappedMsg: Message = {
                                 id: newMsg.id,
                                 senderId: newMsg.senderId || newMsg.sender_id,
@@ -154,9 +162,9 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
                                 fileName: newMsg.fileName || newMsg.file_name,
                                 fileSize: newMsg.fileSize || newMsg.file_size,
                                 type: (newMsg.type || 'text').toLowerCase(),
-                                timestamp: newMsg.sentAt || newMsg.sent_at || newMsg.created_at,
+                                timestamp: t,
                                 status: 'sent',
-                                createdAt: new Date(newMsg.sentAt || newMsg.sent_at || newMsg.created_at || new Date()).getTime()
+                                createdAt: new Date(t || new Date()).getTime()
                             };
 
                             setMessages((prev) => {
@@ -216,6 +224,9 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
 
             if (sentMessageData) {
                 const newMsg = sentMessageData;
+                let t = newMsg.sentAt || newMsg.sent_at;
+                if (t && !t.endsWith('Z') && !t.includes('+') && !t.match(/-\d{2}:\d{2}$/)) t += 'Z';
+
                 const mappedMsg: Message = {
                     id: newMsg.id,
                     senderId: newMsg.senderId || newMsg.sender_id,
@@ -224,9 +235,9 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
                     fileName: newMsg.fileName || newMsg.file_name,
                     fileSize: newMsg.fileSize || newMsg.file_size,
                     type: (newMsg.type || 'text').toLowerCase(),
-                    timestamp: newMsg.sentAt || newMsg.sent_at || new Date().toISOString(),
+                    timestamp: t || new Date().toISOString(),
                     status: 'sent',
-                    createdAt: new Date(newMsg.sentAt || newMsg.sent_at || new Date()).getTime()
+                    createdAt: new Date(t || new Date()).getTime()
                 };
 
                 // Replace temp message with real one

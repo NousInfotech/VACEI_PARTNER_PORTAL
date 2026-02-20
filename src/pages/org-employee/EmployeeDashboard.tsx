@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { 
-  Users, 
-  MessageSquare, 
-  FileText, 
-  CheckCircle2, 
+import {
+  Users,
+  MessageSquare,
+  FileText,
+  CheckCircle2,
   Search,
-  Filter,
+  // Filter,
   Plus,
   Activity
 } from "lucide-react";
@@ -19,8 +19,8 @@ import EmployeeCompliance from "./EmployeeCompliance";
 import Engagement from "./EmployeeEngagement/Engagement";
 import Messages from "../messages/Messages";
 import { NoticeBoard } from "../common/NoticeBoard";
- 
- 
+
+
 const MOCK_CLIENTS = [
   { id: 1, name: "Acme Corp", lastMessage: "Can we review the Q4 audit?", status: "online", sector: "Technology" },
   { id: 2, name: "Global Logistics", lastMessage: "Documents uploaded for VAT", status: "offline", sector: "Shipping" },
@@ -34,7 +34,7 @@ interface EmployeeDashboardProps {
 
 export default function EmployeeDashboard({ activeSection = "Dashboard" }: EmployeeDashboardProps) {
   const { selectedService, selectedServiceLabel } = useAuth();
-  
+
   const { isLoading: loading } = useQuery({
     queryKey: ['employee-dashboard', activeSection, selectedService],
     queryFn: async () => {
@@ -51,9 +51,9 @@ export default function EmployeeDashboard({ activeSection = "Dashboard" }: Emplo
         subtitle={`Manage your ${selectedServiceLabel.toLowerCase()} ${activeSection.toLowerCase()} and clients`}
         actions={
           <div className="flex items-center gap-3">
-            <Button variant="header" className="rounded-xl">
+            {/* <Button variant="header" className="rounded-xl">
               <Filter className="h-4 w-4 mr-2" /> Filter
-            </Button>
+            </Button> */}
             <Button variant="header" className="rounded-xl">
               <Plus className="h-4 w-4 mr-2" /> New Request
             </Button>
@@ -91,8 +91,8 @@ export default function EmployeeDashboard({ activeSection = "Dashboard" }: Emplo
                       <div className={cn(
                         "p-3 rounded-2xl group-hover:scale-110 transition-transform",
                         stat.color === 'blue' ? 'bg-blue-50 text-blue-600' :
-                        stat.color === 'orange' ? 'bg-orange-50 text-orange-600' :
-                        'bg-green-50 text-green-600'
+                          stat.color === 'orange' ? 'bg-orange-50 text-orange-600' :
+                            'bg-green-50 text-green-600'
                       )}>
                         <stat.icon className="h-6 w-6" />
                       </div>
@@ -132,64 +132,63 @@ export default function EmployeeDashboard({ activeSection = "Dashboard" }: Emplo
                     <h2 className="font-bold">Recent Chats</h2>
                   </div>
                   {loading ? (
-                      <Skeleton className="h-5 w-16 rounded-full" />
+                    <Skeleton className="h-5 w-16 rounded-full" />
                   ) : (
-                      <span className="bg-primary text-light text-[10px] font-bold px-2 py-1 rounded-full">
-                        {MOCK_CLIENTS.length} Active
-                      </span>
+                    <span className="bg-primary text-light text-[10px] font-bold px-2 py-1 rounded-full">
+                      {MOCK_CLIENTS.length} Active
+                    </span>
                   )}
                 </div>
                 <div className="mt-4 relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input 
-                    type="text" 
-                    placeholder="Search clients..." 
+                  <input
+                    type="text"
+                    placeholder="Search clients..."
                     className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
               </div>
-              
+
               <div className="divide-y divide-gray-50">
                 {loading ? (
-                    [1, 2, 3, 4].map((i) => (
-                        <div key={i} className="p-4 flex items-center gap-4">
-                            <Skeleton className="h-12 w-12 rounded-2xl shrink-0" />
-                            <div className="flex-1 space-y-2">
-                                <Skeleton className="h-4 w-1/2" />
-                                <Skeleton className="h-3 w-3/4" />
-                            </div>
-                        </div>
-                    ))
+                  [1, 2, 3, 4].map((i) => (
+                    <div key={i} className="p-4 flex items-center gap-4">
+                      <Skeleton className="h-12 w-12 rounded-2xl shrink-0" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-1/2" />
+                        <Skeleton className="h-3 w-3/4" />
+                      </div>
+                    </div>
+                  ))
                 ) : (
-                    MOCK_CLIENTS.map((client) => (
-                      <button key={client.id} className="w-full p-4 flex items-center gap-4 hover:bg-gray-50 transition-colors text-left group">
-                        <div className="relative">
-                          <div className="h-12 w-12 rounded-2xl bg-gray-100 flex items-center justify-center font-bold text-gray-600 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                            {client.name.charAt(0)}
-                          </div>
-                          <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-4 border-white ${
-                            client.status === 'online' ? 'bg-green-500' : 'bg-gray-300'
+                  MOCK_CLIENTS.map((client) => (
+                    <button key={client.id} className="w-full p-4 flex items-center gap-4 hover:bg-gray-50 transition-colors text-left group">
+                      <div className="relative">
+                        <div className="h-12 w-12 rounded-2xl bg-gray-100 flex items-center justify-center font-bold text-gray-600 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                          {client.name.charAt(0)}
+                        </div>
+                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-4 border-white ${client.status === 'online' ? 'bg-green-500' : 'bg-gray-300'
                           }`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-0.5">
+                          <p className="font-bold text-sm text-gray-900 truncate">{client.name}</p>
+                          <span className="text-[10px] text-gray-400">2m ago</span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-0.5">
-                            <p className="font-bold text-sm text-gray-900 truncate">{client.name}</p>
-                            <span className="text-[10px] text-gray-400">2m ago</span>
-                          </div>
-                          <p className="text-xs text-gray-500 truncate">{client.lastMessage}</p>
-                        </div>
-                      </button>
-                    ))
+                        <p className="text-xs text-gray-500 truncate">{client.lastMessage}</p>
+                      </div>
+                    </button>
+                  ))
                 )}
               </div>
-              
+
               <button className="w-full p-4 text-sm font-bold text-primary hover:bg-primary/5 transition-colors border-t border-gray-50">
                 View All Messages
               </button>
             </ShadowCard>
 
             {/* Quick Actions/Shortcuts */}
-            
+
           </div>
         </div>
       ) : activeSection === "Compliance" ? (
@@ -205,7 +204,7 @@ export default function EmployeeDashboard({ activeSection = "Dashboard" }: Emplo
           </div>
           <h2 className="text-2xl font-bold text-gray-900">{activeSection} Section</h2>
           <p className="text-gray-500 max-w-md mt-2">
-            This module is currently being optimized for the {selectedServiceLabel} service. 
+            This module is currently being optimized for the {selectedServiceLabel} service.
             Check back soon for the full feature set.
           </p>
         </ShadowCard>

@@ -57,7 +57,7 @@ const ENGAGEMENT_TABS = [
   { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
   { id: 'requests', label: 'Document Requests', icon: FileText },
   { id: 'audit', label: 'AUDIT', icon: BookOpen },
-  { id: 'vat', label: 'VAT', icon: Activity },
+  // { id: 'vat', label: 'VAT', icon: Activity },
   { id: 'payroll', label: 'Payroll', icon: Users },
   { id: 'mbr', label: 'MBR', icon: PieChart },
   { id: 'tax', label: 'TAX', icon: Landmark },
@@ -73,11 +73,6 @@ const ENGAGEMENT_TABS = [
   { id: 'services-coverage', label: 'Services & Coverage', icon: CheckSquare }, // Reusing icon for now
 ];
 
-const MOCK_DEADLINES = [
-  { id: 1, title: 'Quarterly VAT Filing', date: 'Oct 24, 2024', priority: 'High', status: 'Pending' },
-  { id: 2, title: 'Annual Financial Audit', date: 'Nov 12, 2024', priority: 'Medium', status: 'In Review' },
-  { id: 3, title: 'Employee Tax Forms', date: 'Dec 05, 2024', priority: 'Low', status: 'Not Started' },
-];
 
 const MOCK_STATUS = {
   overall: 75,
@@ -109,7 +104,7 @@ export default function EngagementFullView() {
     if (!selectedService) return 'dashboard';
     const serviceMap: Record<string, string> = {
       'AUDITING': 'audit',
-      'VAT': 'vat',
+      'VAT': 'dashboard', // default to dashboard instead of vat tab
       'PAYROLL': 'payroll',
       'MBR': 'mbr',
       'TAX': 'tax',
@@ -144,7 +139,7 @@ export default function EngagementFullView() {
 
     const serviceMap: Record<string, string> = {
       'AUDITING': 'audit',
-      'VAT': 'vat',
+      'VAT': 'dashboard', // default to dashboard instead of vat tab
       'PAYROLL': 'payroll',
       'MBR': 'mbr',
       'TAX': 'tax',
@@ -175,6 +170,25 @@ export default function EngagementFullView() {
 
   const engagement = engagementResponse?.data || engagementResponse;
   const organizationId = engagement?.organizationId || engagement?.organization?._id;
+
+  const { data: compliances = [], isLoading: complianceLoading } = useQuery({
+    queryKey: ['engagement-compliances', engagementId],
+    enabled: !!engagementId,
+    queryFn: async () => {
+      if (!engagementId) return [];
+      const res = await apiGet<{ data: any[] }>(
+        endPoints.ENGAGEMENTS.COMPLIANCES(engagementId)
+      );
+      return res?.data ?? [];
+    },
+  });
+
+  const upcomingDeadlines = React.useMemo(() => {
+    return compliances
+      .filter((c: any) => c.status !== 'COMPLETED')
+      .sort((a: any, b: any) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+      .slice(0, 3);
+  }, [compliances]);
 
   React.useEffect(() => {
     if (engagement) {
@@ -376,16 +390,16 @@ export default function EngagementFullView() {
                         <Calendar className="h-5 w-5 text-primary" />
                         <h2 className="font-bold text-gray-900">Upcoming Deadlines</h2>
                       </div>
-                      {loading ? (
+                      {complianceLoading ? (
                         <Skeleton className="h-5 w-16" />
                       ) : (
                         <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-1 rounded-full">
-                          {MOCK_DEADLINES.length} Action Items
+                          {upcomingDeadlines.length} Action Items
                         </span>
                       )}
                     </div>
                     <div className="divide-y divide-gray-50">
-                      {loading ? (
+                      {complianceLoading ? (
                         [1, 2, 3].map((i) => (
                           <div key={i} className="p-4 space-y-3">
                             <div className="flex justify-between">
@@ -395,44 +409,43 @@ export default function EngagementFullView() {
                             <Skeleton className="h-3 w-48" />
                           </div>
                         ))
+                      ) : upcomingDeadlines.length === 0 ? (
+                        <div className="p-8 text-center text-sm text-gray-400">
+                          No upcoming deadlines
+                        </div>
                       ) : (
-                        MOCK_DEADLINES.map((deadline) => (
-                          <div key={deadline.id} className="p-4 hover:bg-gray-50 transition-colors group cursor-pointer">
+                        upcomingDeadlines.map((deadline: any) => (
+                          <div key={deadline.id} className="p-4 hover:bg-gray-50 transition-colors group cursor-pointer" onClick={() => setActiveTab('compliance')}>
                             <div className="flex justify-between items-start mb-1">
                               <h4 className="font-bold text-sm text-gray-900 group-hover:text-primary transition-colors">{deadline.title}</h4>
                               <span className={cn(
                                 "text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider",
-                                deadline.priority === 'High' ? 'bg-red-50 text-red-600' :
-                                  deadline.priority === 'Medium' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'
+                                deadline.status === 'ACTION_REQUIRED' ? 'bg-yellow-50 text-yellow-700' :
+                                  deadline.status === 'ACTION_TAKEN' ? 'bg-blue-50 text-blue-700' : 'bg-gray-50 text-gray-600'
                               )}>
-                                {deadline.priority}
+                                {deadline.status.replace('_', ' ')}
                               </span>
                             </div>
                             <div className="flex items-center gap-3 text-[11px] text-gray-500">
                               <div className="flex items-center gap-1">
                                 <Clock size={12} />
-                                <span>{deadline.date}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <div className={cn(
-                                  "h-1.5 w-1.5 rounded-full",
-                                  deadline.status === 'Pending' ? 'bg-orange-400' :
-                                    deadline.status === 'In Review' ? 'bg-blue-400' : 'bg-gray-400'
-                                )} />
-                                <span>{deadline.status}</span>
+                                <span>{new Date(deadline.deadline).toLocaleDateString()}</span>
                               </div>
                             </div>
                           </div>
                         ))
                       )}
                     </div>
-                    <button className="w-full p-4 text-xs font-bold text-primary hover:bg-primary/5 transition-colors border-t border-gray-50 flex items-center justify-center gap-2 group">
+                    <button
+                      onClick={() => setActiveTab('compliance')}
+                      className="w-full p-4 text-xs font-bold text-primary hover:bg-primary/5 transition-colors border-t border-gray-50 flex items-center justify-center gap-2 group"
+                    >
                       View Full Schedule
                       <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
                     </button>
                   </ShadowCard>
 
-                  <ShadowCard className="p-6 bg-linear-to-br from-primary to-primary/80 text-white relative overflow-hidden group">
+                  {/* <ShadowCard className="p-6 bg-linear-to-br from-primary to-primary/80 text-white relative overflow-hidden group">
                     <div className="absolute inset-0 opacity-10 pointer-events-none">
                       <svg className="h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
                         <path d="M0 0 L100 100 M100 0 L0 100" stroke="currentColor" strokeWidth="0.5" />
@@ -449,7 +462,7 @@ export default function EngagementFullView() {
                         Contact Manager
                       </Button>
                     </div>
-                  </ShadowCard>
+                  </ShadowCard> */}
                 </div>
               </div>
             ) : activeTab === 'library' ? (

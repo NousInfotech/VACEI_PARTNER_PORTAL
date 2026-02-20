@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
-import { Send, Paperclip, Smile, X } from 'lucide-react';
+import { Send, X } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import type { Message } from '../types';
 
-import { AttachmentMenu } from './AttachmentMenu';
-import { EmojiPicker } from './EmojiPicker';
-import { GifPicker } from './GifPicker';
+// import { AttachmentMenu } from './AttachmentMenu';
+// import { EmojiPicker } from './EmojiPicker';
+// import { GifPicker } from './GifPicker';
 
 interface MessageInputProps {
-  onSendMessage: (content: { 
-    text?: string; 
-    gifUrl?: string; 
-    fileUrl?: string; 
-    fileName?: string; 
+  onSendMessage: (content: {
+    text?: string;
+    gifUrl?: string;
+    fileUrl?: string;
+    fileName?: string;
     fileSize?: string;
-    type: 'text' | 'gif' | 'image' | 'document' 
+    type: 'text' | 'gif' | 'image' | 'document'
   }) => void;
   replyingTo: Message | null;
   editingMessage: Message | null;
@@ -22,8 +22,8 @@ interface MessageInputProps {
   onCancelEdit: () => void;
 }
 
-export const MessageInput: React.FC<MessageInputProps> = ({ 
-  onSendMessage, 
+export const MessageInput: React.FC<MessageInputProps> = ({
+  onSendMessage,
   replyingTo,
   editingMessage,
   onCancelReply,
@@ -39,10 +39,10 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       setMessage('');
     }
   }, [editingMessage]);
-  
-  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [showGifPicker, setShowGifPicker] = useState(false);
+
+  // const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
+  // const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  // const [showGifPicker, setShowGifPicker] = useState(false);
   const imageInputRef = React.useRef<HTMLInputElement>(null);
   const docInputRef = React.useRef<HTMLInputElement>(null);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
@@ -54,6 +54,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     }
   }, [replyingTo, editingMessage]);
 
+  /*
   const onSelectEmoji = (emoji: string) => {
     setMessage(prev => prev + emoji);
     // Focus after emoji selection too
@@ -64,6 +65,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     onSendMessage({ gifUrl, type: 'gif' });
     setShowGifPicker(false);
   };
+  */
 
   const handleSend = () => {
     if (message.trim()) {
@@ -116,7 +118,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
               {editingMessage?.text || replyingTo?.text || replyingTo?.fileName || 'Media'}
             </p>
           </div>
-          <button 
+          <button
             onClick={editingMessage ? onCancelEdit : onCancelReply}
             className="p-1 hover:bg-gray-200 rounded-lg transition-colors"
           >
@@ -126,23 +128,24 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       )}
 
       <div className="p-2 flex items-center gap-2 shrink-0 relative">
-      <div className="flex items-center gap-1">
-        {/* Hidden File Inputs */}
-        <input 
-          type="file" 
-          ref={imageInputRef} 
-          className="hidden" 
-          accept="image/*"
-          onChange={(e) => handleFileSelect(e, 'image')}
-        />
-        <input 
-          type="file" 
-          ref={docInputRef} 
-          className="hidden" 
-          accept=".pdf,.doc,.docx,.txt"
-          onChange={(e) => handleFileSelect(e, 'document')}
-        />
+        <div className="flex items-center gap-1">
+          {/* Hidden File Inputs */}
+          <input
+            type="file"
+            ref={imageInputRef}
+            className="hidden"
+            accept="image/*"
+            onChange={(e) => handleFileSelect(e, 'image')}
+          />
+          <input
+            type="file"
+            ref={docInputRef}
+            className="hidden"
+            accept=".pdf,.doc,.docx,.txt"
+            onChange={(e) => handleFileSelect(e, 'document')}
+          />
 
+          {/*
         <button 
           onClick={() => {
             setShowEmojiPicker(!showEmojiPicker);
@@ -194,8 +197,10 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             onClose={() => setShowAttachmentMenu(false)}
           />
         )}
-      </div>
+        */}
+        </div>
 
+        {/*
       {showEmojiPicker && (
         <EmojiPicker 
           onSelect={onSelectEmoji} 
@@ -209,31 +214,32 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           onClose={() => setShowGifPicker(false)} 
         />
       )}
-      
-      <div className="flex-1 relative group/input">
-        <textarea
-          ref={textareaRef}
-          rows={1}
-          placeholder="Type a message"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={handleKeyPress}
-          className="w-full bg-white border border-transparent rounded-lg px-3 py-2 text-[15px] outline-none h-10 resize-none flex items-center shadow-sm placeholder:text-gray-400 transition-all focus:border-primary/20"
-        />
-      </div>
+      */}
 
-      <button
-        onClick={handleSend}
-        disabled={!message.trim()}
-        className={cn(
-          "p-2.5 rounded-full transition-all flex items-center justify-center",
-          message.trim() 
-            ? "bg-primary text-white shadow-sm hover:opacity-90 active:scale-95" 
-            : "text-gray-400 cursor-not-allowed"
-        )}
-      >
-        <Send className="w-5 h-5 fill-current" />
-      </button>
+        <div className="flex-1 relative group/input">
+          <textarea
+            ref={textareaRef}
+            rows={1}
+            placeholder="Type a message"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyPress}
+            className="w-full bg-white border border-transparent rounded-lg px-3 py-2 text-[15px] outline-none h-10 resize-none flex items-center shadow-sm placeholder:text-gray-400 transition-all focus:border-primary/20"
+          />
+        </div>
+
+        <button
+          onClick={handleSend}
+          disabled={!message.trim()}
+          className={cn(
+            "p-2.5 rounded-full transition-all flex items-center justify-center",
+            message.trim()
+              ? "bg-primary text-white shadow-sm hover:opacity-90 active:scale-95"
+              : "text-gray-400 cursor-not-allowed"
+          )}
+        >
+          <Send className="w-5 h-5 fill-current" />
+        </button>
       </div>
     </div>
   );

@@ -3,6 +3,20 @@ import type { Chat } from '../types';
 import { cn } from '../../../lib/utils';
 import { useState, useEffect, useRef } from 'react';
 
+/** Format ISO/date timestamp WhatsApp style */
+function formatChatTime(timestamp: string | undefined): string {
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
+  if (isNaN(date.getTime())) return timestamp; // fallback for pre-formatted strings
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  if (isToday) return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const msAgo = now.getTime() - date.getTime();
+  if (msAgo < 7 * 24 * 60 * 60 * 1000)
+    return date.toLocaleDateString([], { weekday: 'short' }); // e.g. "Mon"
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric' }); // e.g. "Feb 18"
+}
+
 interface ChatListProps {
   chats: Chat[];
   activeChatId?: string;
@@ -12,6 +26,7 @@ interface ChatListProps {
   onCreateGroup: () => void;
   onTogglePin: (chatId: string) => void;
   onToggleMute: (chatId: string) => void;
+  currentUserId?: string;
 }
 
 export const ChatList: React.FC<ChatListProps> = ({
@@ -23,6 +38,7 @@ export const ChatList: React.FC<ChatListProps> = ({
   onCreateGroup,
   onTogglePin,
   onToggleMute,
+  currentUserId,
 }) => {
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, chatId: string, isPinned: boolean, isMuted: boolean } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -89,8 +105,8 @@ export const ChatList: React.FC<ChatListProps> = ({
               <div className="relative shrink-0">
                 <div className={cn(
                   "w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition-colors",
-                  chat.type === 'GROUP' 
-                    ? "bg-[#dfe5e7] text-[#54656f]" 
+                  chat.type === 'GROUP'
+                    ? "bg-[#dfe5e7] text-[#54656f]"
                     : "bg-primary/10 text-primary font-bold"
                 )}>
                   {chat.type === 'GROUP' ? (
@@ -119,18 +135,33 @@ export const ChatList: React.FC<ChatListProps> = ({
                       "text-[10px] whitespace-nowrap ml-2",
                       chat.unreadCount > 0 ? "text-primary font-semibold" : "text-gray-400"
                     )}>
-                      {chat.lastMessage.timestamp}
+                      {formatChatTime(chat.lastMessage.timestamp)}
                     </span>
                   )}
                 </div>
-                
+
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-1.5 min-w-0 flex-1">
                     {chat.isMuted && (
                       <VolumeX className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                     )}
                     <p className="text-sm text-gray-500 truncate">
-                      {chat.lastMessage?.text || 'No messages yet'}
+                      {chat.lastMessage
+                        ? (() => {
+                          const isFromMe = chat.lastMessage.senderId === 'me' ||
+                            chat.lastMessage.senderId === currentUserId;
+                          const senderParticipant = isFromMe
+                            ? null
+                            : chat.participants.find(p => p.id === chat.lastMessage!.senderId);
+                          const prefix = isFromMe
+                            ? 'You: '
+                            : chat.type === 'GROUP' && senderParticipant
+                              ? `${senderParticipant.name}: `
+                              : '';
+                          const text = chat.lastMessage.text || (chat.lastMessage.type && chat.lastMessage.type !== 'text' ? `📎 ${chat.lastMessage.type}` : '');
+                          return prefix + (text || 'No messages yet');
+                        })()
+                        : 'No messages yet'}
                     </p>
                   </div>
                   {chat.unreadCount > 0 && (
@@ -151,7 +182,7 @@ export const ChatList: React.FC<ChatListProps> = ({
 
       {/* Context Menu Portal-like */}
       {contextMenu && (
-        <div 
+        <div
           ref={menuRef}
           className="fixed z-50 bg-white shadow-xl rounded-lg py-1 border border-gray-100 min-w-[170px] animate-in fade-in zoom-in-95 duration-100"
           style={{ top: contextMenu.y, left: contextMenu.x }}
@@ -176,7 +207,7 @@ export const ChatList: React.FC<ChatListProps> = ({
               </>
             )}
           </button>
-          <button 
+          <button
             onClick={() => {
               onToggleMute(contextMenu.chatId);
               setContextMenu(null);

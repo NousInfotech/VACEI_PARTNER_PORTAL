@@ -46,6 +46,7 @@ export const endPoints = {
     MEMBER_DELETE: (roomId: string, userId: string) => `/chat/rooms/${roomId}/members/${userId}`,
     MESSAGES: (roomId: string) => `/chat/rooms/${roomId}/messages`,
     MARK_READ: (roomId: string) => `/chat/rooms/${roomId}/read`,
+    UNREAD_COUNT: (roomId: string) => `/chat/rooms/${roomId}/unread-count`,
     UNREAD_SUMMARY: '/chat/unread-summary',
     UPLOAD: '/chat/upload',
   },

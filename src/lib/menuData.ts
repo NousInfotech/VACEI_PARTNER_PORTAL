@@ -82,15 +82,15 @@ export const menuData: MenuItem[] = [
         description: "Chat with your team",
         roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
     },
-    {
-        slug: "support",
-        icon: BubbleChatIcon,
-        label: "Support",
-        href: "/dashboard/support",
-        section: "settings",
-        description: "Get help from Vacei",
-        roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
-    },
+    // {
+    //     slug: "support",
+    //     icon: BubbleChatIcon,
+    //     label: "Support",
+    //     href: "/dashboard/support",
+    //     section: "settings",
+    //     description: "Get help from Vacei",
+    //     roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
+    // },
     {
         slug: "settings",
         icon: InstallingUpdates02Icon,
