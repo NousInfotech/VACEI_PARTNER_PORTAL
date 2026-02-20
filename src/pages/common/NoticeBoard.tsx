@@ -118,7 +118,7 @@ export const NoticeBoard = () => {
       setLoading(true);
       const response = await apiGet<{ success: boolean; data: ApiNotice[] }>(endPoints.NOTICE?.GET_TODAY || '/notices/today');
       const data = response.data || [];
-      
+
       const mappedNotices: Notice[] = data.map((n: ApiNotice) => ({
         id: n.id,
         title: n.title,
@@ -141,7 +141,7 @@ export const NoticeBoard = () => {
 
   useEffect(() => {
     loadNotices();
-    
+
     // Refresh notices from API every 5 minutes
     const apiInterval = setInterval(loadNotices, 5 * 60 * 1000);
     // Update local time every minute for schedule filtering
@@ -269,8 +269,8 @@ export const NoticeBoard = () => {
       </div>
 
       {/* Main Notice Card - VISA Card Style with Parallax Carousel */}
-      <div 
-        className="relative w-full overflow-hidden rounded-2xl min-h-[180px]" 
+      <div
+        className="relative w-full overflow-hidden rounded-2xl min-h-[180px]"
 
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
@@ -284,22 +284,18 @@ export const NoticeBoard = () => {
             day: 'numeric',
             year: 'numeric'
           });
-          const noticeFormattedTime = noticeDate.toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit'
-          });
 
           // Calculate position in stack
           const distanceFromCurrent = index - currentIndex;
           const isCurrent = index === currentIndex;
           const isNext = distanceFromCurrent === 1 || (currentIndex === filteredNotices.length - 1 && index === 0);
           const isPrev = distanceFromCurrent === -1 || (currentIndex === 0 && index === filteredNotices.length - 1);
-          
+
           // Calculate transform and opacity based on position
           let transform = '';
           let opacity = 1;
           let zIndex = filteredNotices.length - Math.abs(distanceFromCurrent);
-          
+
           if (isCurrent) {
             transform = 'translateX(0) translateY(0) rotate(0deg) scale(1)';
             opacity = 1;
@@ -346,10 +342,10 @@ export const NoticeBoard = () => {
                 {/* Decorative Background Patterns */}
                 <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full -mr-40 -mt-40 blur-3xl" />
                 <div className="absolute bottom-0 left-0 w-60 h-60 bg-white/5 rounded-full -ml-30 -mb-30 blur-2xl" />
-                
+
                 {/* Card Chip Effect (Top Left) */}
                 <div className="absolute top-6 left-6 w-12 h-10 bg-linear-to-br from-white/20 to-white/5 rounded-md backdrop-blur-sm border border-white/10 shadow-md opacity-40" />
-                
+
                 {/* Contactless Symbol (Top Right) */}
                 <div className="absolute top-6 right-6 flex items-center gap-1 opacity-30">
                   <div className="w-8 h-8 border border-white/30 rounded-full flex items-center justify-center">
