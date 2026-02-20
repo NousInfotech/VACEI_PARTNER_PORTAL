@@ -1,29 +1,32 @@
 import { useState, useMemo } from "react";
 import { Search, X } from "lucide-react";
 import { Button } from "../../../../../ui/Button";
-import { financialMockData } from "../extended-tb/data";
+import type { ExtendedTBRow } from "../extended-tb/data";
 
 interface AddEntryDialogProps {
     isOpen: boolean;
     onClose: () => void;
-    onAdd: (account: typeof financialMockData[0]) => void;
+    onAdd: (account: ExtendedTBRow) => void;
+    accounts?: ExtendedTBRow[];
 }
 
-export default function AddEntryDialog({ isOpen, onClose, onAdd }: AddEntryDialogProps) {
+export default function AddEntryDialog({ isOpen, onClose, onAdd, accounts = [] }: AddEntryDialogProps) {
     const [searchQuery, setSearchQuery] = useState("");
-    const [selectedId, setSelectedId] = useState<number | null>(null);
+    const [selectedId, setSelectedId] = useState<number | string | null>(null);
 
     const filteredAccounts = useMemo(() => {
-        return financialMockData.filter(account =>
+        if (accounts.length === 0) return [];
+        return accounts.filter(account =>
             account.accountName.toLowerCase().includes(searchQuery.toLowerCase()) ||
             account.code.toLowerCase().includes(searchQuery.toLowerCase())
         );
-    }, [searchQuery]);
+    }, [searchQuery, accounts]);
 
     const handleAdd = () => {
-        const selectedAccount = financialMockData.find(a => a.id === selectedId);
+        const selectedAccount = accounts.find(a => a.id === selectedId || a.accountId === selectedId);
         if (selectedAccount) {
             onAdd(selectedAccount);
+            setSelectedId(null);
             onClose();
         }
     };
@@ -67,31 +70,40 @@ export default function AddEntryDialog({ isOpen, onClose, onAdd }: AddEntryDialo
 
                     {/* List */}
                     <div className="flex-1 overflow-y-auto space-y-1 pr-1">
-                        {filteredAccounts.map((account) => (
-                            <div
-                                key={account.id}
-                                onClick={() => setSelectedId(account.id)}
-                                className={`
-                                    grid grid-cols-[80px_1fr_120px] gap-4 px-4 py-3 rounded-lg border cursor-pointer transition-all
-                                    ${selectedId === account.id
-                                        ? "bg-blue-50 border-blue-200 shadow-sm"
-                                        : "bg-white border-gray-100 hover:border-blue-100 hover:bg-gray-50"}
-                                `}
-                            >
-                                <div className={`font-medium ${selectedId === account.id ? "text-blue-700" : "text-gray-600"}`}>
-                                    {account.code}
+                        {filteredAccounts.map((account) => {
+                            const accountKey = account.accountId || account.id;
+                            const isSelected = selectedId === account.id || selectedId === accountKey;
+                            return (
+                                <div
+                                    key={accountKey}
+                                    onClick={() => setSelectedId(account.id || accountKey)}
+                                    className={`
+                                        grid grid-cols-[80px_1fr_120px] gap-4 px-4 py-3 rounded-lg border cursor-pointer transition-all
+                                        ${isSelected
+                                            ? "bg-blue-50 border-blue-200 shadow-sm"
+                                            : "bg-white border-gray-100 hover:border-blue-100 hover:bg-gray-50"}
+                                    `}
+                                >
+                                    <div className={`font-medium ${isSelected ? "text-blue-700" : "text-gray-600"}`}>
+                                        {account.code}
+                                    </div>
+                                    <div className={`font-medium ${isSelected ? "text-blue-900" : "text-gray-900"}`}>
+                                        {account.accountName}
+                                    </div>
+                                    <div className={`text-right font-medium ${isSelected ? "text-blue-700" : "text-gray-600"}`}>
+                                        {new Intl.NumberFormat('en-US').format(account.currentYear || 0)}
+                                    </div>
                                 </div>
-                                <div className={`font-medium ${selectedId === account.id ? "text-blue-900" : "text-gray-900"}`}>
-                                    {account.accountName}
-                                </div>
-                                <div className={`text-right font-medium ${selectedId === account.id ? "text-blue-700" : "text-gray-600"}`}>
-                                    {new Intl.NumberFormat('en-US').format(account.currentYear)}
-                                </div>
-                            </div>
-                        ))}
-                        {filteredAccounts.length === 0 && (
+                            );
+                        })}
+                        {filteredAccounts.length === 0 && accounts.length > 0 && (
                             <div className="text-center py-8 text-gray-400 text-sm">
                                 No accounts found matching "{searchQuery}"
+                            </div>
+                        )}
+                        {accounts.length === 0 && (
+                            <div className="text-center py-8 text-gray-400 text-sm">
+                                No accounts available. Please upload a trial balance first.
                             </div>
                         )}
                     </div>

@@ -1,7 +1,8 @@
 import { useRef, useEffect } from "react";
 import {
     Trash2,
-    Eye
+    Eye,
+    Info
 } from "lucide-react";
 
 import ClassificationBuilder from "./ClassificationBuilder";
@@ -9,8 +10,11 @@ import type { ExtendedTBRow } from "./data";
 
 interface ExtendedTBTableProps {
     data: ExtendedTBRow[];
-    onUpdateRow: (id: number, field: string, value: string | number) => void;
+    onUpdateRow: (id: number, field: string, value: string | number | null) => void;
+    onUpdateGroups?: (id: number, groups: { group1: string | null; group2: string | null; group3: string | null; group4: string | null }) => void;
     onDeleteRow: (id: number) => void;
+    onShowAdjustmentDetails?: (row: ExtendedTBRow) => void;
+    onShowReclassificationDetails?: (row: ExtendedTBRow) => void;
     isSectionsView?: boolean;
 }
 
@@ -44,7 +48,7 @@ function ResizableTextarea({ value, onChange, placeholder }: { value: string, on
     );
 }
 
-export default function ExtendedTBTable({ data, onUpdateRow, onDeleteRow, isSectionsView = false }: ExtendedTBTableProps) {
+export default function ExtendedTBTable({ data, onUpdateRow, onUpdateGroups, onDeleteRow, onShowAdjustmentDetails, onShowReclassificationDetails, isSectionsView = false }: ExtendedTBTableProps) {
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-US', {
             style: 'decimal',
@@ -131,8 +135,38 @@ export default function ExtendedTBTable({ data, onUpdateRow, onDeleteRow, isSect
                                         />
                                     )}
                                 </td>
-                                <td className="py-3 px-4 text-right text-gray-500 align-top pt-5">{row.reClassification !== 0 ? formatCurrency(row.reClassification) : '-'}</td>
-                                <td className="py-3 px-4 text-right text-gray-500 align-top pt-5">{row.adjustments !== 0 ? formatCurrency(row.adjustments) : '-'}</td>
+                                <td className="py-3 px-4 text-right text-gray-500 align-top pt-5">
+                                    <div className="flex items-center justify-end gap-2">
+                                        <span className="font-medium tabular-nums">
+                                            {row.reClassification !== 0 ? formatCurrency(row.reClassification) : '-'}
+                                        </span>
+                                        {row.reClassification !== 0 && row.reClassification != null && onShowReclassificationDetails && (
+                                            <button
+                                                onClick={() => onShowReclassificationDetails(row)}
+                                                className="p-1 hover:bg-blue-100 rounded text-blue-600 transition-colors"
+                                                title="View reclassification details"
+                                            >
+                                                <Info size={14} />
+                                            </button>
+                                        )}
+                                    </div>
+                                </td>
+                                <td className="py-3 px-4 text-right text-gray-500 align-top pt-5">
+                                    <div className="flex items-center justify-end gap-2">
+                                        <span className="font-medium tabular-nums">
+                                            {row.adjustments !== 0 ? formatCurrency(row.adjustments) : '-'}
+                                        </span>
+                                        {row.adjustments !== 0 && row.adjustments != null && onShowAdjustmentDetails && (
+                                            <button
+                                                onClick={() => onShowAdjustmentDetails(row)}
+                                                className="p-1 hover:bg-blue-100 rounded text-blue-600 transition-colors"
+                                                title="View adjustment details"
+                                            >
+                                                <Info size={14} />
+                                            </button>
+                                        )}
+                                    </div>
+                                </td>
                                 <td className="py-3 px-4 text-right font-bold text-gray-900 align-top pt-5">{formatCurrency(row.finalBalance)}</td>
                                 <td className="py-3 px-4 text-right text-gray-500 align-top">
                                     {isSectionsView ? (
@@ -156,10 +190,15 @@ export default function ExtendedTBTable({ data, onUpdateRow, onDeleteRow, isSect
                                             group3={row.group3}
                                             group4={row.group4}
                                             onGroupsChange={(groups) => {
-                                                onUpdateRow(row.id, 'group1', groups.group1 || '');
-                                                onUpdateRow(row.id, 'group2', groups.group2 || '');
-                                                onUpdateRow(row.id, 'group3', groups.group3 || '');
-                                                onUpdateRow(row.id, 'group4', groups.group4 || '');
+                                                if (onUpdateGroups) {
+                                                    onUpdateGroups(row.id, groups);
+                                                } else {
+                                                    // Fallback to individual updates if onUpdateGroups not provided
+                                                    onUpdateRow(row.id, 'group1', groups.group1 ?? null);
+                                                    onUpdateRow(row.id, 'group2', groups.group2 ?? null);
+                                                    onUpdateRow(row.id, 'group3', groups.group3 ?? null);
+                                                    onUpdateRow(row.id, 'group4', groups.group4 ?? null);
+                                                }
                                             }}
                                         />
                                     </td>

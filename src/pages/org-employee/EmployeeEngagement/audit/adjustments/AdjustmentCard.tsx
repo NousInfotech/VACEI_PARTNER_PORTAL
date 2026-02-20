@@ -16,6 +16,8 @@ interface AdjustmentCardProps {
     lines: AdjustmentEntry[];
     attachmentCount: number;
     onEdit: () => void;
+    onHistory?: () => void;
+    onDelete?: () => void;
 }
 
 export default function AdjustmentCard({
@@ -24,7 +26,9 @@ export default function AdjustmentCard({
     description = "No description",
     lines,
     attachmentCount,
-    onEdit
+    onEdit,
+    onHistory,
+    onDelete
 }: AdjustmentCardProps) {
     const formatCurrency = (amount: number | null) => {
         if (amount === null) return "-";
@@ -110,10 +114,17 @@ export default function AdjustmentCard({
 
                 {/* Actions Sidebar */}
                 <div className="flex flex-col gap-2 w-48 shrink-0">
-                    <Button variant="outline" size="sm" className="w-full justify-start gap-2 bg-white hover:bg-gray-50 text-gray-600 border-gray-200">
-                        <History size={16} />
-                        History
-                    </Button>
+                    {onHistory && (
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={onHistory}
+                            className="w-full justify-start gap-2 bg-white hover:bg-gray-50 text-gray-600 border-gray-200"
+                        >
+                            <History size={16} />
+                            History
+                        </Button>
+                    )}
                     <Button
                         variant="outline"
                         size="sm"
@@ -123,14 +134,23 @@ export default function AdjustmentCard({
                         <Pencil size={16} />
                         Edit
                     </Button>
-                    <Button variant="default" size="sm" className="w-full justify-start gap-2 bg-red-500 hover:bg-red-600 text-white border-transparent">
-                        <Trash2 size={16} />
-                        Delete & Reverse
-                    </Button>
-                    <div className="flex items-center gap-2 px-3 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium mt-1">
-                        <Check size={16} />
-                        Posted
-                    </div>
+                    {onDelete && (
+                        <Button 
+                            variant="default" 
+                            size="sm" 
+                            onClick={onDelete}
+                            className="w-full justify-start gap-2 bg-red-500 hover:bg-red-600 text-white border-transparent"
+                        >
+                            <Trash2 size={16} />
+                            Delete & Reverse
+                        </Button>
+                    )}
+                    {status === 'POSTED' && (
+                        <div className="flex items-center gap-2 px-3 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium mt-1">
+                            <Check size={16} />
+                            Posted
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

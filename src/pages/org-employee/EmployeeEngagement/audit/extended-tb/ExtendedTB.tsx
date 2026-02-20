@@ -11,15 +11,19 @@ import {
     Calendar,
     CheckCircle2,
     ArrowRight,
-    Save
+    Save,
+    Loader2,
+    Info,
+    X
 } from "lucide-react";
 import { Button } from "../../../../../ui/Button";
 import ExtendedTBTable from "./ExtendedTBTable";
 import type { ExtendedTBRow } from "./data";
-import { apiGet, apiPostFormData, apiPost, apiPatch, apiPatch as apiPatchRequest } from "../../../../../config/base";
+import { apiGet, apiPostFormData, apiPost, apiPatch } from "../../../../../config/base";
 import { endPoints } from "../../../../../config/endPoint";
 import AlertMessage from "../../../../common/AlertMessage";
 import CreateAuditCycleDialog from "./CreateAuditCycleDialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../../../../../ui/Dialog";
 
 interface ExtendedTBProps {
     isSectionsView?: boolean;
@@ -35,6 +39,17 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
     const [alertMessage, setAlertMessage] = useState<{ message: string; variant: "success" | "danger" | "warning" | "info" } | null>(null);
     const [showCreateCycleDialog, setShowCreateCycleDialog] = useState(false);
     const queryClient = useQueryClient();
+
+    // State for adjustment/reclassification details
+    const [showAdjustmentDetails, setShowAdjustmentDetails] = useState(false);
+    const [selectedRowForAdjustments, setSelectedRowForAdjustments] = useState<ExtendedTBRow | null>(null);
+    const [adjustmentsForRow, setAdjustmentsForRow] = useState<any[]>([]);
+    const [loadingAdjustments, setLoadingAdjustments] = useState(false);
+
+    const [showReclassificationDetails, setShowReclassificationDetails] = useState(false);
+    const [selectedRowForReclassifications, setSelectedRowForReclassifications] = useState<ExtendedTBRow | null>(null);
+    const [reclassificationsForRow, setReclassificationsForRow] = useState<any[]>([]);
+    const [loadingReclassifications, setLoadingReclassifications] = useState(false);
 
     const handleAddRow = () => {
         const newRow: ExtendedTBRow = {
@@ -57,8 +72,8 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
         setData([...data, newRow]);
     };
 
-    const handleUpdateRow = (id: number, field: string, value: string | number | null) => {
-        setData(data.map(row => {
+    const handleUpdateRow = (id: number, field: string, value: string | number | null | undefined) => {
+        setData(prevData => prevData.map(row => {
             if (row.id === id) {
                 const updatedRow = { ...row, [field]: value };
                 // If updating groups, also update the classification string for display
@@ -77,8 +92,109 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
         }));
     };
 
+    // Handle group updates - update all groups at once to avoid stale state
+    const handleUpdateGroups = (id: number, groups: { group1: string | null; group2: string | null; group3: string | null; group4: string | null }) => {
+        setData(prevData => prevData.map(row => {
+            if (row.id === id) {
+                const updatedRow = { 
+                    ...row, 
+                    group1: groups.group1 ?? null,
+                    group2: groups.group2 ?? null,
+                    group3: groups.group3 ?? null,
+                    group4: groups.group4 ?? null
+                };
+                // Update classification string for display
+                const classificationParts = [
+                    updatedRow.group1,
+                    updatedRow.group2,
+                    updatedRow.group3,
+                    updatedRow.group4
+                ].filter(Boolean);
+                updatedRow.classification = classificationParts.join(' > ') || '';
+                return updatedRow;
+            }
+            return row;
+        }));
+    };
+
     const handleDeleteRow = (id: number) => {
-        setData(data.filter(row => row.id !== id));
+        setData(prevData => prevData.filter(row => row.id !== id));
+    };
+
+    // Show adjustment details for a specific row
+    const showAdjustmentDetailsForRow = async (row: ExtendedTBRow) => {
+        setSelectedRowForAdjustments(row);
+        setShowAdjustmentDetails(true);
+        setLoadingAdjustments(true);
+        setAdjustmentsForRow([]);
+
+        try {
+            if (!auditCycleId || !trialBalanceId) {
+                setAdjustmentsForRow([]);
+                return;
+            }
+
+            // Fetch all audit entries for this trial balance
+            const response = await apiGet<any>(endPoints.AUDIT.GET_AUDIT_ENTRIES(auditCycleId, trialBalanceId));
+
+            if (response?.data) {
+                const entries = Array.isArray(response.data) ? response.data : [];
+                // Filter to adjustments that affect this specific row
+                const rowAccountId = row.accountId;
+                const relevantAdjustments = entries.filter((entry: any) => {
+                    if (entry.type !== 'ADJUSTMENT') return false;
+                    // Check if any line in this entry matches the row's accountId
+                    return entry.lines?.some((line: any) => 
+                        line.trialBalanceAccountId === rowAccountId
+                    );
+                });
+
+                setAdjustmentsForRow(relevantAdjustments);
+            }
+        } catch (error: any) {
+            console.error("Error fetching adjustments:", error);
+            setAdjustmentsForRow([]);
+        } finally {
+            setLoadingAdjustments(false);
+        }
+    };
+
+    // Show reclassification details for a specific row
+    const showReclassificationDetailsForRow = async (row: ExtendedTBRow) => {
+        setSelectedRowForReclassifications(row);
+        setShowReclassificationDetails(true);
+        setLoadingReclassifications(true);
+        setReclassificationsForRow([]);
+
+        try {
+            if (!auditCycleId || !trialBalanceId) {
+                setReclassificationsForRow([]);
+                return;
+            }
+
+            // Fetch all audit entries for this trial balance
+            const response = await apiGet<any>(endPoints.AUDIT.GET_AUDIT_ENTRIES(auditCycleId, trialBalanceId));
+
+            if (response?.data) {
+                const entries = Array.isArray(response.data) ? response.data : [];
+                // Filter to reclassifications that affect this specific row
+                const rowAccountId = row.accountId;
+                const relevantReclassifications = entries.filter((entry: any) => {
+                    if (entry.type !== 'RECLASSIFICATION') return false;
+                    // Check if any line in this entry matches the row's accountId
+                    return entry.lines?.some((line: any) => 
+                        line.trialBalanceAccountId === rowAccountId
+                    );
+                });
+
+                setReclassificationsForRow(relevantReclassifications);
+            }
+        } catch (error: any) {
+            console.error("Error fetching reclassifications:", error);
+            setReclassificationsForRow([]);
+        } finally {
+            setLoadingReclassifications(false);
+        }
     };
 
     const totals = data.reduce((acc, row) => ({
@@ -180,19 +296,22 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
                     finalBalance,
                     priorYear,
                     classification, // Legacy: kept for display
-                    group1: account.group1 || null,
-                    group2: account.group2 || null,
-                    group3: account.group3 || null,
-                    group4: account.group4 || null,
+                    group1: (account.group1 && account.group1.trim()) || null,
+                    group2: (account.group2 && account.group2.trim()) || null,
+                    group3: (account.group3 && account.group3.trim()) || null,
+                    group4: (account.group4 && account.group4.trim()) || null,
                     accountId: account.id, // Backend account ID for updates
                     actions: [], // Can be populated from audit entries if needed
                     linkedFiles: [] // Can be populated from evidence if needed
                 };
             });
             setData(mappedData);
+            // Set originalData to track changes - use deep copy to avoid reference issues
+            setOriginalData(JSON.parse(JSON.stringify(mappedData)));
         } else if (!trialBalanceId || (!isLoadingTrialBalanceData && !trialBalanceWithAccountsData)) {
             // If no trial balance exists yet, show empty array
             setData([]);
+            setOriginalData([]);
         }
     }, [trialBalanceWithAccountsData, trialBalanceId, isLoadingTrialBalanceData]);
 
@@ -445,21 +564,42 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
         fileInputRef.current?.click();
     };
 
-    // Check if there are any changes to save
+    // Check if there are any changes to save (only for rows with accountId that can be saved)
     const hasChanges = React.useMemo(() => {
-        if (data.length !== originalData.length) return true;
-        return data.some((row, index) => {
-            const original = originalData[index];
+        // If originalData is empty, no changes can be detected (data hasn't loaded yet)
+        if (originalData.length === 0) return false;
+        
+        // Helper to normalize values for comparison (handle null, undefined, empty string)
+        const normalize = (value: string | null | undefined): string | null => {
+            if (value === null || value === undefined) return null;
+            const trimmed = String(value).trim();
+            return trimmed === '' ? null : trimmed;
+        };
+        
+        // Only check rows that have accountId (can be saved)
+        const saveableRows = data.filter(row => row.accountId);
+        
+        // If no saveable rows, no changes
+        if (saveableRows.length === 0) return false;
+        
+        // Check if any saveable row has changes
+        return saveableRows.some((row) => {
+            // Find the original row by accountId (must match since we filtered by accountId)
+            const original = originalData.find(orig => orig.accountId === row.accountId);
+            
+            // If original row not found, there are changes
             if (!original) return true;
+            
+            // Compare all fields with normalized values
             return (
-                row.code !== original.code ||
-                row.accountName !== original.accountName ||
+                normalize(row.code) !== normalize(original.code) ||
+                normalize(row.accountName) !== normalize(original.accountName) ||
                 row.currentYear !== original.currentYear ||
                 row.priorYear !== original.priorYear ||
-                row.group1 !== original.group1 ||
-                row.group2 !== original.group2 ||
-                row.group3 !== original.group3 ||
-                row.group4 !== original.group4
+                normalize(row.group1) !== normalize(original.group1) ||
+                normalize(row.group2) !== normalize(original.group2) ||
+                normalize(row.group3) !== normalize(original.group3) ||
+                normalize(row.group4) !== normalize(original.group4)
             );
         });
     }, [data, originalData]);
@@ -473,22 +613,29 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
             }
 
             // Prepare accounts to update (only those with accountId from backend)
+            // Helper to normalize values for comparison
+            const normalize = (value: string | null | undefined): string | null => {
+                if (value === null || value === undefined) return null;
+                const trimmed = String(value).trim();
+                return trimmed === '' ? null : trimmed;
+            };
+            
             const accountsToUpdate = data
                 .filter(row => row.accountId) // Only rows that exist in backend
                 .map(row => {
-                    const original = originalData.find(orig => orig.id === row.id);
+                    const original = originalData.find(orig => orig.accountId === row.accountId);
                     if (!original) return null;
 
-                    // Check if this row has changes
+                    // Check if this row has changes (using normalized comparison)
                     const hasRowChanges = (
-                        row.code !== original.code ||
-                        row.accountName !== original.accountName ||
+                        normalize(row.code) !== normalize(original.code) ||
+                        normalize(row.accountName) !== normalize(original.accountName) ||
                         row.currentYear !== original.currentYear ||
                         row.priorYear !== original.priorYear ||
-                        row.group1 !== original.group1 ||
-                        row.group2 !== original.group2 ||
-                        row.group3 !== original.group3 ||
-                        row.group4 !== original.group4
+                        normalize(row.group1) !== normalize(original.group1) ||
+                        normalize(row.group2) !== normalize(original.group2) ||
+                        normalize(row.group3) !== normalize(original.group3) ||
+                        normalize(row.group4) !== normalize(original.group4)
                     );
 
                     if (!hasRowChanges) return null;
@@ -510,18 +657,18 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
                         updateObj.currentYear = row.currentYear;
                     }
 
-                    // Include groups if they changed
+                    // Include groups if they changed (normalize empty strings to null)
                     if (row.group1 !== original.group1) {
-                        updateObj.group1 = row.group1 || null;
+                        updateObj.group1 = (row.group1 && row.group1.trim()) || null;
                     }
                     if (row.group2 !== original.group2) {
-                        updateObj.group2 = row.group2 || null;
+                        updateObj.group2 = (row.group2 && row.group2.trim()) || null;
                     }
                     if (row.group3 !== original.group3) {
-                        updateObj.group3 = row.group3 || null;
+                        updateObj.group3 = (row.group3 && row.group3.trim()) || null;
                     }
                     if (row.group4 !== original.group4) {
-                        updateObj.group4 = row.group4 || null;
+                        updateObj.group4 = (row.group4 && row.group4.trim()) || null;
                     }
 
                     return updateObj;
@@ -819,7 +966,10 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
                 <ExtendedTBTable
                     data={data}
                     onUpdateRow={handleUpdateRow}
+                    onUpdateGroups={handleUpdateGroups}
                     onDeleteRow={handleDeleteRow}
+                    onShowAdjustmentDetails={showAdjustmentDetailsForRow}
+                    onShowReclassificationDetails={showReclassificationDetailsForRow}
                     isSectionsView={isSectionsView}
                 />
             )}
@@ -832,6 +982,324 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
                 companyId={companyId}
                 isLoading={createAuditCycleMutation.isPending}
             />
+
+            {/* Adjustment Details Dialog */}
+            <Dialog open={showAdjustmentDetails} onOpenChange={setShowAdjustmentDetails}>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto relative">
+                    <button
+                        onClick={() => setShowAdjustmentDetails(false)}
+                        className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-700 transition-colors"
+                        aria-label="Close dialog"
+                    >
+                        <X size={20} />
+                    </button>
+                    <DialogHeader>
+                        <DialogTitle>Adjustment Details</DialogTitle>
+                        <DialogDescription>
+                            Adjustments affecting{" "}
+                            <span className="font-semibold">
+                                {selectedRowForAdjustments?.code} - {selectedRowForAdjustments?.accountName}
+                            </span>
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                        {loadingAdjustments ? (
+                            <div className="flex items-center justify-center py-8">
+                                <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                                <span className="ml-2 text-sm text-gray-600">Loading adjustments...</span>
+                            </div>
+                        ) : adjustmentsForRow.length === 0 ? (
+                            <div className="text-center py-8 text-gray-500">
+                                <Info className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                                <p>No adjustments found for this row</p>
+                                <p className="text-xs mt-1">
+                                    The adjustment value may have been set directly or come from a different source.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {adjustmentsForRow.map((adj: any) => {
+                                    const rowAccountId = selectedRowForAdjustments?.accountId;
+                                    
+                                    // Calculate net impact on this specific row
+                                    const netImpactOnRow = adj.lines
+                                        ?.filter((line: any) => line.trialBalanceAccountId === rowAccountId)
+                                        .reduce((sum: number, line: any) => {
+                                            const value = line.type === 'DEBIT' ? line.value : -line.value;
+                                            return sum + value;
+                                        }, 0) || 0;
+
+                                    // Calculate totals for the adjustment
+                                    const totalDr = adj.lines
+                                        ?.filter((line: any) => line.type === 'DEBIT')
+                                        .reduce((sum: number, line: any) => sum + (line.value || 0), 0) || 0;
+                                    const totalCr = adj.lines
+                                        ?.filter((line: any) => line.type === 'CREDIT')
+                                        .reduce((sum: number, line: any) => sum + (line.value || 0), 0) || 0;
+
+                                    return (
+                                        <div key={adj.id} className="border border-blue-200 rounded-lg p-4">
+                                            <div className="space-y-3">
+                                                {/* Adjustment Header */}
+                                                <div className="flex items-center gap-3">
+                                                    <span className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
+                                                        {adj.code}
+                                                    </span>
+                                                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                                        adj.status === "POSTED" 
+                                                            ? "bg-green-100 text-green-700" 
+                                                            : "bg-gray-100 text-gray-700"
+                                                    }`}>
+                                                        {adj.status}
+                                                    </span>
+                                                    <span className="text-sm text-gray-600">
+                                                        {adj.description || "No description"}
+                                                    </span>
+                                                </div>
+
+                                                {/* Entries Table */}
+                                                <div className="border rounded-lg overflow-hidden">
+                                                    <table className="w-full text-sm">
+                                                        <thead className="bg-gray-50">
+                                                            <tr>
+                                                                <th className="px-3 py-2 text-left border-r">Code</th>
+                                                                <th className="px-3 py-2 text-left border-r">Account</th>
+                                                                <th className="px-3 py-2 text-right border-r">Debit</th>
+                                                                <th className="px-3 py-2 text-right border-r">Credit</th>
+                                                                <th className="px-3 py-2 text-left">Details</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {adj.lines?.map((line: any, idx: number) => {
+                                                                const isClickedRow = line.trialBalanceAccountId === rowAccountId;
+                                                                return (
+                                                                    <tr
+                                                                        key={idx}
+                                                                        className={`border-t ${isClickedRow ? "bg-blue-50 font-semibold" : ""}`}
+                                                                    >
+                                                                        <td className="px-3 py-2 border-r font-mono text-xs">
+                                                                            {line.trialBalanceAccount?.code || '-'}
+                                                                            {isClickedRow && (
+                                                                                <span className="ml-2 px-1 py-0.5 bg-blue-200 rounded text-xs">
+                                                                                    This row
+                                                                                </span>
+                                                                            )}
+                                                                        </td>
+                                                                        <td className="px-3 py-2 border-r">{line.trialBalanceAccount?.accountName || '-'}</td>
+                                                                        <td className="px-3 py-2 border-r text-right">
+                                                                            {line.type === 'DEBIT' ? formatCurrency(line.value) : '-'}
+                                                                        </td>
+                                                                        <td className="px-3 py-2 border-r text-right">
+                                                                            {line.type === 'CREDIT' ? formatCurrency(line.value) : '-'}
+                                                                        </td>
+                                                                        <td className="px-3 py-2 text-xs text-gray-600">
+                                                                            {line.reason || '-'}
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            })}
+
+                                                            {/* Totals Row */}
+                                                            <tr className="border-t bg-gray-100 font-semibold">
+                                                                <td colSpan={2} className="px-3 py-2 border-r">
+                                                                    TOTAL
+                                                                </td>
+                                                                <td className="px-3 py-2 border-r text-right">
+                                                                    {formatCurrency(totalDr)}
+                                                                </td>
+                                                                <td className="px-3 py-2 border-r text-right">
+                                                                    {formatCurrency(totalCr)}
+                                                                </td>
+                                                                <td className="px-3 py-2">
+                                                                    <span className={`px-2 py-1 rounded text-xs ${
+                                                                        totalDr === totalCr 
+                                                                            ? "bg-green-100 text-green-700" 
+                                                                            : "bg-red-100 text-red-700"
+                                                                    }`}>
+                                                                        {totalDr === totalCr ? "Balanced" : "Unbalanced"}
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+
+                                                {/* Net Impact on THIS account */}
+                                                <div className="flex items-center justify-between text-sm bg-blue-50 p-3 rounded border border-blue-200">
+                                                    <span className="font-medium">Net impact on {selectedRowForAdjustments?.accountName}:</span>
+                                                    <span className="font-bold text-lg">
+                                                        {formatCurrency(netImpactOnRow)}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Reclassification Details Dialog */}
+            <Dialog open={showReclassificationDetails} onOpenChange={setShowReclassificationDetails}>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto relative">
+                    <button
+                        onClick={() => setShowReclassificationDetails(false)}
+                        className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-700 transition-colors"
+                        aria-label="Close dialog"
+                    >
+                        <X size={20} />
+                    </button>
+                    <DialogHeader>
+                        <DialogTitle>Reclassification Details</DialogTitle>
+                        <DialogDescription>
+                            Reclassifications affecting{" "}
+                            <span className="font-semibold">
+                                {selectedRowForReclassifications?.code} - {selectedRowForReclassifications?.accountName}
+                            </span>
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                        {loadingReclassifications ? (
+                            <div className="flex items-center justify-center py-8">
+                                <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                                <span className="ml-2 text-sm text-gray-600">Loading reclassifications...</span>
+                            </div>
+                        ) : reclassificationsForRow.length === 0 ? (
+                            <div className="text-center py-8 text-gray-500">
+                                <Info className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                                <p>No reclassifications found for this row</p>
+                                <p className="text-xs mt-1">
+                                    The reclassification value may have been set directly or come from a different source.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {reclassificationsForRow.map((rc: any) => {
+                                    const rowAccountId = selectedRowForReclassifications?.accountId;
+                                    
+                                    // Calculate net impact on this specific row
+                                    const netImpactOnRow = rc.lines
+                                        ?.filter((line: any) => line.trialBalanceAccountId === rowAccountId)
+                                        .reduce((sum: number, line: any) => {
+                                            const value = line.type === 'DEBIT' ? line.value : -line.value;
+                                            return sum + value;
+                                        }, 0) || 0;
+
+                                    // Calculate totals for the reclassification
+                                    const totalDr = rc.lines
+                                        ?.filter((line: any) => line.type === 'DEBIT')
+                                        .reduce((sum: number, line: any) => sum + (line.value || 0), 0) || 0;
+                                    const totalCr = rc.lines
+                                        ?.filter((line: any) => line.type === 'CREDIT')
+                                        .reduce((sum: number, line: any) => sum + (line.value || 0), 0) || 0;
+
+                                    return (
+                                        <div key={rc.id} className="border border-blue-200 rounded-lg p-4">
+                                            <div className="space-y-3">
+                                                {/* Reclassification Header */}
+                                                <div className="flex items-center gap-3">
+                                                    <span className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
+                                                        {rc.code}
+                                                    </span>
+                                                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                                        rc.status === "POSTED" 
+                                                            ? "bg-green-100 text-green-700" 
+                                                            : "bg-gray-100 text-gray-700"
+                                                    }`}>
+                                                        {rc.status}
+                                                    </span>
+                                                    <span className="text-sm text-gray-600">
+                                                        {rc.description || "No description"}
+                                                    </span>
+                                                </div>
+
+                                                {/* Entries Table */}
+                                                <div className="border rounded-lg overflow-hidden">
+                                                    <table className="w-full text-sm">
+                                                        <thead className="bg-gray-50">
+                                                            <tr>
+                                                                <th className="px-3 py-2 text-left border-r">Code</th>
+                                                                <th className="px-3 py-2 text-left border-r">Account</th>
+                                                                <th className="px-3 py-2 text-right border-r">Debit</th>
+                                                                <th className="px-3 py-2 text-right border-r">Credit</th>
+                                                                <th className="px-3 py-2 text-left">Details</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {rc.lines?.map((line: any, idx: number) => {
+                                                                const isClickedRow = line.trialBalanceAccountId === rowAccountId;
+                                                                return (
+                                                                    <tr
+                                                                        key={idx}
+                                                                        className={`border-t ${isClickedRow ? "bg-blue-50 font-semibold" : ""}`}
+                                                                    >
+                                                                        <td className="px-3 py-2 border-r font-mono text-xs">
+                                                                            {line.trialBalanceAccount?.code || '-'}
+                                                                            {isClickedRow && (
+                                                                                <span className="ml-2 px-1 py-0.5 bg-blue-200 rounded text-xs">
+                                                                                    This row
+                                                                                </span>
+                                                                            )}
+                                                                        </td>
+                                                                        <td className="px-3 py-2 border-r">{line.trialBalanceAccount?.accountName || '-'}</td>
+                                                                        <td className="px-3 py-2 border-r text-right">
+                                                                            {line.type === 'DEBIT' ? formatCurrency(line.value) : '-'}
+                                                                        </td>
+                                                                        <td className="px-3 py-2 border-r text-right">
+                                                                            {line.type === 'CREDIT' ? formatCurrency(line.value) : '-'}
+                                                                        </td>
+                                                                        <td className="px-3 py-2 text-xs text-gray-600">
+                                                                            {line.reason || '-'}
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            })}
+
+                                                            {/* Totals Row */}
+                                                            <tr className="border-t bg-gray-100 font-semibold">
+                                                                <td colSpan={2} className="px-3 py-2 border-r">
+                                                                    TOTAL
+                                                                </td>
+                                                                <td className="px-3 py-2 border-r text-right">
+                                                                    {formatCurrency(totalDr)}
+                                                                </td>
+                                                                <td className="px-3 py-2 border-r text-right">
+                                                                    {formatCurrency(totalCr)}
+                                                                </td>
+                                                                <td className="px-3 py-2">
+                                                                    <span className={`px-2 py-1 rounded text-xs ${
+                                                                        totalDr === totalCr 
+                                                                            ? "bg-green-100 text-green-700" 
+                                                                            : "bg-red-100 text-red-700"
+                                                                    }`}>
+                                                                        {totalDr === totalCr ? "Balanced" : "Unbalanced"}
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+
+                                                {/* Net Impact on THIS account */}
+                                                <div className="flex items-center justify-between text-sm bg-blue-50 p-3 rounded border border-blue-200">
+                                                    <span className="font-medium">Net impact on {selectedRowForReclassifications?.accountName}:</span>
+                                                    <span className="font-bold text-lg">
+                                                        {formatCurrency(netImpactOnRow)}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
