@@ -20,6 +20,7 @@ interface ClassificationBuilderProps {
 }
 
 export default function ClassificationBuilder({ 
+    value: _value, 
     onChange, 
     group1: initialGroup1 = null,
     group2: initialGroup2 = null,
@@ -164,7 +165,7 @@ export default function ClassificationBuilder({
         <div className="flex flex-col gap-2 p-2 min-w-[200px]">
             {/* Group 1 */}
             <div className="flex items-center gap-1">
-                <span className="text-xs font-semibold text-gray-400 w-12 shrink-0">Group 1</span>
+                <span className="text-xs font-semibold text-gray-400 w-12 shrink-0 whitespace-nowrap">Group 1</span>
                 <div className="relative flex-1">
                     <select
                         value={group1 || ''}
@@ -192,7 +193,7 @@ export default function ClassificationBuilder({
             {/* Group 2 */}
             {group1 && (
                 <div className="flex items-center gap-1">
-                    <span className="text-xs font-semibold text-gray-400 w-12 shrink-0">Group 2</span>
+                    <span className="text-xs font-semibold text-gray-400 w-12 shrink-0 whitespace-nowrap">Group 2</span>
                     <div className="relative flex-1">
                         <select
                             value={group2 || ''}
@@ -222,7 +223,7 @@ export default function ClassificationBuilder({
             {/* Group 3 */}
             {group1 && group2 && (
                 <div className="flex items-center gap-1">
-                    <span className="text-xs font-semibold text-gray-400 w-12 shrink-0">Group 3</span>
+                    <span className="text-xs font-semibold text-gray-400 w-12 shrink-0 whitespace-nowrap">Group 3</span>
                     <div className="relative flex-1">
                         <select
                             value={group3 || ''}
@@ -252,7 +253,7 @@ export default function ClassificationBuilder({
             {/* Group 4 */}
             {group1 && group2 && group3 && (
                 <div className="flex items-center gap-1">
-                    <span className="text-xs font-semibold text-gray-400 w-12 shrink-0">Group 4</span>
+                    <span className="text-xs font-semibold text-gray-400 w-12 shrink-0 whitespace-nowrap">Group 4</span>
                     <div className="relative flex-1">
                         {group4Options.length > 0 ? (
                             <select

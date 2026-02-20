@@ -69,6 +69,13 @@ export const endPoints = {
     GET_TRIAL_BALANCE_WITH_ACCOUNTS: (auditCycleId: string, trialBalanceId: string) => `/audit-cycles/${auditCycleId}/trial-balances/${trialBalanceId}/with-accounts`,
     GET_CLASSIFICATION_MAP: '/classifications/map',
     UPDATE_TRIAL_BALANCE_ACCOUNTS: (auditCycleId: string, trialBalanceId: string) => `/audit-cycles/${auditCycleId}/trial-balances/${trialBalanceId}/accounts`,
+    CREATE_AUDIT_ENTRY: (auditCycleId: string, trialBalanceId: string) => `/audit-cycles/${auditCycleId}/trial-balances/${trialBalanceId}/audit-entries`,
+    GET_AUDIT_ENTRIES: (auditCycleId: string, trialBalanceId: string) => `/audit-cycles/${auditCycleId}/trial-balances/${trialBalanceId}/audit-entries`,
+    GET_AUDIT_ENTRY: (auditCycleId: string, trialBalanceId: string, entryId: string) => `/audit-cycles/${auditCycleId}/trial-balances/${trialBalanceId}/audit-entries/${entryId}`,
+    UPDATE_AUDIT_ENTRY: (auditCycleId: string, trialBalanceId: string, entryId: string) => `/audit-cycles/${auditCycleId}/trial-balances/${trialBalanceId}/audit-entries/${entryId}`,
+    DELETE_AUDIT_ENTRY: (auditCycleId: string, trialBalanceId: string, entryId: string) => `/audit-cycles/${auditCycleId}/trial-balances/${trialBalanceId}/audit-entries/${entryId}`,
+    GET_INCOME_STATEMENT: (engagementId: string) => `/services/audit/engagements/${engagementId}/financial-reports/income-statement`,
+    GET_BALANCE_SHEET: (engagementId: string) => `/services/audit/engagements/${engagementId}/financial-reports/balance-sheet`,
   },
   INCORPORATION: {
     GET_BY_COMPANY: (companyId: string) => `/incorporation/company/${companyId}`,

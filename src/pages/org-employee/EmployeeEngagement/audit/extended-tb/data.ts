@@ -17,7 +17,7 @@ export interface ExtendedTBRow {
     linkedFiles?: string[];
 }
 
-export const financialMockData: ExtendedTBRow[] = [
+export const financialMockData: any[] = [
     {
         id: 1,
         code: "1",
