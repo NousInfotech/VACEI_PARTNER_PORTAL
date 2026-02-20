@@ -7,7 +7,12 @@ export interface ExtendedTBRow {
     adjustments: number;
     finalBalance: number;
     priorYear: number;
-    classification: string;
+    classification: string; // Kept for backward compatibility (display only)
+    group1: string | null;
+    group2: string | null;
+    group3: string | null;
+    group4: string | null;
+    accountId?: string; // Backend account ID for updates
     actions: string[];
     linkedFiles?: string[];
 }

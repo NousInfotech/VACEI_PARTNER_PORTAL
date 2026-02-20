@@ -85,7 +85,7 @@ export default function ExtendedTBTable({ data, onUpdateRow, onDeleteRow, isSect
                             <th className="py-4 px-4 font-semibold text-gray-600 text-right whitespace-nowrap">Adjustments</th>
                             <th className="py-4 px-4 font-semibold text-gray-600 text-right whitespace-nowrap">Final Balance</th>
                             <th className="py-4 px-4 font-semibold text-gray-600 text-right whitespace-nowrap">Prior Year</th>
-                            {!isSectionsView && <th className="py-4 px-4 font-semibold text-gray-600 min-w-[300px] text-center">Classification</th>}
+                            {!isSectionsView && <th className="py-4 px-4 font-semibold text-gray-600 min-w-[280px] text-left">Classification Groups</th>}
                             <th className="py-4 px-4 font-semibold text-gray-600 w-24 text-center">
                                 {isSectionsView ? "Linked files" : "Actions"}
                             </th>
@@ -108,7 +108,7 @@ export default function ExtendedTBTable({ data, onUpdateRow, onDeleteRow, isSect
                                 </td>
                                 <td className="py-3 px-4 font-medium text-gray-900 text-left align-top">
                                     {isSectionsView ? (
-                                        <div className="px-3 py-2 text-gray-900 font-medium break-words max-w-[300px] bg-white border border-gray-200 rounded-xl leading-relaxed shadow-sm">
+                                        <div className="px-3 py-2 text-gray-900 font-medium wrap-break-word max-w-[300px] bg-white border border-gray-200 rounded-xl leading-relaxed shadow-sm">
                                             {row.accountName}
                                         </div>
                                     ) : (
@@ -151,6 +151,16 @@ export default function ExtendedTBTable({ data, onUpdateRow, onDeleteRow, isSect
                                         <ClassificationBuilder
                                             value={row.classification}
                                             onChange={(val) => onUpdateRow(row.id, 'classification', val)}
+                                            group1={row.group1}
+                                            group2={row.group2}
+                                            group3={row.group3}
+                                            group4={row.group4}
+                                            onGroupsChange={(groups) => {
+                                                onUpdateRow(row.id, 'group1', groups.group1 || '');
+                                                onUpdateRow(row.id, 'group2', groups.group2 || '');
+                                                onUpdateRow(row.id, 'group3', groups.group3 || '');
+                                                onUpdateRow(row.id, 'group4', groups.group4 || '');
+                                            }}
                                         />
                                     </td>
                                 )}
