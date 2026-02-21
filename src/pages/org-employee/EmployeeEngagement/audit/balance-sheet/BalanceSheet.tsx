@@ -289,11 +289,11 @@ export default function BalanceSheet({ engagementId }: BalanceSheetProps) {
                         No data available for display yet.
                     </div>
                 ) : (
-                    <div className="flex-1 overflow-y-auto">
-                        {/* ASSETS Section */}
-                        <div className="bg-gray-200/50 px-6 py-3 font-bold text-xs text-gray-700 uppercase tracking-wider">
-                            ASSETS
-                        </div>
+                <div className="flex-1 overflow-y-auto">
+                    {/* ASSETS Section */}
+                    <div className="bg-gray-200/50 px-6 py-3 font-bold text-xs text-gray-700 uppercase tracking-wider">
+                        ASSETS
+                    </div>
 
                         {/* Assets Total */}
                         <div className="grid grid-cols-[1fr_80px_120px_120px] px-6 py-2 text-sm text-gray-700">
@@ -301,25 +301,25 @@ export default function BalanceSheet({ engagementId }: BalanceSheetProps) {
                             <div></div>
                             <div className="text-right font-bold">{formatNumber(balanceSheet.current_year.totals.assets.value)}</div>
                             <div className="text-right text-gray-500">{formatNumber(balanceSheet.prior_year.totals.assets.value)}</div>
-                        </div>
+                    </div>
 
-                        {/* Total Assets */}
-                        <div className="grid grid-cols-[1fr_80px_120px_120px] bg-[rgb(253,230,138)] px-6 py-3 text-sm font-bold border-y border-yellow-200">
-                            <div>Total Assets</div>
-                            <div></div>
+                    {/* Total Assets */}
+                    <div className="grid grid-cols-[1fr_80px_120px_120px] bg-[rgb(253,230,138)] px-6 py-3 text-sm font-bold border-y border-yellow-200">
+                        <div>Total Assets</div>
+                        <div></div>
                             <div className="text-right">{formatNumber(balanceSheet.current_year.totals.total_assets.value)}</div>
                             <div className="text-right">{formatNumber(balanceSheet.prior_year.totals.total_assets.value)}</div>
-                        </div>
+                    </div>
 
-                        {/* EQUITY AND LIABILITIES Section */}
-                        <div className="bg-gray-200/50 px-6 py-3 font-bold text-xs text-gray-700 uppercase tracking-wider mt-4">
-                            EQUITY AND LIABILITIES
-                        </div>
+                    {/* EQUITY AND LIABILITIES Section */}
+                    <div className="bg-gray-200/50 px-6 py-3 font-bold text-xs text-gray-700 uppercase tracking-wider mt-4">
+                        EQUITY AND LIABILITIES
+                    </div>
 
                         {/* LIABILITIES */}
-                        <div className="bg-gray-100/50 px-6 py-2 font-bold text-xs text-gray-600 uppercase tracking-wider">
+                    <div className="bg-gray-100/50 px-6 py-2 font-bold text-xs text-gray-600 uppercase tracking-wider">
                             LIABILITIES
-                        </div>
+                    </div>
 
                         <div className="grid grid-cols-[1fr_80px_120px_120px] px-6 py-2 text-sm text-gray-700">
                             <div className="font-medium">Liabilities</div>
@@ -331,40 +331,40 @@ export default function BalanceSheet({ engagementId }: BalanceSheetProps) {
                         {/* EQUITY */}
                         <div className="bg-gray-100/50 px-6 py-2 font-bold text-xs text-gray-600 uppercase tracking-wider mt-4">
                             EQUITY
-                        </div>
+                                </div>
 
                         <div className="grid grid-cols-[1fr_80px_120px_120px] px-6 py-2 text-sm text-gray-700">
                             <div className="font-medium">Equity</div>
                             <div></div>
                             <div className="text-right font-bold">{formatNumber(balanceSheet.current_year.totals.equity.value)}</div>
                             <div className="text-right text-gray-500">{formatNumber(balanceSheet.prior_year.totals.equity.value)}</div>
-                        </div>
+                    </div>
 
-                        {/* Total Equity */}
-                        <div className="grid grid-cols-[1fr_80px_120px_120px] bg-[rgb(253,230,138)]/50 px-6 py-3 text-sm font-bold border-y border-yellow-200">
-                            <div>Total Equity</div>
-                            <div></div>
+                    {/* Total Equity */}
+                    <div className="grid grid-cols-[1fr_80px_120px_120px] bg-[rgb(253,230,138)]/50 px-6 py-3 text-sm font-bold border-y border-yellow-200">
+                        <div>Total Equity</div>
+                        <div></div>
                             <div className="text-right">{formatNumber(balanceSheet.current_year.totals.equity.value)}</div>
                             <div className="text-right">{formatNumber(balanceSheet.prior_year.totals.equity.value)}</div>
-                        </div>
+                    </div>
 
-                        {/* Total Equity and Liabilities */}
-                        <div className="grid grid-cols-[1fr_80px_120px_120px] bg-[rgb(253,230,138)] px-6 py-3 text-sm font-bold border-y border-yellow-200 mt-4">
-                            <div>Total Equity and Liabilities</div>
-                            <div></div>
+                    {/* Total Equity and Liabilities */}
+                    <div className="grid grid-cols-[1fr_80px_120px_120px] bg-[rgb(253,230,138)] px-6 py-3 text-sm font-bold border-y border-yellow-200 mt-4">
+                        <div>Total Equity and Liabilities</div>
+                        <div></div>
                             <div className="text-right">{formatNumber(balanceSheet.current_year.totals.total_equity_and_liabilities.value)}</div>
                             <div className="text-right">{formatNumber(balanceSheet.prior_year.totals.total_equity_and_liabilities.value)}</div>
-                        </div>
-
-                        {/* Balance Check Row */}
-                        <div className={`grid grid-cols-[1fr_80px_120px_120px] px-6 py-3 text-sm font-bold border-t-2 ${isBalanced ? "bg-green-50 border-green-500 text-green-900" : "bg-red-50 border-red-500 text-gray-900"
-                            }`}>
-                            <div>Balance Check (Assets = Liabilities + Equity)</div>
-                            <div></div>
-                            <div className="text-right">{formatNumber(difference)}</div>
-                            <div className="text-right">{formatNumber(balanceSheet.prior_year.totals.total_assets.value - balanceSheet.prior_year.totals.total_equity_and_liabilities.value)}</div>
-                        </div>
                     </div>
+
+                    {/* Balance Check Row */}
+                    <div className={`grid grid-cols-[1fr_80px_120px_120px] px-6 py-3 text-sm font-bold border-t-2 ${isBalanced ? "bg-green-50 border-green-500 text-green-900" : "bg-red-50 border-red-500 text-gray-900"
+                        }`}>
+                        <div>Balance Check (Assets = Liabilities + Equity)</div>
+                        <div></div>
+                        <div className="text-right">{formatNumber(difference)}</div>
+                            <div className="text-right">{formatNumber(balanceSheet.prior_year.totals.total_assets.value - balanceSheet.prior_year.totals.total_equity_and_liabilities.value)}</div>
+                    </div>
+                </div>
                 )}
             </div>
         </div>

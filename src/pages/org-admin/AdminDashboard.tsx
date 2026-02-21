@@ -101,7 +101,7 @@ export default function AdminDashboard({ activeSection }: AdminDashboardProps) {
   }
 
   return (
-    <div className="space-y-8 p-8 max-w-7xl mx-auto">
+    <div className="space-y-8 mx-auto">
       <PageHeader
         title="Admin Overview"
         subtitle="Welcome back! Here's what's happening in your organization today."

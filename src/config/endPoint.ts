@@ -32,6 +32,7 @@ export const endPoints = {
     MILESTONES: (engagementId: string) => `/engagements/${engagementId}/milestones`,
     LIBRARY_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library`,
     LIBRARY_FOLDER_BY_TYPE: (engagementId: string, type: string) => `/engagements/${engagementId}/library?type=${type}`,
+    EVIDENCE_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library/evidences`,
   },
   ENGAGEMENT_UPDATES: '/engagement-updates',
   DOCUMENT_REQUESTS: '/document-requests',
@@ -81,8 +82,28 @@ export const endPoints = {
     DELETE_AUDIT_ENTRY: (auditCycleId: string, trialBalanceId: string, entryId: string) => `/audit-cycles/${auditCycleId}/trial-balances/${trialBalanceId}/audit-entries/${entryId}`,
     GET_INCOME_STATEMENT: (engagementId: string) => `/services/audit/engagements/${engagementId}/financial-reports/income-statement`,
     GET_BALANCE_SHEET: (engagementId: string) => `/services/audit/engagements/${engagementId}/financial-reports/balance-sheet`,
+    // Evidence endpoints
+    GET_EVIDENCES: '/evidences',
+    GET_EVIDENCE: (evidenceId: string) => `/evidences/${evidenceId}`,
+    CREATE_EVIDENCE: '/evidences',
+    UPDATE_EVIDENCE: (evidenceId: string) => `/evidences/${evidenceId}`,
+    DELETE_EVIDENCE: (evidenceId: string) => `/evidences/${evidenceId}`,
+    // Classification endpoints
+    GET_CLASSIFICATIONS: '/classifications',
+    GET_CLASSIFICATION: (classificationId: string) => `/classifications/${classificationId}`,
+    CREATE_CLASSIFICATION: '/classifications',
+    FIND_CLASSIFICATION_BY_GROUPS: '/classifications/find-by-groups',
   },
   INCORPORATION: {
     GET_BY_COMPANY: (companyId: string) => `/incorporation/company/${companyId}`,
   },
+  TODO: {
+    BASE: '/todos',
+    BY_ENGAGEMENT: (engagementId: string) => `/engagements/${engagementId}/todos`,
+    BY_ID: (todoId: string) => `/todos/${todoId}`,
+    UPDATE_STATUS: (todoId: string) => `/todos/${todoId}/status`,
+    FROM_CHAT: (engagementId: string) => `/engagements/${engagementId}/todos/from-chat`,
+    FROM_DOCUMENT_REQUEST: (engagementId: string) => `/engagements/${engagementId}/todos/from-document-request`,
+    FROM_REQUESTED_DOCUMENT: (engagementId: string) => `/engagements/${engagementId}/todos/from-requested-document`,
+  }
 };

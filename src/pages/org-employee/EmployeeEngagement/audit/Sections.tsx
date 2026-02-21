@@ -61,16 +61,14 @@ export default function Sections({ engagementId }: SectionsProps) {
                     </div>
                 );
 
-            // Dynamic Classification Pages
-            case 'intangible-assets':
-                return <ClassificationView title="Intangible Assets" subtitle="Analysis of intangible assets, amortization, and impairment." />;
-            case 'share-capital':
-                return <ClassificationView title="Share Capital" subtitle="Analysis of equity structure, shares issued, and capital reserves." />;
-
+            // Dynamic Classification Pages - handle classification-* IDs
             default:
+                if (activeSection.startsWith('classification-')) {
+                    return <ClassificationView classificationId={activeSection} engagementId={engagementId} />;
+                }
                 return (
                     <div className="flex items-center justify-center h-full text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                        {SECTIONS.find(s => s.id === activeSection)?.label} Content Placeholder
+                        {SECTIONS.find(s => s.id === activeSection)?.label || 'Content'} Content Placeholder
                     </div>
                 );
         }
@@ -83,6 +81,7 @@ export default function Sections({ engagementId }: SectionsProps) {
                     activeSection={activeSection}
                     onSectionChange={setActiveSection}
                     onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+                    engagementId={engagementId}
                 />
             </div>
 
