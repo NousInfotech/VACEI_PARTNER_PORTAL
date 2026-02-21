@@ -190,9 +190,7 @@ export default function TodoModal({
                 </label>
                 <Input
                   type="date"
-                  {...register("deadline", { 
-                    required: (mode === "from-chat" || mode === "from-req-doc") ? "Deadline is required" : false 
-                  })}
+                  {...register("deadline")}
                   className={cn("rounded-xl border-gray-200 focus:border-primary/30", errors.deadline && "border-red-500")}
                 />
                 {errors.deadline && <p className="text-[10px] text-red-500 font-bold">{errors.deadline.message}</p>}

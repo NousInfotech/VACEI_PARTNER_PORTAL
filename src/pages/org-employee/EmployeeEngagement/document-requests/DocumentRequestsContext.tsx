@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiPostFormData, apiPatch, apiDelete } from "../../../../config/base";
 import { endPoints } from "../../../../config/endPoint";
 import { useAuth } from "../../../../context/auth-context-core";
+import { todoService } from "../../../../api/todoService";
 import type { 
   RequestedDocumentItem, 
   DocumentRequestItem,
@@ -41,8 +42,8 @@ interface DocumentRequestsContextType {
   setTodoInitialData: (data: any) => void;
   todoSourceId: string | undefined;
   setTodoSourceId: (id: string | undefined) => void;
-  todoMode: "from-doc-req" | "from-req-doc" | "create";
-  setTodoMode: (mode: "from-doc-req" | "from-req-doc" | "create") => void;
+  todoMode: "from-doc-req" | "from-req-doc" | "create" | "edit";
+  setTodoMode: (mode: "from-doc-req" | "from-req-doc" | "create" | "edit") => void;
 }
 
 const DocumentRequestsContext = createContext<DocumentRequestsContextType | undefined>(undefined);
@@ -71,7 +72,7 @@ export const DocumentRequestsProvider: React.FC<{ engagementId?: string; childre
   const [isTodoModalOpen, setIsTodoModalOpen] = useState(false);
   const [todoInitialData, setTodoInitialData] = useState<any>(null);
   const [todoSourceId, setTodoSourceId] = useState<string | undefined>(undefined);
-  const [todoMode, setTodoMode] = useState<"from-doc-req" | "from-req-doc" | "create">("from-doc-req");
+  const [todoMode, setTodoMode] = useState<"from-doc-req" | "from-req-doc" | "create" | "edit">("from-doc-req");
   
   const [formData, setFormData] = useState({
     documentName: "",
@@ -155,8 +156,61 @@ export const DocumentRequestsProvider: React.FC<{ engagementId?: string; childre
       let url = endPoints.REQUESTED_DOCUMENT_UPLOAD(documentRequestId, docId);
       return apiPostFormData(url, formData);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["document-requests", engagementId] });
+      
+      // Auto update linked todo to ACTION_TAKEN
+      const todos = queryClient.getQueryData<any[]>(['engagement-todos', engagementId]);
+      const docGroups = queryClient.getQueryData<DocumentRequestItem[]>(["document-requests", engagementId]);
+      
+      if (!todos || !docGroups) return;
+
+      const completionCheck = (d: RequestedDocumentItem): boolean => {
+        if (d.id === variables.docId) return true; // Account for the fact that this one is now uploaded
+        if (d.count === 'SINGLE') return !!d.file;
+        return !!d.children && d.children.length > 0 && d.children.every(completionCheck);
+      };
+
+      // 1. Specific Document
+      const linkedTodo = todos?.find(t => t.moduleId === variables.docId && (t.type === 'REQUESTED_DOCUMENT' || t.type === 'CUSTOM'));
+      if (linkedTodo) {
+        todoService.updateStatus(linkedTodo.id, 'ACTION_TAKEN').catch(console.error);
+      }
+
+      // 2. Parent Document (if all siblings finished)
+      for (const group of docGroups) {
+        const findParentAndCheck = (docs: RequestedDocumentItem[]): boolean => {
+          for (const d of docs) {
+            if (d.children?.some(c => c.id === variables.docId)) {
+              // Found the parent
+              if (d.children.every(completionCheck)) {
+                const parentTodo = todos.find(t => t.moduleId === d.id && (t.type === 'REQUESTED_DOCUMENT' || t.type === 'CUSTOM'));
+                if (parentTodo) todoService.updateStatus(parentTodo.id, 'ACTION_TAKEN').catch(console.error);
+              }
+              return true;
+            }
+            if (d.children && findParentAndCheck(d.children)) return true;
+          }
+          return false;
+        };
+        if (findParentAndCheck(group.requestedDocuments)) break;
+      }
+
+      // 3. Document Group (if all documents in group finished)
+      for (const group of docGroups) {
+        const isTargetGroup = (function search(docs: RequestedDocumentItem[]): boolean {
+          return docs.some(d => d.id === variables.docId || (d.children && search(d.children)));
+        })(group.requestedDocuments);
+
+        if (isTargetGroup) {
+          const allDocsInGroupFinished = group.requestedDocuments.every(completionCheck);
+          if (allDocsInGroupFinished) {
+            const groupTodo = todos.find(t => t.moduleId === group.id && (t.type === 'DOCUMENT_REQUEST' || t.type === 'CUSTOM'));
+            if (groupTodo) todoService.updateStatus(groupTodo.id, 'ACTION_TAKEN').catch(console.error);
+          }
+          break;
+        }
+      }
     },
   });
   
@@ -164,8 +218,15 @@ export const DocumentRequestsProvider: React.FC<{ engagementId?: string; childre
     mutationFn: async ({ documentRequestId, docId, reason }: { documentRequestId: string; docId: string; reason: string }) => {
       return apiPatch(endPoints.REQUESTED_DOCUMENT_BY_ID(documentRequestId, docId) + '/clear', { reason });
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["document-requests", engagementId] });
+
+      // Auto update linked todo to ACTION_REQUIRED
+      const todos = queryClient.getQueryData<any[]>(['engagement-todos', engagementId]);
+      const linkedTodo = todos?.find(t => t.moduleId === variables.docId && (t.type === 'REQUESTED_DOCUMENT' || t.type === 'CUSTOM'));
+      if (linkedTodo) {
+        todoService.updateStatus(linkedTodo.id, 'ACTION_REQUIRED').catch(console.error);
+      }
     },
   });
 
@@ -173,8 +234,15 @@ export const DocumentRequestsProvider: React.FC<{ engagementId?: string; childre
     mutationFn: async ({ documentRequestId, docId, reason }: { documentRequestId: string; docId: string; reason: string }) => {
       return apiDelete(endPoints.REQUESTED_DOCUMENT_BY_ID(documentRequestId, docId), { reason });
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["document-requests", engagementId] });
+
+      // Auto delete linked todo
+      const todos = queryClient.getQueryData<any[]>(['engagement-todos', engagementId]);
+      const linkedTodo = todos?.find(t => t.moduleId === variables.docId && (t.type === 'REQUESTED_DOCUMENT' || t.type === 'CUSTOM'));
+      if (linkedTodo) {
+        todoService.delete(linkedTodo.id).catch(console.error);
+      }
     },
   });
 
@@ -207,8 +275,15 @@ export const DocumentRequestsProvider: React.FC<{ engagementId?: string; childre
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
       return apiDelete(endPoints.DOCUMENT_REQUESTS + `/${id}`, { reason });
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["document-requests", engagementId] });
+
+      // Auto delete linked todo
+      const todos = queryClient.getQueryData<any[]>(['engagement-todos', engagementId]);
+      const linkedTodo = todos?.find(t => t.moduleId === variables.id && (t.type === 'DOCUMENT_REQUEST' || t.type === 'CUSTOM'));
+      if (linkedTodo) {
+        todoService.delete(linkedTodo.id).catch(console.error);
+      }
     },
   });
 

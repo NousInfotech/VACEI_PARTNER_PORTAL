@@ -65,6 +65,11 @@ export const RequestedDocumentRow = ({
     hardDeleteMutation.mutate({ documentRequestId: doc.documentRequestId, docId: doc.id, reason });
   };
 
+  const isCompleted = (function check(d: RequestedDocumentItem): boolean {
+    if (d.count === 'SINGLE') return !!d.file;
+    return !!d.children && d.children.length > 0 && d.children.every(check);
+  })(doc);
+
   return (
     <li className={cn("p-4 bg-white rounded-xl border border-gray-200 shadow-sm space-y-4", doc.parentId && "ml-8 border-l-4 border-l-blue-100")}>
       <div className="flex items-start justify-between gap-4">
@@ -88,35 +93,46 @@ export const RequestedDocumentRow = ({
                 {doc.status}
               </span>
               {doc.file && <span className="text-[10px] text-gray-400">Uploaded: {format(new Date(doc.createdAt), "MMM dd, yyyy")}</span>}
-              {linkedTodo && (
-                <div className="flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 rounded-full text-[10px] font-bold animate-pulse">
-                  <CheckSquare className="h-3 w-3" />
-                  Task Tracked
-                </div>
-              )}
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
-          {!doc.file && (
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="h-9 w-9 text-amber-500 border-amber-200 hover:bg-amber-50" 
-              onClick={() => {
-                setTodoInitialData({
-                  title: `Upload: ${doc.documentName}`,
-                  description: doc.description || '',
-                });
-                setTodoSourceId(doc.id);
-                setTodoMode("from-req-doc");
-                setIsTodoModalOpen(true);
-              }}
-              title="Create Todo"
-            >
-              <CheckSquare className="h-4 w-4" />
-            </Button>
+          {!isCompleted && (
+            linkedTodo ? (
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-9 w-9 text-blue-500 border-blue-200 hover:bg-blue-50" 
+                onClick={() => {
+                  setTodoInitialData(linkedTodo);
+                  setTodoSourceId(doc.id);
+                  setTodoMode("edit");
+                  setIsTodoModalOpen(true);
+                }}
+                title="Edit Todo"
+              >
+                <FileEdit className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-9 w-9 text-amber-500 border-amber-200 hover:bg-amber-50" 
+                onClick={() => {
+                  setTodoInitialData({
+                    title: `Upload: ${doc.documentName}`,
+                    description: doc.description || '',
+                  });
+                  setTodoSourceId(doc.id);
+                  setTodoMode("from-req-doc");
+                  setIsTodoModalOpen(true);
+                }}
+                title="Create Todo"
+              >
+                <CheckSquare className="h-4 w-4" />
+              </Button>
+            )
           )}
           {!isMultiple && !doc.file && (
             <div className="relative">

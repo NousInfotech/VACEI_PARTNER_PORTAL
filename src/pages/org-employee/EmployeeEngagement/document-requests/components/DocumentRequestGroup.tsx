@@ -1,4 +1,4 @@
-import { FileText, Plus, Edit2, Trash2, Loader2, CheckSquare } from "lucide-react";
+import { FileText, Plus, Edit2, Trash2, Loader2, CheckSquare, FileEdit } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { todoService } from "@/api/todoService";
 import { useParams } from "react-router-dom";
@@ -65,12 +65,6 @@ export const DocumentRequestGroup = ({ req, children }: DocumentRequestGroupProp
                 <span className="bg-primary/10 text-primary border border-primary/20 rounded-full px-2 py-0.5 text-[10px] font-bold">
                   {progressPercent}% Complete
                 </span>
-                {linkedTodo && (
-                  <span className="bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5 text-[10px] font-bold flex items-center gap-1 animate-pulse">
-                    <CheckSquare className="h-3 w-3" />
-                    Todo Linked
-                  </span>
-                )}
               </div>
               <p className="text-sm text-gray-600">{req.description}</p>
             </div>
@@ -85,23 +79,42 @@ export const DocumentRequestGroup = ({ req, children }: DocumentRequestGroupProp
             >
               <Edit2 className="h-4 w-4" />
             </Button>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="h-10 w-10 text-amber-500 border-amber-200 hover:bg-amber-50" 
-              onClick={() => {
-                setTodoInitialData({
-                  title: `Follow up: ${req.title}`,
-                  description: req.description || '',
-                });
-                setTodoSourceId(req.id);
-                setTodoMode("from-doc-req");
-                setIsTodoModalOpen(true);
-              }}
-              title="Create Todo"
-            >
-              <CheckSquare className="h-4 w-4" />
-            </Button>
+            {progressPercent < 100 && (
+              linkedTodo ? (
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="h-10 w-10 text-blue-500 border-blue-200 hover:bg-blue-50" 
+                  onClick={() => {
+                    setTodoInitialData(linkedTodo);
+                    setTodoSourceId(req.id);
+                    setTodoMode("edit");
+                    setIsTodoModalOpen(true);
+                  }}
+                  title="Edit Todo"
+                >
+                  <FileEdit className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="h-10 w-10 text-amber-500 border-amber-200 hover:bg-amber-50" 
+                  onClick={() => {
+                    setTodoInitialData({
+                      title: `Follow up: ${req.title}`,
+                      description: req.description || '',
+                    });
+                    setTodoSourceId(req.id);
+                    setTodoMode("from-doc-req");
+                    setIsTodoModalOpen(true);
+                  }}
+                  title="Create Todo"
+                >
+                  <CheckSquare className="h-4 w-4" />
+                </Button>
+              )
+            )}
             <Button 
               variant="outline" 
               size="icon" 
