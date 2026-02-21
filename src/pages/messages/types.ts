@@ -21,6 +21,12 @@ export interface Message {
   timestamp: string;
   status: 'sent' | 'delivered' | 'read' | 'sending';
   replyToId?: string;
+  /** ID of the message being replied to (backend: replyToMessageId) */
+  replyToMessageId?: string | null;
+  /** Parent message object when present (from GET /chat/rooms/:roomId/messages) */
+  replyToMessage?: Message | null;
+  /** Child messages (replies to this message) */
+  replies?: Message[];
   isEdited?: boolean;
   reactions?: Record<string, string[]>; // emoji -> array of userIds
   isDeleted?: boolean;

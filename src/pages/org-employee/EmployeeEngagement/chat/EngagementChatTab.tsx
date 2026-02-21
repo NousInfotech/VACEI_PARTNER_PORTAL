@@ -133,7 +133,10 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
 
     const handleSendMessage = async (content: any) => {
         try {
-            await sendMessage(content);
+            const payload = replyToMessage?.id
+                ? { ...content, replyToMessageId: replyToMessage.id, replyToMessage }
+                : content;
+            await sendMessage(payload);
             setReplyToMessage(null);
         } catch (e) {
             console.error('Failed to send message:', e);

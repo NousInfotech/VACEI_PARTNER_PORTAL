@@ -100,11 +100,10 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
                 // Fetch initial messages
                 const msgs = await chatService.getMessages(roomId);
                 if (msgs?.data) {
-                    const mappedMessages = msgs.data.map((msg: any) => {
+                    const mapMessage = (msg: any): Message => {
                         let t = msg.sentAt || msg.sent_at || msg.created_at;
                         if (t && !t.endsWith('Z') && !t.includes('+') && !t.match(/-\d{2}:\d{2}$/)) t += 'Z';
-
-                        return {
+                        const base: Message = {
                             id: msg.id,
                             senderId: msg.senderId || msg.sender_id,
                             text: msg.content || msg.text,
@@ -113,11 +112,15 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
                             fileSize: msg.fileSize || msg.file_size,
                             type: (msg.type || 'text').toLowerCase(),
                             timestamp: t,
-                            status: 'sent', // Default to sent for history
+                            status: 'sent',
                             createdAt: new Date(t || new Date()).getTime(),
-                            // Map other fields if necessary
+                            replyToMessageId: msg.replyToMessageId ?? msg.reply_to_message_id ?? null,
+                            replyToMessage: msg.replyToMessage ? mapMessage(msg.replyToMessage) : (msg.reply_to_message ? mapMessage(msg.reply_to_message) : null),
+                            replies: Array.isArray(msg.replies) ? msg.replies.map((r: any) => mapMessage(r)) : undefined,
                         };
-                    });
+                        return base;
+                    };
+                    const mappedMessages = msgs.data.map((msg: any) => mapMessage(msg));
 
                     // Ensure messages are sorted by timestamp
                     const sorted = (mappedMessages as Message[]).sort((a, b) =>
@@ -164,7 +167,10 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
                                 type: (newMsg.type || 'text').toLowerCase(),
                                 timestamp: t,
                                 status: 'sent',
-                                createdAt: new Date(t || new Date()).getTime()
+                                createdAt: new Date(t || new Date()).getTime(),
+                                replyToMessageId: newMsg.replyToMessageId ?? newMsg.reply_to_message_id ?? null,
+                                replyToMessage: newMsg.replyToMessage ? { id: newMsg.replyToMessage.id, senderId: newMsg.replyToMessage.senderId || newMsg.replyToMessage.sender_id, text: newMsg.replyToMessage.content || newMsg.replyToMessage.text, type: 'text', timestamp: newMsg.replyToMessage.sentAt || newMsg.replyToMessage.sent_at || '', status: 'sent', fileName: newMsg.replyToMessage.fileName || newMsg.replyToMessage.file_name } : null,
+                                replies: newMsg.replies ? newMsg.replies.map((r: any) => ({ id: r.id, senderId: r.senderId || r.sender_id, text: r.content || r.text, type: (r.type || 'text').toLowerCase(), timestamp: r.sentAt || r.sent_at || '', status: 'sent' as const, replyToMessageId: r.replyToMessageId ?? r.reply_to_message_id })) : undefined,
                             };
 
                             setMessages((prev) => {
@@ -205,7 +211,7 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
         const tempId = `temp-${Date.now()}`;
         const tempMessage: Message = {
             id: tempId,
-            senderId: 'me', // Or currentUserId
+            senderId: 'me',
             text: content.text,
             fileUrl: content.fileUrl || content.gifUrl,
             fileName: content.fileName,
@@ -213,7 +219,8 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
             type: content.type,
             timestamp: new Date().toISOString(),
             status: 'sending',
-            createdAt: Date.now()
+            createdAt: Date.now(),
+            ...(content.replyToMessageId && { replyToMessageId: content.replyToMessageId }),
         };
 
         // Add temp message immediately
@@ -237,7 +244,30 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
                     type: (newMsg.type || 'text').toLowerCase(),
                     timestamp: t || new Date().toISOString(),
                     status: 'sent',
-                    createdAt: new Date(t || new Date()).getTime()
+                    createdAt: new Date(t || new Date()).getTime(),
+                    ...(newMsg.replyToMessageId != null && { replyToMessageId: newMsg.replyToMessageId }),
+                    ...(newMsg.replyToMessage && {
+                        replyToMessage: {
+                            id: newMsg.replyToMessage.id,
+                            senderId: newMsg.replyToMessage.senderId || newMsg.replyToMessage.sender_id,
+                            text: newMsg.replyToMessage.content || newMsg.replyToMessage.text,
+                            type: 'text',
+                            timestamp: newMsg.replyToMessage.sentAt || newMsg.replyToMessage.sent_at || '',
+                            status: 'sent' as const,
+                            fileName: newMsg.replyToMessage.fileName || newMsg.replyToMessage.file_name,
+                        },
+                    }),
+                    ...(Array.isArray(newMsg.replies) && newMsg.replies.length > 0 && {
+                        replies: newMsg.replies.map((r: any) => ({
+                            id: r.id,
+                            senderId: r.senderId || r.sender_id,
+                            text: r.content || r.text,
+                            type: (r.type || 'text').toLowerCase(),
+                            timestamp: r.sentAt || r.sent_at || '',
+                            status: 'sent' as const,
+                            replyToMessageId: r.replyToMessageId ?? r.reply_to_message_id,
+                        })),
+                    }),
                 };
 
                 // Replace temp message with real one

@@ -128,8 +128,8 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             message.status === 'sending' && "opacity-70" // Visual cue for optimistic send
           )}
         >
-          {/* Reply Preview */}
-          {message.replyToId && (
+          {/* Reply Preview - show replyToMessage content or fallback when replyToMessageId/replyToId present */}
+          {(message.replyToMessage || message.replyToMessageId || message.replyToId) && (
             <div className={cn(
               "mb-2 p-2 rounded-lg border-l-4 bg-black/5 flex flex-col gap-0.5 min-w-[120px]",
               isMe ? "border-white/40" : "border-primary/40"
@@ -144,7 +144,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                 "text-[12px] truncate opacity-70 italic",
                 isMe ? "text-white" : "text-gray-600"
               )}>
-                Message has been replied to
+                {message.replyToMessage?.text || message.replyToMessage?.fileName || 'Message'}
               </p>
             </div>
           )}
