@@ -19,23 +19,10 @@ interface ClassificationViewProps {
     subtitle?: string;
 }
 
-export interface WorkbookFile {
-    id: string;
-    name: string;
-    user: string;
-    size: string;
-    date: string;
-}
 
 export default function ClassificationView({ classificationId, engagementId, title: propTitle }: ClassificationViewProps) {
     // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
     const [activeTab, setActiveTab] = useState('Lead Sheet');
-
-    // File State Management - must be before conditional returns
-    const [files, setFiles] = useState<WorkbookFile[]>([
-        { id: '1', name: "Unique Ltd.xlsx", user: "Uploaded by User", size: "2.4 MB", date: "2 min ago" },
-        { id: '2', name: "Financial_Report_2024.xlsx", user: "Uploaded by Admin", size: "1.8 MB", date: "1 hour ago" }
-    ]);
 
     // Fetch ETB data
     const { data: etbData, isLoading, trialBalanceId } = useETBData(engagementId);
@@ -103,17 +90,6 @@ export default function ClassificationView({ classificationId, engagementId, tit
         { id: 'WorkBook', label: 'WorkBook' },
     ];
 
-    const handleFileClick = (file: WorkbookFile) => {
-        window.open(`/workbook-viewer?filename=${encodeURIComponent(file.name)}`, '_blank');
-    };
-
-    const handleUpload = (newFile: WorkbookFile) => {
-        setFiles([newFile, ...files]);
-    };
-
-    const handleDeleteFile = (id: string) => {
-        setFiles(files.filter(f => f.id !== id));
-    };
 
     // NOW conditional returns are safe
     if (isLoading) {
@@ -178,10 +154,9 @@ export default function ClassificationView({ classificationId, engagementId, tit
             {activeTab === 'WorkBook' && (
                 <ClassificationWorkbook
                     title={title}
-                    files={files}
-                    onUpload={handleUpload}
-                    onFileClick={handleFileClick}
-                    onDeleteFile={handleDeleteFile}
+                    engagementId={engagementId}
+                    classification={title} // Pass classification string (label) for filtering
+                    classificationId={dbClassificationId ?? undefined} // Pass classification ID (UUID) for evidence creation
                     classificationRows={tableRows}
                 />
             )}

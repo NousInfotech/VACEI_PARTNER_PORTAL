@@ -33,6 +33,7 @@ export const endPoints = {
     LIBRARY_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library`,
     LIBRARY_FOLDER_BY_TYPE: (engagementId: string, type: string) => `/engagements/${engagementId}/library?type=${type}`,
     EVIDENCE_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library/evidences`,
+    WORKBOOK_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library/workbooks`,
   },
   ENGAGEMENT_UPDATES: '/engagement-updates',
   DOCUMENT_REQUESTS: '/document-requests',
@@ -89,6 +90,24 @@ export const endPoints = {
     GET_CLASSIFICATION: (classificationId: string) => `/classifications/${classificationId}`,
     CREATE_CLASSIFICATION: '/classifications',
     FIND_CLASSIFICATION_BY_GROUPS: '/classifications/find-by-groups',
+    // Workbook endpoints
+    GET_WORKBOOKS: '/workbooks',
+    GET_WORKBOOK: (workbookId: string) => `/workbooks/${workbookId}`,
+    CREATE_WORKBOOK: '/workbooks',
+    UPDATE_WORKBOOK: (workbookId: string) => `/workbooks/${workbookId}`,
+    DELETE_WORKBOOK: (workbookId: string) => `/workbooks/${workbookId}`,
+    GET_WORKBOOK_SHEETS: (workbookId: string) => `/workbooks/${workbookId}/sheets`,
+    GET_WORKBOOK_SHEET_DATA: (workbookId: string, sheetName?: string) => 
+      sheetName 
+        ? `/workbooks/${workbookId}/sheets/data?sheetName=${encodeURIComponent(sheetName)}`
+        : `/workbooks/${workbookId}/sheets/data`,
+    // RangeEvidence endpoints (for mappings and references)
+    GET_RANGE_EVIDENCES: (workbookId: string) => `/workbooks/${workbookId}/range-evidences`,
+    GET_RANGE_EVIDENCE: (workbookId: string, rangeEvidenceId: string) => `/workbooks/${workbookId}/range-evidences/${rangeEvidenceId}`,
+    CREATE_RANGE_EVIDENCE: (workbookId: string) => `/workbooks/${workbookId}/range-evidences`,
+      UPDATE_RANGE_EVIDENCE: (workbookId: string, rangeEvidenceId: string) => `/workbooks/${workbookId}/range-evidences/${rangeEvidenceId}`,
+      DELETE_RANGE_EVIDENCE: (workbookId: string, rangeEvidenceId: string) => `/workbooks/${workbookId}/range-evidences/${rangeEvidenceId}`,
+      ATTACH_EVIDENCE_TO_RANGE_EVIDENCE: (workbookId: string, rangeEvidenceId: string) => `/workbooks/${workbookId}/range-evidences/${rangeEvidenceId}/attach-evidence`,
   },
   INCORPORATION: {
     GET_BY_COMPANY: (companyId: string) => `/incorporation/company/${companyId}`,

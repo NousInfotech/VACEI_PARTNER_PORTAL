@@ -32,7 +32,7 @@ const App = () => {
           </Route>
           <Route path="/engagement-view/:id" element={<EngagementFullView />} />
           <Route path="/engagement-view/services/:serviceId" element={<EngagementFullView />} />
-          <Route path="/workbook-viewer" element={<WorkbookViewerPage />} />
+          <Route path="/workbook-viewer/:workbookId" element={<WorkbookViewerPage />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </Router>
