@@ -105,5 +105,13 @@ export const endPoints = {
     FROM_CHAT: (engagementId: string) => `/engagements/${engagementId}/todos/from-chat`,
     FROM_DOCUMENT_REQUEST: (engagementId: string) => `/engagements/${engagementId}/todos/from-document-request`,
     FROM_REQUESTED_DOCUMENT: (engagementId: string) => `/engagements/${engagementId}/todos/from-requested-document`,
+  },
+  PROCEDURE_PROMPT: {
+    BASE: '/procedure-prompts',
+    GET_ALL: '/procedure-prompts',
+    GET_BY_ID: (id: string) => `/procedure-prompts/${id}`,
+    CREATE: '/procedure-prompts',
+    UPDATE: (id: string) => `/procedure-prompts/${id}`,
+    DELETE: (id: string) => `/procedure-prompts/${id}`,
   }
 };

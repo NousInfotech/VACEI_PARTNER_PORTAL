@@ -28,6 +28,9 @@ const App = () => {
             <Route path="/dashboard/messages" element={<Messages />} />
             <Route path="/dashboard/support" element={<Messages isSingleChat={true} contextualChatId="support-chat" />} />
             <Route path="/dashboard/settings" element={<Dashboard activeSection="Settings" />} />
+            <Route path="/dashboard/procedure-prompts" element={<Dashboard activeSection="Procedure Prompt" />} />
+            <Route path="/dashboard/procedure-prompts/create" element={<Dashboard activeSection="Create Procedure Prompt" />} />
+            <Route path="/dashboard/procedure-prompts/:id/edit" element={<Dashboard activeSection="Edit Procedure Prompt" />} />
             <Route path="*" element={<NotFound />} />
           </Route>
           <Route path="/engagement-view/:id" element={<EngagementFullView />} />
