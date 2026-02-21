@@ -121,7 +121,7 @@ export default function Reclassifications({ engagementId }: ReclassificationsPro
             queryClient.invalidateQueries({ queryKey: ['trial-balance-with-accounts'] });
             queryClient.invalidateQueries({ queryKey: ['audit-entries', trialBalanceId] });
             setIsFormExpanded(false);
-            setEditingItem(undefined);
+        setEditingItem(undefined);
         },
         onError: (error: any) => {
             console.error("Failed to create reclassification:", error);
@@ -279,7 +279,7 @@ export default function Reclassifications({ engagementId }: ReclassificationsPro
         if (isFormExpanded) {
             handleCancel();
         } else {
-            setEditingItem(undefined);
+        setEditingItem(undefined);
             setIsFormExpanded(true);
         }
     };
@@ -367,7 +367,7 @@ export default function Reclassifications({ engagementId }: ReclassificationsPro
             ) : auditEntries.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">No reclassifications found. Create your first reclassification above.</div>
             ) : (
-                <div className="space-y-4">
+            <div className="space-y-4">
                     {auditEntries.map((entry: any) => {
                         const lines: AdjustmentEntry[] = (entry.lines || []).map((line: any, index: number) => ({
                             id: index + 1,
@@ -380,20 +380,20 @@ export default function Reclassifications({ engagementId }: ReclassificationsPro
                         }));
 
                         return (
-                            <AdjustmentCard
+                <AdjustmentCard
                                 key={entry.id}
                                 id={entry.code}
                                 status={entry.status}
                                 description={entry.description}
                                 lines={lines}
-                                attachmentCount={0}
+                    attachmentCount={0}
                                 onEdit={() => handleEdit(entry.id)}
                                 onHistory={() => handleHistory(entry.id)}
                                 onDelete={() => handleDelete(entry.id)}
-                            />
+                />
                         );
                     })}
-                </div>
+            </div>
             )}
         </div>
     );

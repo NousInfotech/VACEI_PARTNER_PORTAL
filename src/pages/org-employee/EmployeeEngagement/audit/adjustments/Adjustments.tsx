@@ -122,7 +122,7 @@ export default function Adjustments({ engagementId }: AdjustmentsProps) {
             queryClient.invalidateQueries({ queryKey: ['trial-balance-with-accounts'] });
             queryClient.invalidateQueries({ queryKey: ['audit-entries', trialBalanceId] });
             setIsFormExpanded(false);
-            setEditingAdjustment(undefined);
+        setEditingAdjustment(undefined);
         },
         onError: (error: any) => {
             console.error("Failed to create adjustment:", error);
@@ -285,7 +285,7 @@ export default function Adjustments({ engagementId }: AdjustmentsProps) {
         if (isFormExpanded) {
             handleCancel();
         } else {
-            setEditingAdjustment(undefined);
+        setEditingAdjustment(undefined);
             setIsFormExpanded(true);
         }
     };
@@ -373,7 +373,7 @@ export default function Adjustments({ engagementId }: AdjustmentsProps) {
             ) : auditEntries.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">No adjustments found. Create your first adjustment above.</div>
             ) : (
-                <div className="space-y-4">
+            <div className="space-y-4">
                     {auditEntries.map((entry: any) => {
                         // Map backend entry lines to AdjustmentEntry format
                         const lines: AdjustmentEntry[] = (entry.lines || []).map((line: any, index: number) => ({
@@ -387,20 +387,20 @@ export default function Adjustments({ engagementId }: AdjustmentsProps) {
                         }));
 
                         return (
-                            <AdjustmentCard
+                <AdjustmentCard
                                 key={entry.id}
                                 id={entry.code}
                                 status={entry.status}
                                 description={entry.description}
                                 lines={lines}
-                                attachmentCount={0}
+                    attachmentCount={0}
                                 onEdit={() => handleEdit(entry.id)}
                                 onHistory={() => handleHistory(entry.id)}
                                 onDelete={() => handleDelete(entry.id)}
-                            />
+                />
                         );
                     })}
-                </div>
+            </div>
             )}
         </div>
     );
