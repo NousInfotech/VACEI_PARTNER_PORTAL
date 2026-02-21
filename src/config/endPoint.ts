@@ -39,6 +39,10 @@ export const endPoints = {
   REQUESTED_DOCUMENTS: (requestId: string) => `/document-requests/${requestId}/documents`,
   REQUESTED_DOCUMENT_BY_ID: (requestId: string, docId: string) => `/document-requests/${requestId}/documents/${docId}`,
   REQUESTED_DOCUMENT_UPLOAD: (requestId: string, docId: string) => `/document-requests/${requestId}/documents/${docId}/upload`,
+  COMPLIANCE_CALENDAR: {
+    BASE: '/compliance-calendar',
+    GET_BY_ID: (id: string) => `/compliance-calendar/${id}`
+  },
   CHAT: {
     ROOMS: '/chat/rooms',
     ROOM_BY_ID: (roomId: string) => `/chat/rooms/${roomId}`,

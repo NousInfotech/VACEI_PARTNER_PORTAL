@@ -39,7 +39,7 @@ export default function MaterialityStep({ onProceed }: MaterialityStepProps) {
                 </div>
 
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex gap-3">
-                    <Info className="flex-shrink-0 text-gray-500" size={20} />
+                    <Info className="shrink-0 text-gray-500" size={20} />
                     <p className="text-sm text-gray-600">
                         <span className="font-semibold text-gray-900">Materiality Guidelines:</span> Materiality is typically set as a percentage of key financial statement items (e.g., 5% of net income, 0.5-1% of total assets, or 0.5-1% of revenue). Consider the entity's size, nature, and risk profile when setting materiality.
                     </p>
