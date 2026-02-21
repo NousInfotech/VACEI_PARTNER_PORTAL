@@ -13,13 +13,22 @@ import { FallbackView } from "./components/FallbackView";
 import { RequestedDocumentRow } from "./components/RequestedDocumentRow";
 import { DocumentRequestGroup } from "./components/DocumentRequestGroup";
 import { DocumentRequestModal } from "./components/DocumentRequestModal";
+import TodoModal from "../components/TodoModal";
 
 interface DocumentRequestsViewProps {
   engagementId?: string;
 }
 
 const DocumentRequestsContent = () => {
-  const { engagementId, setIsAddModalOpen } = useDocumentRequests();
+  const { 
+    engagementId, 
+    setIsAddModalOpen,
+    isTodoModalOpen,
+    setIsTodoModalOpen,
+    todoInitialData,
+    todoSourceId,
+    todoMode
+  } = useDocumentRequests();
   const { selectedService } = useAuth();
   const serviceName = selectedService?.replace(/_/g, " ") || "Engagement";
 
@@ -80,6 +89,16 @@ const DocumentRequestsContent = () => {
       </div>
 
       <DocumentRequestModal />
+      <TodoModal 
+        isOpen={isTodoModalOpen}
+        onClose={() => setIsTodoModalOpen(false)}
+        onSuccess={() => {}}
+        engagementId={engagementId!}
+        mode={todoMode}
+        sourceId={todoSourceId}
+        initialData={todoInitialData}
+        service={selectedService || 'AUDITING'}
+      />
     </div>
   );
 };

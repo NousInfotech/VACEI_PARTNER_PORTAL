@@ -1,7 +1,9 @@
 import { format } from "date-fns";
 import { 
-  Upload, Loader2, Eye, Download, Edit2, Trash2, FileEdit, FileUp, RotateCcw, Plus 
+  Upload, Loader2, Eye, Download, Edit2, Trash2, FileEdit, FileUp, RotateCcw, Plus, CheckSquare 
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { todoService } from "@/api/todoService";
 import { Button } from "../../../../../ui/Button";
 import { cn } from "../../../../../lib/utils";
 import type { RequestedDocumentItem } from "../types";
@@ -24,8 +26,24 @@ export const RequestedDocumentRow = ({
     setFormData,
     uploadMutation,
     clearMutation,
-    hardDeleteMutation
+    hardDeleteMutation,
+    setIsTodoModalOpen,
+    setTodoInitialData,
+    setTodoSourceId,
+    setTodoMode
   } = useDocumentRequests();
+  
+  
+  // Re-evaluating engagementId source
+  const { engagementId } = useDocumentRequests();
+  
+  const { data: todosList } = useQuery({
+    queryKey: ['engagement-todos', engagementId],
+    enabled: !!engagementId,
+    queryFn: () => todoService.list(engagementId!),
+  });
+
+  const linkedTodo = todosList?.find(t => t.moduleId === doc.id && (t.type === 'REQUESTED_DOCUMENT' || t.type === 'CUSTOM'));
 
   const isMultiple = doc.count === 'MULTIPLE';
   const isTemplate = doc.type === 'TEMPLATE';
@@ -70,11 +88,36 @@ export const RequestedDocumentRow = ({
                 {doc.status}
               </span>
               {doc.file && <span className="text-[10px] text-gray-400">Uploaded: {format(new Date(doc.createdAt), "MMM dd, yyyy")}</span>}
+              {linkedTodo && (
+                <div className="flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 rounded-full text-[10px] font-bold animate-pulse">
+                  <CheckSquare className="h-3 w-3" />
+                  Task Tracked
+                </div>
+              )}
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
+          {!doc.file && (
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="h-9 w-9 text-amber-500 border-amber-200 hover:bg-amber-50" 
+              onClick={() => {
+                setTodoInitialData({
+                  title: `Upload: ${doc.documentName}`,
+                  description: doc.description || '',
+                });
+                setTodoSourceId(doc.id);
+                setTodoMode("from-req-doc");
+                setIsTodoModalOpen(true);
+              }}
+              title="Create Todo"
+            >
+              <CheckSquare className="h-4 w-4" />
+            </Button>
+          )}
           {!isMultiple && !doc.file && (
             <div className="relative">
               <input 

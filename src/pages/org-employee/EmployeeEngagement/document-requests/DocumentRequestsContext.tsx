@@ -35,6 +35,14 @@ interface DocumentRequestsContextType {
   clearMutation: any;
   hardDeleteMutation: any;
   engagementId?: string;
+  isTodoModalOpen: boolean;
+  setIsTodoModalOpen: (open: boolean) => void;
+  todoInitialData: any;
+  setTodoInitialData: (data: any) => void;
+  todoSourceId: string | undefined;
+  setTodoSourceId: (id: string | undefined) => void;
+  todoMode: "from-doc-req" | "from-req-doc" | "create";
+  setTodoMode: (mode: "from-doc-req" | "from-req-doc" | "create") => void;
 }
 
 const DocumentRequestsContext = createContext<DocumentRequestsContextType | undefined>(undefined);
@@ -60,6 +68,10 @@ export const DocumentRequestsProvider: React.FC<{ engagementId?: string; childre
   const [editingDoc, setEditingDoc] = useState<RequestedDocumentItem | null>(null);
   const [editingGroup, setEditingGroup] = useState<DocumentRequestItem | null>(null);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [isTodoModalOpen, setIsTodoModalOpen] = useState(false);
+  const [todoInitialData, setTodoInitialData] = useState<any>(null);
+  const [todoSourceId, setTodoSourceId] = useState<string | undefined>(undefined);
+  const [todoMode, setTodoMode] = useState<"from-doc-req" | "from-req-doc" | "create">("from-doc-req");
   
   const [formData, setFormData] = useState({
     documentName: "",
@@ -339,11 +351,23 @@ export const DocumentRequestsProvider: React.FC<{ engagementId?: string; childre
     deleteContainerMutation,
     clearMutation,
     hardDeleteMutation,
-    engagementId
+    engagementId,
+    isTodoModalOpen,
+    setIsTodoModalOpen,
+    todoInitialData,
+    setTodoInitialData,
+    todoSourceId,
+    setTodoSourceId,
+    todoMode,
+    setTodoMode,
   }), [
     formData, 
     isAddModalOpen, 
     isGroupModalOpen,
+    isTodoModalOpen,
+    todoInitialData,
+    todoSourceId,
+    todoMode,
     addingToContainerId, 
     editingDoc, 
     editingGroup,

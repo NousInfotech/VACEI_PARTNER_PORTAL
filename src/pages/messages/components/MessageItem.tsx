@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Check, CheckCheck, FileText, ChevronDown, Clock } from 'lucide-react';
+import { Check, CheckCheck, FileText, ChevronDown, Clock, CheckSquare } from 'lucide-react';
 import type { Message, User } from '../types';
 import { cn } from '../../../lib/utils';
 import { MessageOptions } from './MessageOptions';
@@ -18,6 +18,7 @@ interface MessageItemProps {
   onDelete?: () => void;
   onReact?: (emoji: string) => void;
   onForward?: () => void;
+  onCreateTodo?: () => void;
   isSelectMode?: boolean;
   isSelected?: boolean;
   onSelect?: () => void;
@@ -25,6 +26,7 @@ interface MessageItemProps {
   showOptions?: boolean;
   onToggleOptions?: (show: boolean) => void;
   onImageLoad?: () => void;
+  linkedTodo?: any;
 }
 
 export const MessageItem: React.FC<MessageItemProps> = ({
@@ -42,9 +44,11 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   isSelected,
   onSelect,
   onEnterSelectMode,
+  onCreateTodo,
   showOptions = false,
   onToggleOptions,
-  onImageLoad
+  onImageLoad,
+  linkedTodo
 }) => {
   const [showReactionDetails, setShowReactionDetails] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -74,6 +78,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     else if (action === 'edit') onEdit?.();
     else if (action === 'delete') onDelete?.();
     else if (action === 'forward') onForward?.();
+    else if (action === 'createTodo') onCreateTodo?.();
     else if (action === 'react' && data) onReact?.(data as string);
     else if (action === 'copy') {
       if (message.text) navigator.clipboard.writeText(message.text);
@@ -170,6 +175,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             isDeleted={message.isDeleted}
             triggerRect={triggerCoords}
             createdAt={message.createdAt}
+            hasTodo={Boolean(linkedTodo)}
           />
 
           {message.type === 'image' ? (
@@ -254,6 +260,11 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                   <CheckCheck className="w-3.5 h-3.5 stroke-[2.5]" />
                 )}
               </span>
+            )}
+            {linkedTodo && (
+               <span className="flex items-center shrink-0" title="Linked to Todo">
+                  <CheckSquare className="w-3.5 h-3.5 text-primary stroke-[2.5]" />
+               </span>
             )}
           </div>
         </div>

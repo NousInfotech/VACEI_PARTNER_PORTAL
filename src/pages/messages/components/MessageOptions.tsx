@@ -13,7 +13,7 @@ import {
 import { cn } from '../../../lib/utils';
 import { EMOJI_LIST } from '../constants';
 
-export type MessageAction = 'reply' | 'react' | 'forward' | 'delete' | 'copy' | 'select' | 'edit';
+export type MessageAction = 'reply' | 'react' | 'forward' | 'delete' | 'copy' | 'select' | 'edit' | 'createTodo';
 
 interface MessageOptionsProps {
   isOpen: boolean;
@@ -23,6 +23,7 @@ interface MessageOptionsProps {
   isDeleted?: boolean;
   triggerRect?: DOMRect | null;
   createdAt?: number;
+  hasTodo?: boolean;
 }
 
 const COMMON_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
@@ -35,6 +36,7 @@ export const MessageOptions: React.FC<MessageOptionsProps> = ({
   isDeleted,
   triggerRect,
   createdAt,
+  hasTodo,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState<{ top: number; left: number; transformOrigin: string } | null>(null);
@@ -95,6 +97,12 @@ export const MessageOptions: React.FC<MessageOptionsProps> = ({
 
   const footerOptions = [
     { id: 'select' as const, label: 'Select', icon: CheckSquare },
+    { 
+      id: 'createTodo' as const, 
+      label: hasTodo ? 'Edit Checklist' : 'Create Todo', 
+      icon: CheckSquare, 
+      className: 'text-amber-500' 
+    },
     { id: 'delete' as const, label: 'Delete', icon: Trash2, className: 'text-[#ef5350]' },
   ];
 

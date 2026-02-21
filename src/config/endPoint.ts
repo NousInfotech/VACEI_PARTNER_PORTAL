@@ -81,4 +81,13 @@ export const endPoints = {
   INCORPORATION: {
     GET_BY_COMPANY: (companyId: string) => `/incorporation/company/${companyId}`,
   },
+  TODO: {
+    BASE: '/todos',
+    BY_ENGAGEMENT: (engagementId: string) => `/engagements/${engagementId}/todos`,
+    BY_ID: (todoId: string) => `/todos/${todoId}`,
+    UPDATE_STATUS: (todoId: string) => `/todos/${todoId}/status`,
+    FROM_CHAT: (engagementId: string) => `/engagements/${engagementId}/todos/from-chat`,
+    FROM_DOCUMENT_REQUEST: (engagementId: string) => `/engagements/${engagementId}/todos/from-document-request`,
+    FROM_REQUESTED_DOCUMENT: (engagementId: string) => `/engagements/${engagementId}/todos/from-requested-document`,
+  }
 };

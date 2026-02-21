@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useChat } from '@/hooks/useChat';
+import { useQuery } from '@tanstack/react-query';
+import { todoService } from '@/api/todoService';
 import type { Chat, Message } from '@/pages/messages/types';
 import { ChatWindow } from '@/pages/messages/components/ChatWindow';
 import { MessageSearchPane } from '@/pages/messages/components/MessageSearchPane';
@@ -10,7 +12,8 @@ import { ConfirmModal } from '@/pages/messages/components/ConfirmModal';
 import { EmojiPicker } from '@/pages/messages/components/EmojiPicker';
 import { Loader2, X, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils'; // Keep as cn
-import { useAuth } from '@/context/auth-context-core'; // Correct path for auth context
+import { useAuth } from '@/context/auth-context-core';
+import TodoModal from '../components/TodoModal';
 
 interface EngagementChatTabProps {
     engagementId: string;
@@ -48,6 +51,10 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
         userId?: string;
     }>({ isOpen: false, type: 'message' });
     const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+    const [isTodoModalOpen, setIsTodoModalOpen] = useState(false);
+    const [todoInitialData, setTodoInitialData] = useState<any>(null);
+    const [todoSourceId, setTodoSourceId] = useState<string | undefined>(undefined);
+    const [todoMode, setTodoMode] = useState<"from-chat" | "edit" | "create">("from-chat");
 
     // construct active chat object
     const activeChat: Chat | null = room ? {
@@ -56,6 +63,20 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
         // Ensure participants are typed correctly if needed, matching Chat interface
         participants: room.participants || []
     } : null;
+    
+    const { data: engagementTodos } = useQuery({
+        queryKey: ['engagement-todos', engagementId],
+        enabled: !!engagementId,
+        queryFn: () => todoService.list(engagementId),
+    });
+
+    const todoMap = useMemo(() => {
+        const map: Record<string, any> = {};
+        engagementTodos?.forEach(todo => {
+            if (todo.moduleId) map[todo.moduleId] = todo;
+        });
+        return map;
+    }, [engagementTodos]);
 
     useEffect(() => {
         if (activeChat) {
@@ -184,6 +205,21 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
                             else handleReactToMessage(msgId, emoji);
                         }}
                         onForwardMessage={handleForwardMessage}
+                        onCreateTodoMessage={(msg) => {
+                            const existingTodo = todoMap[msg.id];
+                            if (existingTodo) {
+                                setTodoInitialData(existingTodo);
+                                setTodoMode("edit" as any); // Use "edit" if supported by context otherwise "create"
+                            } else {
+                                setTodoInitialData({
+                                    title: `Follow up: ${msg.text?.substring(0, 30)}${msg.text && msg.text.length > 30 ? '...' : ''}`,
+                                    description: msg.text || '',
+                                });
+                                setTodoMode("from-chat" as any);
+                            }
+                            setTodoSourceId(msg.id);
+                            setIsTodoModalOpen(true);
+                        }}
                         replyingTo={replyToMessage}
                         editingMessage={editingMessage}
                         onCancelReply={() => setReplyToMessage(null)}
@@ -193,6 +229,7 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
                         onSelectMessage={(id) => setSelectedMessageIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])}
                         onEnterSelectMode={() => setIsSelectMode(true)}
                         currentUserId={activeChat.messages[0]?.senderId === 'me' ? 'me' : (useAuth().organizationMember?.userId || '')} // Pass currentUserId, fallback to auth
+                        todoMap={todoMap}
                     />
                 </div>
 
@@ -275,6 +312,19 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
                 variant="danger"
                 onConfirm={confirmDelete}
                 onCancel={() => setConfirmState({ isOpen: false, type: 'message' })}
+            />
+
+            <TodoModal 
+                isOpen={isTodoModalOpen}
+                onClose={() => setIsTodoModalOpen(false)}
+                onSuccess={() => {
+                   // Optional: toast already handled in modal
+                }}
+                engagementId={engagementId}
+                mode={todoMode as any}
+                sourceId={todoSourceId}
+                initialData={todoInitialData}
+                service={(room as any)?.service || 'AUDITING'}
             />
         </div>
     );

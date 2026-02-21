@@ -1,4 +1,7 @@
-import { FileText, Plus, Edit2, Trash2, Loader2 } from "lucide-react";
+import { FileText, Plus, Edit2, Trash2, Loader2, CheckSquare } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { todoService } from "@/api/todoService";
+import { useParams } from "react-router-dom";
 import { Button } from "../../../../../ui/Button";
 import type { DocumentRequestItem } from "../types";
 import { useDocumentRequests } from "../DocumentRequestsContext";
@@ -9,7 +12,25 @@ interface DocumentRequestGroupProps {
 }
 
 export const DocumentRequestGroup = ({ req, children }: DocumentRequestGroupProps) => {
-  const { setAddingToContainerId, setIsAddModalOpen, setEditingGroup, deleteContainerMutation } = useDocumentRequests();
+  const { id: engagementId } = useParams();
+  const { 
+    setAddingToContainerId, 
+    setIsAddModalOpen, 
+    setEditingGroup, 
+    deleteContainerMutation,
+    setIsTodoModalOpen,
+    setTodoInitialData,
+    setTodoSourceId,
+    setTodoMode
+  } = useDocumentRequests();
+  
+  const { data: todos } = useQuery({
+    queryKey: ['engagement-todos', engagementId],
+    enabled: !!engagementId,
+    queryFn: () => todoService.list(engagementId!),
+  });
+
+  const linkedTodo = todos?.find(t => t.moduleId === req.id && (t.type === 'DOCUMENT_REQUEST' || t.type === 'CUSTOM'));
 
   const isDeleting = deleteContainerMutation.isPending && deleteContainerMutation.variables?.id === req.id;
 
@@ -44,6 +65,12 @@ export const DocumentRequestGroup = ({ req, children }: DocumentRequestGroupProp
                 <span className="bg-primary/10 text-primary border border-primary/20 rounded-full px-2 py-0.5 text-[10px] font-bold">
                   {progressPercent}% Complete
                 </span>
+                {linkedTodo && (
+                  <span className="bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5 text-[10px] font-bold flex items-center gap-1 animate-pulse">
+                    <CheckSquare className="h-3 w-3" />
+                    Todo Linked
+                  </span>
+                )}
               </div>
               <p className="text-sm text-gray-600">{req.description}</p>
             </div>
@@ -57,6 +84,23 @@ export const DocumentRequestGroup = ({ req, children }: DocumentRequestGroupProp
               title="Edit Group"
             >
               <Edit2 className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="h-10 w-10 text-amber-500 border-amber-200 hover:bg-amber-50" 
+              onClick={() => {
+                setTodoInitialData({
+                  title: `Follow up: ${req.title}`,
+                  description: req.description || '',
+                });
+                setTodoSourceId(req.id);
+                setTodoMode("from-doc-req");
+                setIsTodoModalOpen(true);
+              }}
+              title="Create Todo"
+            >
+              <CheckSquare className="h-4 w-4" />
             </Button>
             <Button 
               variant="outline" 
