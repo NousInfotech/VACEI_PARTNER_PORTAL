@@ -20,6 +20,9 @@ import { PageHeader } from "../common/PageHeader";
 import EmployeeManagement from "./employee-management/EmployeeManagement";
 import Engagement from "../org-employee/EmployeeEngagement/Engagement";
 import Messages from "../messages/Messages";
+import ProcedurePromptList from "./procedure-prompt/ProcedurePromptList";
+import CreateProcedurePrompt from "./procedure-prompt/CreateProcedurePrompt";
+import EditProcedurePrompt from "./procedure-prompt/EditProcedurePrompt";
 
 interface AdminDashboardProps {
   activeSection?: string;
@@ -98,6 +101,18 @@ export default function AdminDashboard({ activeSection }: AdminDashboardProps) {
 
   if (activeSection === "Engagements") {
     return <Engagement />;
+  }
+
+  if (activeSection === "Procedure Prompt") {
+    return <ProcedurePromptList />;
+  }
+
+  if (activeSection === "Create Procedure Prompt") {
+    return <CreateProcedurePrompt />;
+  }
+
+  if (activeSection === "Edit Procedure Prompt") {
+    return <EditProcedurePrompt />;
   }
 
   return (

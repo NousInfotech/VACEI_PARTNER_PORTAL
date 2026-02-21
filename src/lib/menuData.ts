@@ -6,6 +6,7 @@ import {
     InstallingUpdates02Icon,
     Building01Icon,
     BubbleChatIcon,
+    NoteEditIcon
 } from '@hugeicons/core-free-icons';
 import type { MenuItem } from './types';
 
@@ -91,6 +92,15 @@ export const menuData: MenuItem[] = [
     //     description: "Get help from Vacei",
     //     roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
     // },
+    {
+        slug: "procedure-prompts",
+        icon: NoteEditIcon,
+        label: "Procedure Prompt",
+        href: "/dashboard/procedure-prompts",
+        section: "operations",
+        description: "Manage AI procedure prompts",
+        roles: ["ORG_ADMIN"]
+    },
     {
         slug: "settings",
         icon: InstallingUpdates02Icon,
