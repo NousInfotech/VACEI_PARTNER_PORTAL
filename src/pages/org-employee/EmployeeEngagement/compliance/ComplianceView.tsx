@@ -20,6 +20,7 @@ import { apiGet, apiPost, apiPatch, apiDelete } from '../../../../config/base';
 import { endPoints } from '../../../../config/endPoint';
 import { cn } from '../../../../lib/utils';
 import { useAuth } from '../../../../context/auth-context-core';
+import type { ComplianceCalendarItem } from '../../../../lib/types';
 
 type ComplianceStatus = 'ACTION_REQUIRED' | 'ACTION_TAKEN' | 'COMPLETED';
 type ComplianceType = 'DOCUMENT_REQUEST' | 'CHAT' | 'REQUESTED_DOCUMENT' | 'CUSTOM';
@@ -38,10 +39,6 @@ interface ComplianceItem {
     moduleId: string | null;
 }
 
-interface ApiResponse<T> {
-    data: T;
-    message?: string;
-}
 
 export default function ComplianceView({ engagementId }: { engagementId?: string }) {
     const queryClient = useQueryClient();
@@ -58,21 +55,74 @@ export default function ComplianceView({ engagementId }: { engagementId?: string
         type: 'CUSTOM' as ComplianceType
     });
 
-    const { data: compliances = [], isLoading } = useQuery({
-        queryKey: ['engagement-compliances', engagementId],
+    // Get engagement to extract companyId
+    const { data: engagementData } = useQuery({
+        queryKey: ['engagement', engagementId],
         enabled: !!engagementId,
         queryFn: async () => {
-            if (!engagementId) return [];
-            const res = await apiGet<ApiResponse<ComplianceItem[]>>(
-                endPoints.ENGAGEMENTS.COMPLIANCES(engagementId)
+            if (!engagementId) return null;
+            const res = await apiGet<any>(endPoints.ENGAGEMENTS.GET_BY_ID(engagementId));
+            return res?.data || res;
+        },
+    });
+
+    const companyId = engagementData?.companyId || engagementData?.company?.id;
+
+    // Use Compliance Calendar API filtered by companyId instead of non-existent /engagements/{id}/compliances
+    const { data: compliances = [], isLoading } = useQuery({
+        queryKey: ['engagement-compliances', engagementId, companyId],
+        enabled: !!engagementId && !!companyId,
+        queryFn: async () => {
+            if (!companyId) return [];
+            const res = await apiGet<{ success: boolean; data?: ComplianceCalendarItem[] }>(
+                `${endPoints.COMPLIANCE_CALENDAR.BASE}?type=COMPANY&companyId=${companyId}`
             );
-            return res?.data ?? [];
+            // Map ComplianceCalendarItem to ComplianceItem format expected by UI
+            return (res?.data || []).map((item: any) => {
+                const dueDate = new Date(item.dueDate);
+                const now = new Date();
+                const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                
+                // Calculate status based on dueDate
+                let status: ComplianceStatus = 'ACTION_REQUIRED';
+                if (daysUntilDue < 0) {
+                    status = 'ACTION_REQUIRED'; // Overdue
+                } else if (daysUntilDue <= 7) {
+                    status = 'ACTION_REQUIRED'; // Due soon
+                } else {
+                    status = 'ACTION_TAKEN'; // Upcoming (not urgent yet)
+                }
+                
+                return {
+                    id: item.id,
+                    title: item.title,
+                    description: item.description,
+                    customerComment: null,
+                    startDate: item.startDate,
+                    deadline: item.dueDate,
+                    status,
+                    type: 'CUSTOM' as ComplianceType,
+                    cta: '',
+                    service: item.serviceCategory,
+                    moduleId: null,
+                };
+            });
         },
     });
 
     const createMutation = useMutation({
         mutationFn: async (payload: any) => {
-            return apiPost(endPoints.ENGAGEMENTS.COMPLIANCES(engagementId!), payload);
+            // Use Compliance Calendar API - create COMPANY type entry
+            return apiPost(endPoints.COMPLIANCE_CALENDAR.BASE, {
+                type: 'COMPANY',
+                companyId: companyId,
+                title: payload.title,
+                description: payload.description || null,
+                startDate: payload.startDate,
+                dueDate: payload.deadline,
+                frequency: 'YEARLY', // Default, can be made configurable
+                serviceCategory: payload.service,
+            });
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['engagement-compliances', engagementId] });
@@ -83,7 +133,14 @@ export default function ComplianceView({ engagementId }: { engagementId?: string
 
     const updateMutation = useMutation({
         mutationFn: async ({ id, payload }: { id: string; payload: any }) => {
-            return apiPatch(`${endPoints.ENGAGEMENTS.COMPLIANCES(engagementId!)}/${id}`, payload);
+            // Use Compliance Calendar API
+            return apiPatch(endPoints.COMPLIANCE_CALENDAR.GET_BY_ID(id), {
+                title: payload.title,
+                description: payload.description || null,
+                startDate: payload.startDate,
+                dueDate: payload.deadline,
+                serviceCategory: payload.service,
+            });
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['engagement-compliances', engagementId] });
@@ -94,7 +151,8 @@ export default function ComplianceView({ engagementId }: { engagementId?: string
 
     const deleteMutation = useMutation({
         mutationFn: async (id: string) => {
-            return apiDelete(`${endPoints.ENGAGEMENTS.COMPLIANCES(engagementId!)}/${id}`);
+            // Use Compliance Calendar API
+            return apiDelete(endPoints.COMPLIANCE_CALENDAR.GET_BY_ID(id));
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['engagement-compliances', engagementId] });

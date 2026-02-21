@@ -20,6 +20,7 @@ import {
   Landmark,
   Building2,
   ShieldCheck,
+  ListChecks,
 } from "lucide-react";
 import { ShadowCard } from "../../../ui/ShadowCard";
 import { Button } from "../../../ui/Button";
@@ -44,7 +45,7 @@ import DocumentRequestsView from "./document-requests/DocumentRequestsView";
 import TeamsView from "./teams/TeamsView";
 import CFOView from "./cfo/CFOView";
 import CSPView from "./csp/CSPView";
-import AuditChecklist from "./checklist/AuditChecklist";
+import EngagementTodoView from "./EngagementTodoView";
 import EngagementUpdatesView from "./updates/EngagementUpdatesView";
 import ComplianceView from "./compliance/ComplianceView";
 import MilestonesView from "./milestones/MilestonesView";
@@ -52,6 +53,7 @@ import CFOEngagementsTable from "./cfo/CFOEngagementsTable";
 import CSPCoverageTable from "./csp/CSPCoverageTable";
 import ViewCompanySection from "../../common/view-company/ViewCompanySection";
 import EngagementChatTab from "./chat/EngagementChatTab";
+import AuditChecklist from "./checklist/AuditChecklist";
 
 const ENGAGEMENT_TABS = [
   { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -64,7 +66,8 @@ const ENGAGEMENT_TABS = [
   { id: 'cfo', label: 'CFO', icon: TrendingUp },
   { id: 'csp', label: 'CSP', icon: Building2 },
   { id: 'library', label: 'Library', icon: Library },
-  { id: 'todo', label: 'Todo/Checklists', icon: CheckSquare },
+  { id: 'checklist', label: 'Checklist', icon: ListChecks },
+  { id: 'todo', label: 'Todo', icon: CheckSquare },
   { id: 'compliance', label: 'Compliance', icon: ShieldCheck },
   { id: 'milestones', label: 'Milestones', icon: Landmark },
   { id: 'updates', label: 'Updates', icon: MessageSquare },
@@ -150,7 +153,7 @@ export default function EngagementFullView() {
     const activeServiceTab = serviceMap[selectedService];
 
     const tabs = ENGAGEMENT_TABS.filter(tab => {
-      if (['dashboard', 'requests', 'library', 'todo', 'compliance', 'milestones', 'updates', 'chat', 'teams'].includes(tab.id)) {
+      if (['dashboard', 'requests', 'library', 'checklist', 'todo', 'compliance', 'milestones', 'updates', 'chat', 'teams'].includes(tab.id)) {
         return true;
       }
       if (tab.id === 'services-coverage' && (activeServiceTab === 'cfo' || activeServiceTab === 'csp')) {
@@ -171,9 +174,12 @@ export default function EngagementFullView() {
   const engagement = engagementResponse?.data || engagementResponse;
   const organizationId = engagement?.organizationId || engagement?.organization?._id;
 
+  const companyId = engagement?.companyId || engagement?.company?.id;
+
+  // Use Compliance Calendar API instead of non-existent /engagements/{id}/compliances
   const { data: compliances = [], isLoading: complianceLoading } = useQuery({
-    queryKey: ['engagement-compliances', engagementId],
-    enabled: !!engagementId,
+    queryKey: ['engagement-compliances', engagementId, companyId],
+    enabled: !!engagementId && !!companyId,
     queryFn: async () => {
       if (!engagementId) return [];
       try {
@@ -196,8 +202,16 @@ export default function EngagementFullView() {
 
   const upcomingDeadlines = React.useMemo(() => {
     return compliances
-      .filter((c: any) => c.status !== 'COMPLETED')
-      .sort((a: any, b: any) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+      .filter((c: any) => {
+        // Filter by dueDate (compliance calendar uses dueDate, not deadline)
+        const dueDate = c.dueDate || c.deadline;
+        return new Date(dueDate) >= new Date();
+      })
+      .sort((a: any, b: any) => {
+        const dateA = new Date(a.dueDate || a.deadline).getTime();
+        const dateB = new Date(b.dueDate || b.deadline).getTime();
+        return dateA - dateB;
+      })
       .slice(0, 3);
   }, [compliances]);
 
@@ -506,8 +520,10 @@ export default function EngagementFullView() {
               <EngagementChatTab engagementId={engagementId || ''} companyId={engagement?.companyId} chatRoomId={engagement?.chatRoomId} />
             ) : activeTab === 'teams' ? (
               <TeamsView engagementId={engagementId ?? undefined} />
+            ) : activeTab === 'checklist' ? (
+              <AuditChecklist engagementId={engagementId} />
             ) : activeTab === 'todo' ? (
-              <AuditChecklist engagementId={engagementId ?? undefined} />
+              <EngagementTodoView engagementId={engagementId} service={engagement?.service} />
             ) : activeTab === 'compliance' ? (
               <ComplianceView engagementId={engagementId ?? undefined} />
             ) : activeTab === 'milestones' ? (

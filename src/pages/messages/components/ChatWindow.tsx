@@ -28,6 +28,7 @@ interface ChatWindowProps {
   onDeleteMessage: (messageId: string) => void;
   onReactToMessage: (messageId: string, emoji: string) => void;
   onForwardMessage: (message: Message) => void;
+  onCreateTodoMessage?: (message: Message) => void;
   replyingTo: Message | null;
   editingMessage: Message | null;
   onCancelReply: () => void;
@@ -37,6 +38,7 @@ interface ChatWindowProps {
   onSelectMessage: (messageId: string) => void;
   onEnterSelectMode: () => void;
   currentUserId: string; // Add currentUserId prop
+  todoMap?: Record<string, any>;
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
@@ -55,6 +57,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   onDeleteMessage,
   onReactToMessage,
   onForwardMessage,
+  onCreateTodoMessage,
   replyingTo,
   editingMessage,
   onCancelReply,
@@ -63,7 +66,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   selectedMessageIds,
   onSelectMessage,
   onEnterSelectMode,
-  currentUserId // Destructure currentUserId
+  currentUserId, // Destructure currentUserId
+  todoMap
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [highlightedId, setHighlightedId] = React.useState<string | null>(null);
@@ -162,12 +166,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 onDelete={() => onDeleteMessage(msg.id)}
                 onReact={(emoji) => onReactToMessage(msg.id, emoji)}
                 onForward={() => onForwardMessage(msg)}
+                onCreateTodo={() => onCreateTodoMessage?.(msg)}
                 isSelectMode={isSelectMode}
                 isSelected={selectedMessageIds.includes(msg.id)}
                 onSelect={() => onSelectMessage(msg.id)}
                 onEnterSelectMode={onEnterSelectMode}
                 showOptions={activeOptionsId === msg.id}
                 onToggleOptions={(show) => setActiveOptionsId(show ? msg.id : null)}
+                linkedTodo={todoMap?.[msg.id]}
                 onImageLoad={() => {
                   if (scrollRef.current) {
                     scrollRef.current.scrollTop = scrollRef.current.scrollHeight;

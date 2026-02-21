@@ -40,6 +40,10 @@ export const endPoints = {
   REQUESTED_DOCUMENTS: (requestId: string) => `/document-requests/${requestId}/documents`,
   REQUESTED_DOCUMENT_BY_ID: (requestId: string, docId: string) => `/document-requests/${requestId}/documents/${docId}`,
   REQUESTED_DOCUMENT_UPLOAD: (requestId: string, docId: string) => `/document-requests/${requestId}/documents/${docId}/upload`,
+  COMPLIANCE_CALENDAR: {
+    BASE: '/compliance-calendar',
+    GET_BY_ID: (id: string) => `/compliance-calendar/${id}`
+  },
   CHAT: {
     ROOMS: '/chat/rooms',
     ROOM_BY_ID: (roomId: string) => `/chat/rooms/${roomId}`,
@@ -112,4 +116,21 @@ export const endPoints = {
   INCORPORATION: {
     GET_BY_COMPANY: (companyId: string) => `/incorporation/company/${companyId}`,
   },
+  TODO: {
+    BASE: '/todos',
+    BY_ENGAGEMENT: (engagementId: string) => `/engagements/${engagementId}/todos`,
+    BY_ID: (todoId: string) => `/todos/${todoId}`,
+    UPDATE_STATUS: (todoId: string) => `/todos/${todoId}/status`,
+    FROM_CHAT: (engagementId: string) => `/engagements/${engagementId}/todos/from-chat`,
+    FROM_DOCUMENT_REQUEST: (engagementId: string) => `/engagements/${engagementId}/todos/from-document-request`,
+    FROM_REQUESTED_DOCUMENT: (engagementId: string) => `/engagements/${engagementId}/todos/from-requested-document`,
+  },
+  PROCEDURE_PROMPT: {
+    BASE: '/procedure-prompts',
+    GET_ALL: '/procedure-prompts',
+    GET_BY_ID: (id: string) => `/procedure-prompts/${id}`,
+    CREATE: '/procedure-prompts',
+    UPDATE: (id: string) => `/procedure-prompts/${id}`,
+    DELETE: (id: string) => `/procedure-prompts/${id}`,
+  }
 };

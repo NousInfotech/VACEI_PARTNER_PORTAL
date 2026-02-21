@@ -1,4 +1,7 @@
-import { FileText, Plus, Edit2, Trash2, Loader2 } from "lucide-react";
+import { FileText, Plus, Edit2, Trash2, Loader2, CheckSquare, FileEdit } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { todoService } from "@/api/todoService";
+import { useParams } from "react-router-dom";
 import { Button } from "../../../../../ui/Button";
 import type { DocumentRequestItem } from "../types";
 import { useDocumentRequests } from "../DocumentRequestsContext";
@@ -9,7 +12,25 @@ interface DocumentRequestGroupProps {
 }
 
 export const DocumentRequestGroup = ({ req, children }: DocumentRequestGroupProps) => {
-  const { setAddingToContainerId, setIsAddModalOpen, setEditingGroup, deleteContainerMutation } = useDocumentRequests();
+  const { id: engagementId } = useParams();
+  const { 
+    setAddingToContainerId, 
+    setIsAddModalOpen, 
+    setEditingGroup, 
+    deleteContainerMutation,
+    setIsTodoModalOpen,
+    setTodoInitialData,
+    setTodoSourceId,
+    setTodoMode
+  } = useDocumentRequests();
+  
+  const { data: todos } = useQuery({
+    queryKey: ['engagement-todos', engagementId],
+    enabled: !!engagementId,
+    queryFn: () => todoService.list(engagementId!),
+  });
+
+  const linkedTodo = todos?.find(t => t.moduleId === req.id && (t.type === 'DOCUMENT_REQUEST' || t.type === 'CUSTOM'));
 
   const isDeleting = deleteContainerMutation.isPending && deleteContainerMutation.variables?.id === req.id;
 
@@ -58,6 +79,42 @@ export const DocumentRequestGroup = ({ req, children }: DocumentRequestGroupProp
             >
               <Edit2 className="h-4 w-4" />
             </Button>
+            {progressPercent < 100 && (
+              linkedTodo ? (
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="h-10 w-10 text-blue-500 border-blue-200 hover:bg-blue-50" 
+                  onClick={() => {
+                    setTodoInitialData(linkedTodo);
+                    setTodoSourceId(req.id);
+                    setTodoMode("edit");
+                    setIsTodoModalOpen(true);
+                  }}
+                  title="Edit Todo"
+                >
+                  <FileEdit className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="h-10 w-10 text-amber-500 border-amber-200 hover:bg-amber-50" 
+                  onClick={() => {
+                    setTodoInitialData({
+                      title: `Follow up: ${req.title}`,
+                      description: req.description || '',
+                    });
+                    setTodoSourceId(req.id);
+                    setTodoMode("from-doc-req");
+                    setIsTodoModalOpen(true);
+                  }}
+                  title="Create Todo"
+                >
+                  <CheckSquare className="h-4 w-4" />
+                </Button>
+              )
+            )}
             <Button 
               variant="outline" 
               size="icon" 

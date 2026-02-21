@@ -1,43 +1,41 @@
-import type { ComplianceItem } from "./types";
-export const MOCK_COMPLIANCE: ComplianceItem[] = [
+import type { ComplianceCalendarItem } from "./types";
+export const MOCK_COMPLIANCE: Partial<ComplianceCalendarItem>[] = [
   {
     id: "1",
     title: "VAT Return Submission Q4",
-    companyName: "Acme Corp",
-    category: "Tax",
+    companyId: "Acme Corp",
+    serviceCategory: "Tax",
     dueDate: "2024-02-15",
-    status: "PENDING"
+    frequency: "YEARLY"
   },
   {
     id: "2",
     title: "Annual General Meeting Minutes",
-    companyName: "Global Trade Hub",
-    category: "Corporate",
+    companyId: "Global Trade Hub",
+    serviceCategory: "Corporate",
     dueDate: "2024-01-20",
-    status: "COMPLETED"
+    frequency: "YEARLY"
   },
   {
     id: "3",
     title: "Internal Audit Review",
-    companyName: "Nexus AI Research",
-    category: "Audit",
+    companyId: "Nexus AI Research",
+    serviceCategory: "Audit",
     dueDate: "2024-03-01",
-    status: "PENDING"
+    frequency: "YEARLY"
   },
   {
     id: "4",
     title: "Business License Renewal",
-    companyName: "Acme Corp",
-    category: "Legal",
+    companyId: "Acme Corp",
+    serviceCategory: "Legal",
     dueDate: "2023-12-15",
-    status: "OVERDUE"
   },
   {
     id: "5",
     title: "Corporate Income Tax Return",
-    companyName: "Mediterranean Hospitality",
-    category: "Tax",
+    companyId: "Mediterranean Hospitality",
+    serviceCategory: "Tax",
     dueDate: "2024-06-30",
-    status: "PENDING"
   }
 ];

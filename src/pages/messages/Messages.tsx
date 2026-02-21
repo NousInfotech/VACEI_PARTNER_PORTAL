@@ -483,8 +483,10 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
     }
 
     try {
-      // sendChatMessage handles optimistic UI (temp message → confirmed) internally
-      await sendChatMessage(content);
+      const payload = replyToMessage?.id
+        ? { ...content, replyToMessageId: replyToMessage.id, replyToMessage }
+        : content;
+      await sendChatMessage(payload);
       setReplyToMessage(null);
     } catch (e) {
       console.error('Failed to send message:', e);

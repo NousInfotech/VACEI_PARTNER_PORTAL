@@ -68,7 +68,7 @@ export const chatService = {
      */
     sendMessage: async (
         roomId: string,
-        content: { text?: string; fileUrl?: string; type: 'text' | 'image' | 'document' | 'gif'; gifUrl?: string; fileName?: string; fileSize?: string }
+        content: { text?: string; fileUrl?: string; type: 'text' | 'image' | 'document' | 'gif'; gifUrl?: string; fileName?: string; fileSize?: string; replyToMessageId?: string | null }
     ) => {
         const currentUserId = getDecodedUserId();
         if (!currentUserId) throw new Error('User not authenticated');
@@ -85,7 +85,8 @@ export const chatService = {
                     fileName: content.fileName,
                     fileSize: content.fileSize,
                     type: content.type.toUpperCase(), // Ensure backend enum match
-                    sentAt: new Date().toISOString()
+                    sentAt: new Date().toISOString(),
+                    ...(content.replyToMessageId && { replyToMessageId: content.replyToMessageId }),
                 })
                 .select()
                 .single();
@@ -100,9 +101,11 @@ export const chatService = {
 
             // Fallback to REST API
             try {
+                const { replyToMessageId: _replyId, ...rest } = content;
                 return await apiPost<Message>(endPoints.CHAT.MESSAGES(roomId), {
-                    ...content,
-                    type: content.type.toUpperCase()
+                    ...rest,
+                    type: content.type.toUpperCase(),
+                    ...(_replyId && { replyToMessageId: _replyId }),
                 });
             } catch (restError) {
                 console.error('Message send failed via REST:', restError);

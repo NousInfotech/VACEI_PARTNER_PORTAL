@@ -20,6 +20,9 @@ import { PageHeader } from "../common/PageHeader";
 import EmployeeManagement from "./employee-management/EmployeeManagement";
 import Engagement from "../org-employee/EmployeeEngagement/Engagement";
 import Messages from "../messages/Messages";
+import ProcedurePromptList from "./procedure-prompt/ProcedurePromptList";
+import CreateProcedurePrompt from "./procedure-prompt/CreateProcedurePrompt";
+import EditProcedurePrompt from "./procedure-prompt/EditProcedurePrompt";
 
 interface AdminDashboardProps {
   activeSection?: string;
@@ -100,8 +103,20 @@ export default function AdminDashboard({ activeSection }: AdminDashboardProps) {
     return <Engagement />;
   }
 
+  if (activeSection === "Procedure Prompt") {
+    return <ProcedurePromptList />;
+  }
+
+  if (activeSection === "Create Procedure Prompt") {
+    return <CreateProcedurePrompt />;
+  }
+
+  if (activeSection === "Edit Procedure Prompt") {
+    return <EditProcedurePrompt />;
+  }
+
   return (
-    <div className="space-y-8 p-8 max-w-7xl mx-auto">
+    <div className="space-y-8 mx-auto">
       <PageHeader
         title="Admin Overview"
         subtitle="Welcome back! Here's what's happening in your organization today."

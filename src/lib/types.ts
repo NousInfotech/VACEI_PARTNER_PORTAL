@@ -16,13 +16,41 @@ export interface MenuItem {
 }
 
 // compliance types
-export interface ComplianceItem {
+export type ComplianceCalendarFrequency = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY' | 'CUSTOM';
+export type ComplianceCalendarType = 'COMPANY' | 'GLOBAL';
+
+export interface ComplianceCalendarItem {
   id: string;
+  type: ComplianceCalendarType;
+  companyId: string | null;
   title: string;
-  companyName: string;
-  category: "Tax" | "Corporate" | "Legal" | "Audit";
+  description: string | null;
+  startDate: string;
   dueDate: string;
-  status: "COMPLETED" | "PENDING" | "OVERDUE";
+  frequency: ComplianceCalendarFrequency;
+  customFrequencyPeriodUnit: 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS' | null;
+  customFrequencyPeriodValue: number | null;
+  serviceCategory: string;
+  customServiceCycleId: string | null;
+  createdById: string;
+  createdAt: string;
+  updatedAt: string;
+  company?: {
+    id: string;
+    name: string;
+  };
+  customServiceCycle?: {
+    id: string;
+    title: string;
+  };
+  createdBy?: {
+    id: string;
+    user?: {
+      id: string;
+      firstName: string;
+      lastName: string;
+    };
+  };
 }
 
 // Auth types
