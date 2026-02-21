@@ -39,10 +39,6 @@ interface ComplianceItem {
     moduleId: string | null;
 }
 
-interface ApiResponse<T> {
-    data: T;
-    message?: string;
-}
 
 export default function ComplianceView({ engagementId }: { engagementId?: string }) {
     const queryClient = useQueryClient();
