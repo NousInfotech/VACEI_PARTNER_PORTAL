@@ -171,13 +171,16 @@ export default function EngagementFullView() {
   const engagement = engagementResponse?.data || engagementResponse;
   const organizationId = engagement?.organizationId || engagement?.organization?._id;
 
+  const companyId = engagement?.companyId || engagement?.company?.id;
+
+  // Use Compliance Calendar API instead of non-existent /engagements/{id}/compliances
   const { data: compliances = [], isLoading: complianceLoading } = useQuery({
-    queryKey: ['engagement-compliances', engagementId],
-    enabled: !!engagementId,
+    queryKey: ['engagement-compliances', engagementId, companyId],
+    enabled: !!engagementId && !!companyId,
     queryFn: async () => {
-      if (!engagementId) return [];
-      const res = await apiGet<{ data: any[] }>(
-        endPoints.ENGAGEMENTS.COMPLIANCES(engagementId)
+      if (!companyId) return [];
+      const res = await apiGet<{ success: boolean; data?: any[] }>(
+        `${endPoints.COMPLIANCE_CALENDAR.BASE}?type=COMPANY&companyId=${companyId}`
       );
       return res?.data ?? [];
     },
@@ -185,8 +188,16 @@ export default function EngagementFullView() {
 
   const upcomingDeadlines = React.useMemo(() => {
     return compliances
-      .filter((c: any) => c.status !== 'COMPLETED')
-      .sort((a: any, b: any) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+      .filter((c: any) => {
+        // Filter by dueDate (compliance calendar uses dueDate, not deadline)
+        const dueDate = c.dueDate || c.deadline;
+        return new Date(dueDate) >= new Date();
+      })
+      .sort((a: any, b: any) => {
+        const dateA = new Date(a.dueDate || a.deadline).getTime();
+        const dateB = new Date(b.dueDate || b.deadline).getTime();
+        return dateA - dateB;
+      })
       .slice(0, 3);
   }, [compliances]);
 
