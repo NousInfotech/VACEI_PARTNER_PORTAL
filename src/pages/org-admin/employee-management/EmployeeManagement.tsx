@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Search, Mail, User, Edit, Loader2, CheckCircle } from "lucide-react";
+import { Plus, Search, Mail, Edit, Loader2, CheckCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/ui/Button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/ui/Dialog";
-import CreateEmployee from "./CreateEmployee";
 import AssignServices from "./AssignServices";
 import axiosInstance from "@/config/axiosConfig";
 import { endPoints } from "@/config/endPoint";
@@ -36,9 +36,9 @@ interface EmployeeResponseItem {
 }
 
 export default function EmployeeManagement() {
+    const navigate = useNavigate();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
     const [isAssignServicesOpen, setIsAssignServicesOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
@@ -82,7 +82,8 @@ export default function EmployeeManagement() {
                         serviceNames: [...standardLabels, ...customLabels]
                     };
                 });
-                setEmployees(mappedEmployees);
+                const employeesOnly = mappedEmployees.filter(emp => emp.role === 'EMPLOYEE');
+                setEmployees(employeesOnly);
             }
         } catch (error) {
             console.error("Failed to fetch employees:", error);
@@ -98,16 +99,6 @@ export default function EmployeeManagement() {
 
         return () => clearTimeout(timer);
     }, [fetchEmployees]);
-
-    const handleCreateSuccess = () => {
-        fetchEmployees();
-        setIsCreateOpen(false);
-        setSuccessDialog({
-            open: true,
-            title: "Employee Added",
-            message: "The new employee has been successfully added to your organization."
-        });
-    };
 
     const handleAssignServicesSuccess = () => {
         fetchEmployees();
@@ -131,7 +122,7 @@ export default function EmployeeManagement() {
                     <h1 className="text-2xl font-bold text-gray-900">Employee Management</h1>
                     <p className="text-gray-500">Manage access and services for your team members.</p>
                 </div>
-                <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
+                <Button onClick={() => navigate("/dashboard/employees/create")} className="gap-2">
                     <Plus size={18} />
                     Add Employee
                 </Button>
@@ -162,7 +153,6 @@ export default function EmployeeManagement() {
                         <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             <tr>
                                 <th className="px-6 py-4">Employee</th>
-                                <th className="px-6 py-4 text-center">Role</th>
                                 <th className="px-6 py-4 text-center">Assigned Services</th>
                                 <th className="px-6 py-4 text-right">Actions</th>
                             </tr>
@@ -184,12 +174,6 @@ export default function EmployeeManagement() {
                                                     </div>
                                                 </div>
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
-                                                <User size={12} />
-                                                {emp.role}
-                                            </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <div className="flex flex-wrap gap-2 justify-center">
@@ -219,7 +203,7 @@ export default function EmployeeManagement() {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                                    <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
                                         No employees found
                                     </td>
                                 </tr>
@@ -228,16 +212,6 @@ export default function EmployeeManagement() {
                     </table>
                 )}
             </div>
-
-            {/* Create Dialog */}
-            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                <DialogContent className="max-h-[85vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>Add New Employee</DialogTitle>
-                    </DialogHeader>
-                    <CreateEmployee onSuccess={handleCreateSuccess} onCancel={() => setIsCreateOpen(false)} />
-                </DialogContent>
-            </Dialog>
 
             {/* Assign Services Dialog */}
             <Dialog open={isAssignServicesOpen} onOpenChange={setIsAssignServicesOpen}>

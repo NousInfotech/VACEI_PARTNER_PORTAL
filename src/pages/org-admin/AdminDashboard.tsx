@@ -18,6 +18,7 @@ import { Skeleton } from "../../ui/Skeleton";
 import { NoticeBoard } from "../common/NoticeBoard";
 import { PageHeader } from "../common/PageHeader";
 import EmployeeManagement from "./employee-management/EmployeeManagement";
+import CreateEmployee from "./employee-management/CreateEmployee";
 import Engagement from "../org-employee/EmployeeEngagement/Engagement";
 import Messages from "../messages/Messages";
 import ProcedurePromptList from "./procedure-prompt/ProcedurePromptList";
@@ -73,14 +74,13 @@ export default function AdminDashboard({ activeSection }: AdminDashboardProps) {
     },
   ];
 
-  const quickActions = [
+    const quickActions = [
     { 
       title: "Add Employee", 
       description: "Onboard new team member", 
       icon: UserPlus, 
-      path: "/dashboard/employees", // Assuming sidebar handles this or navigate logic
-      color: "bg-primary",
-      action: () => {} // If we need specific modal triggers
+      path: "/dashboard/employees/create", 
+      color: "bg-primary"
     },
     { 
       title: "View Engagements", 
@@ -93,6 +93,10 @@ export default function AdminDashboard({ activeSection }: AdminDashboardProps) {
 
   if (activeSection === "Employees") {
     return <EmployeeManagement />;
+  }
+
+  if (activeSection === "Create Employee") {
+    return <CreateEmployee onSuccess={() => navigate("/dashboard/employees")} onCancel={() => navigate("/dashboard/employees")} />;
   }
 
   if (activeSection === "Messages") {

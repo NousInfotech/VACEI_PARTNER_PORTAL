@@ -25,6 +25,7 @@ const App = () => {
             <Route path="/dashboard/compliance" element={<Dashboard activeSection="Compliance" />} />
             <Route path="/dashboard/templates" element={<Dashboard activeSection="Document Request Templates" />} />
             <Route path="/dashboard/employees" element={<Dashboard activeSection="Employees" />} />
+            <Route path="/dashboard/employees/create" element={<Dashboard activeSection="Create Employee" />} />
             <Route path="/dashboard/messages" element={<Messages />} />
             <Route path="/dashboard/support" element={<Messages isSingleChat={true} contextualChatId="support-chat" />} />
             <Route path="/dashboard/settings" element={<Dashboard activeSection="Settings" />} />
