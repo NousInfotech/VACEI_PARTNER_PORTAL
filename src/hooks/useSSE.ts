@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { getPortalRedirectUrl } from '../api/notificationService';
 
 const getBackendUrl = () => {
     return (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000/api/v1").replace(/\/?$/, "/");
@@ -46,7 +47,7 @@ export const useSSE = () => {
                     description: newNotification.content,
                     action: {
                         label: 'View',
-                        onClick: () => window.location.href = newNotification.redirectUrl || '#',
+                        onClick: () => window.location.href = getPortalRedirectUrl(newNotification.redirectUrl) || '#',
                     },
                 });
             };
