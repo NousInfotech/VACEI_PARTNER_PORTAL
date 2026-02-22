@@ -19,6 +19,13 @@ export const endPoints = {
   NOTICE: {
     GET_TODAY: '/notices/today',
   },
+  NOTIFICATION: {
+    BASE: '/notifications',
+    UNREAD_COUNT: '/notifications/unread-count',
+    MARK_READ: (id: string) => `/notifications/read/${id}`,
+    MARK_ALL_READ: '/notifications/read-all',
+    PREFERENCES: '/notifications/preferences',
+  },
   ENGAGEMENTS: {
     GET_ALL: '/engagements',
     GET_BY_ID: (engagementId: string) => `/engagements/${engagementId}`,
@@ -101,17 +108,17 @@ export const endPoints = {
     UPDATE_WORKBOOK: (workbookId: string) => `/workbooks/${workbookId}`,
     DELETE_WORKBOOK: (workbookId: string) => `/workbooks/${workbookId}`,
     GET_WORKBOOK_SHEETS: (workbookId: string) => `/workbooks/${workbookId}/sheets`,
-    GET_WORKBOOK_SHEET_DATA: (workbookId: string, sheetName?: string) => 
-      sheetName 
+    GET_WORKBOOK_SHEET_DATA: (workbookId: string, sheetName?: string) =>
+      sheetName
         ? `/workbooks/${workbookId}/sheets/data?sheetName=${encodeURIComponent(sheetName)}`
         : `/workbooks/${workbookId}/sheets/data`,
     // RangeEvidence endpoints (for mappings and references)
     GET_RANGE_EVIDENCES: (workbookId: string) => `/workbooks/${workbookId}/range-evidences`,
     GET_RANGE_EVIDENCE: (workbookId: string, rangeEvidenceId: string) => `/workbooks/${workbookId}/range-evidences/${rangeEvidenceId}`,
     CREATE_RANGE_EVIDENCE: (workbookId: string) => `/workbooks/${workbookId}/range-evidences`,
-      UPDATE_RANGE_EVIDENCE: (workbookId: string, rangeEvidenceId: string) => `/workbooks/${workbookId}/range-evidences/${rangeEvidenceId}`,
-      DELETE_RANGE_EVIDENCE: (workbookId: string, rangeEvidenceId: string) => `/workbooks/${workbookId}/range-evidences/${rangeEvidenceId}`,
-      ATTACH_EVIDENCE_TO_RANGE_EVIDENCE: (workbookId: string, rangeEvidenceId: string) => `/workbooks/${workbookId}/range-evidences/${rangeEvidenceId}/attach-evidence`,
+    UPDATE_RANGE_EVIDENCE: (workbookId: string, rangeEvidenceId: string) => `/workbooks/${workbookId}/range-evidences/${rangeEvidenceId}`,
+    DELETE_RANGE_EVIDENCE: (workbookId: string, rangeEvidenceId: string) => `/workbooks/${workbookId}/range-evidences/${rangeEvidenceId}`,
+    ATTACH_EVIDENCE_TO_RANGE_EVIDENCE: (workbookId: string, rangeEvidenceId: string) => `/workbooks/${workbookId}/range-evidences/${rangeEvidenceId}/attach-evidence`,
   },
   INCORPORATION: {
     GET_BY_COMPANY: (companyId: string) => `/incorporation/company/${companyId}`,
