@@ -1,10 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { useMemo } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { PanelLeft, PanelLeftClose, Search, Bell, LogOut, Settings } from "lucide-react";
 import { Button } from "../ui/Button";
 import { useAuth } from "../context/auth-context-core";
 import { Select } from "../ui/Select";
 import { AVAILABLE_SERVICES } from "../lib/types";
+import { fetchNotificationsAPI, fetchUnreadCountAPI, markNotificationAsReadAPI } from "../api/notificationService";
+import { useSSE } from "../hooks/useSSE";
 
 interface TopHeaderProps {
     onSidebarToggle: () => void;
@@ -50,6 +52,66 @@ export default function TopHeader({
     }, [organizationMember?.allowedServices, organizationMember?.allowedCustomServiceCycles, setSelectedService]);
 
     const currentServiceLabel = selectedServiceLabel;
+
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    const loadNotifications = useCallback(async () => {
+        try {
+            const res = await fetchNotificationsAPI({ page: 1, limit: 10 });
+            setNotifications(res.items ?? []);
+        } catch {
+            setNotifications([]);
+        }
+    }, []);
+
+    const loadUnreadCount = useCallback(async () => {
+        try {
+            const c = await fetchUnreadCountAPI();
+            setUnreadCount(c);
+        } catch {
+            setUnreadCount(0);
+        }
+    }, []);
+
+    const onNewNotification = useCallback(() => {
+        loadUnreadCount();
+        loadNotifications();
+    }, [loadUnreadCount, loadNotifications]);
+    useSSE(onNewNotification);
+
+    useEffect(() => {
+        loadUnreadCount();
+    }, [loadUnreadCount]);
+
+    useEffect(() => {
+        if (showNotifications) loadNotifications();
+    }, [showNotifications, loadNotifications]);
+
+    // Poll unread count periodically (fallback when SSE does not connect)
+    useEffect(() => {
+        const interval = setInterval(loadUnreadCount, 30_000);
+        return () => clearInterval(interval);
+    }, [loadUnreadCount]);
+
+    // Refresh when user returns to tab
+    useEffect(() => {
+        const onFocus = () => loadUnreadCount();
+        window.addEventListener('focus', onFocus);
+        return () => window.removeEventListener('focus', onFocus);
+    }, [loadUnreadCount]);
+    const handleNotificationClick = async (n: any) => {
+        if (!n.isRead) {
+            try {
+                await markNotificationAsReadAPI(n.id);
+                setNotifications((prev) => prev.map((x) => (x.id === n.id ? { ...x, isRead: true } : x)));
+                setUnreadCount((c) => Math.max(0, c - 1));
+            } catch {}
+        }
+        setShowNotifications(false);
+        if (n.redirectUrl) navigate(n.redirectUrl);
+    };
 
     return (
         <header
@@ -98,10 +160,47 @@ export default function TopHeader({
             </div>
 
             <div className="flex items-center gap-3">
-                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl relative">
-                    <Bell className="h-5 w-5 text-gray-700" />
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-                </Button>
+                <div className="relative">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-10 w-10 rounded-xl relative"
+                        onClick={() => setShowNotifications((v) => !v)}
+                    >
+                        <Bell className="h-5 w-5 text-gray-700" />
+                        {unreadCount > 0 && (
+                            <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-bold bg-red-500 text-white rounded-full border-2 border-white">
+                                {unreadCount > 99 ? '99+' : unreadCount}
+                            </span>
+                        )}
+                    </Button>
+                    {showNotifications && (
+                        <>
+                            <div
+                                className="fixed inset-0 z-40"
+                                onClick={() => setShowNotifications(false)}
+                                aria-hidden
+                            />
+                            <div className="absolute right-0 top-12 w-80 max-h-96 overflow-y-auto bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+                                <h3 className="px-4 py-2 text-sm font-bold text-gray-900">Notifications</h3>
+                                {notifications.length > 0 ? (
+                                    notifications.map((n) => (
+                                        <button
+                                            key={n.id}
+                                            onClick={() => handleNotificationClick(n)}
+                                            className={`w-full px-4 py-3 text-left hover:bg-gray-50 ${!n.isRead ? 'bg-blue-50/50' : ''}`}
+                                        >
+                                            <p className="text-sm font-medium text-gray-900 line-clamp-1">{n.title}</p>
+                                            <p className="text-xs text-gray-500 line-clamp-2 mt-0.5">{n.content}</p>
+                                        </button>
+                                    ))
+                                ) : (
+                                    <p className="px-4 py-6 text-sm text-gray-500">No notifications</p>
+                                )}
+                            </div>
+                        </>
+                    )}
+                </div>
 
                 <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl">
                     <Settings className="h-5 w-5 text-gray-700" />

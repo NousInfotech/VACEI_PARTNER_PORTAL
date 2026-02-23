@@ -49,6 +49,8 @@ export const endPoints = {
     MEMBERS: (roomId: string) => `/chat/rooms/${roomId}/members`,
     MEMBER_DELETE: (roomId: string, userId: string) => `/chat/rooms/${roomId}/members/${userId}`,
     MESSAGES: (roomId: string) => `/chat/rooms/${roomId}/messages`,
+    CLEAR_MESSAGES: (roomId: string) => `/chat/rooms/${roomId}/messages`,
+    NOTIFY_MEMBERS: (roomId: string) => `/chat/rooms/${roomId}/notify-members`,
     MARK_READ: (roomId: string) => `/chat/rooms/${roomId}/read`,
     UNREAD_COUNT: (roomId: string) => `/chat/rooms/${roomId}/unread-count`,
     UNREAD_SUMMARY: '/chat/unread-summary',
@@ -105,6 +107,12 @@ export const endPoints = {
     FROM_CHAT: (engagementId: string) => `/engagements/${engagementId}/todos/from-chat`,
     FROM_DOCUMENT_REQUEST: (engagementId: string) => `/engagements/${engagementId}/todos/from-document-request`,
     FROM_REQUESTED_DOCUMENT: (engagementId: string) => `/engagements/${engagementId}/todos/from-requested-document`,
+  },
+  NOTIFICATIONS: {
+    BASE: '/notifications',
+    UNREAD_COUNT: '/notifications/unread-count',
+    READ: (id: string) => `/notifications/read/${id}`,
+    READ_ALL: '/notifications/read-all',
   },
   PROCEDURE_PROMPT: {
     BASE: '/procedure-prompts',

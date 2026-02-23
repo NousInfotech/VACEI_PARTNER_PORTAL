@@ -17,6 +17,7 @@ import { MessageSquare, Plus, Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/auth-context-core';
 import { apiGet, apiPost, apiDelete } from '../../config/base';
 import { endPoints } from '../../config/endPoint';
+import { chatService } from '../../api/chatService';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 
@@ -139,8 +140,9 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
     bgSubscriptionsRef.current.forEach(ch => supabase.removeChannel(ch));
     bgSubscriptionsRef.current = [];
 
-    const token = localStorage.getItem('token');
-    if (token) supabase.realtime.setAuth(token);
+    // NOTE: We are not using Supabase Auth sessions in this app.
+    // Do not set realtime auth with the backend JWT; it can cause RLS/functions
+    // that rely on auth.uid() to fail because auth.uid() remains NULL.
 
     chats.forEach(chat => {
       const channel = supabase
@@ -259,7 +261,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
   };
 
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     const { messageId, type, userId } = confirmState;
     if (!activeChatId) return;
 
@@ -272,6 +274,12 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
     }
 
     if (type === 'clear-chat') {
+      try {
+        await chatService.clearRoom(activeChatId!);
+        clearMessages();
+      } catch (e) {
+        console.error('Failed to clear chat:', e);
+      }
       setChats(prev => prev.map(chat =>
         chat.id === activeChatId ? { ...chat, messages: [] } : chat
       ));
@@ -396,6 +404,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
     messages: activeChatMessages,
     sendMessage: sendChatMessage,
     currentUserId,
+    clearMessages,
   } = useChat(undefined, { roomId: activeChatId ?? undefined });
 
   /** Open a room: reset its unread count and mark as read on the server */
