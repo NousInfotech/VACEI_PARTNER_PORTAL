@@ -22,7 +22,8 @@ export default function NotificationSettings() {
         const loadPrefs = async () => {
             try {
                 const prefs = await notificationService.getPreferences();
-                setNotifications(prefs.data || prefs);
+                const data = (prefs as any).data || prefs;
+                setNotifications(data);
             } catch (err) {
                 console.error("Failed to load notification preferences", err);
             } finally {
