@@ -2,19 +2,17 @@ import { FileSpreadsheet } from "lucide-react";
 import WorkbookTable from "./WorkbookTable";
 import LinkedWorkbooksCard from "./LinkedWorkbooksCard";
 import UploadWorkbookCard from "./UploadWorkbookCard";
-import type { WorkbookFile } from "../ClassificationView";
 import type { TableRow } from "./ClassificationTable";
 
 interface ClassificationWorkbookProps {
     title: string;
-    files: WorkbookFile[];
-    onUpload: (file: WorkbookFile) => void;
-    onFileClick: (file: WorkbookFile) => void;
-    onDeleteFile: (id: string) => void;
+    engagementId?: string;
+    classification?: string; // Classification string (label) like "Intangible Assets", "Share Capital", etc.
+    classificationId?: string; // Classification ID (UUID) for evidence creation
     classificationRows?: TableRow[];
 }
 
-export default function ClassificationWorkbook({ title, files, onUpload, onFileClick, onDeleteFile, classificationRows = [] }: ClassificationWorkbookProps) {
+export default function ClassificationWorkbook({ title, engagementId, classification, classificationId, classificationRows = [] }: ClassificationWorkbookProps) {
     // Use real data if available, otherwise use empty array
     const groupedRows = classificationRows.filter(row => row.linkedFiles > 0);
     const ungroupedRows = classificationRows.filter(row => row.linkedFiles === 0);
@@ -51,14 +49,17 @@ export default function ClassificationWorkbook({ title, files, onUpload, onFileC
                         <FileSpreadsheet size={16} />
                         Linked Workbooks
                     </h2>
-                    <LinkedWorkbooksCard />
+                    <LinkedWorkbooksCard 
+                        engagementId={engagementId}
+                        classification={classification}
+                        classificationId={classificationId}
+                    />
                 </div>
 
                 <UploadWorkbookCard
-                    files={files}
-                    onUpload={onUpload}
-                    onFileClick={onFileClick}
-                    onDelete={onDeleteFile}
+                    engagementId={engagementId}
+                    classification={classification}
+                    classificationId={classificationId}
                 />
             </div>
         </div>

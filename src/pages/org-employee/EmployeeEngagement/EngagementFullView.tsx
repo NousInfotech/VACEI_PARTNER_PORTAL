@@ -181,12 +181,23 @@ export default function EngagementFullView() {
     queryKey: ['engagement-compliances', engagementId, companyId],
     enabled: !!engagementId && !!companyId,
     queryFn: async () => {
-      if (!companyId) return [];
-      const res = await apiGet<{ success: boolean; data?: any[] }>(
-        `${endPoints.COMPLIANCE_CALENDAR.BASE}?type=COMPANY&companyId=${companyId}`
-      );
-      return res?.data ?? [];
+      if (!engagementId) return [];
+      try {
+        const res = await apiGet<{ data: any[] }>(
+          endPoints.ENGAGEMENTS.COMPLIANCES(engagementId)
+        );
+        return res?.data ?? [];
+      } catch (error: any) {
+        // Handle 404 gracefully - endpoint may not be implemented yet
+        if (error?.response?.status === 404) {
+          console.warn('Compliances endpoint not found, returning empty array');
+          return [];
+        }
+        // Re-throw other errors
+        throw error;
+      }
     },
+    retry: false, // Don't retry on 404 errors
   });
 
   const upcomingDeadlines = React.useMemo(() => {

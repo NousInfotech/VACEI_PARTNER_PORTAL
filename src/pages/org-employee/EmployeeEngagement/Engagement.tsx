@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Briefcase } from "lucide-react";
 import { ShadowCard } from "../../../ui/ShadowCard";
 import { Button } from "../../../ui/Button";
 import { Skeleton } from "../../../ui/Skeleton";
 import { useAuth } from "../../../context/auth-context-core";
 import { apiGet } from "../../../config/base";
 import { endPoints } from "../../../config/endPoint";
+import PageHeader from "../../common/PageHeader";
 
 interface OrgEngagement {
   id: string;
@@ -22,8 +23,13 @@ interface OrgEngagementResponse {
 }
 
 export default function Engagement() {
-  const { selectedService, organizationMember } = useAuth();
+  const { user, organizationMember } = useAuth();
   const hasToken = typeof window !== "undefined" && !!localStorage.getItem("token");
+
+  // Only allow ORG_ADMIN to view this component
+  if (user?.role !== "ORG_ADMIN") {
+    return null;
+  }
 
   const { data, isLoading: loading } = useQuery({
     queryKey: ["employee-engagements", organizationMember?.organizationId],
@@ -40,10 +46,6 @@ export default function Engagement() {
   });
 
   const engagements = (data ?? []) as OrgEngagement[];
-  const filteredEngagements = engagements.filter((engagement) => {
-    if (!selectedService) return true;
-    return engagement.serviceType === selectedService;
-  });
 
   const handleViewDetails = (engagement: OrgEngagement) => {
     const targetUrl = `/engagement-view/${engagement.id}?service=${encodeURIComponent(engagement.serviceType)}`;
@@ -67,6 +69,10 @@ export default function Engagement() {
 
   return (
     <div className="mx-auto space-y-8 animate-in fade-in duration-500 pb-10">
+      <PageHeader 
+        title="Engagements" 
+        subtitle="Manage and view all your organization's engagements" 
+      />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (
           [1, 2, 3].map((i) => (
@@ -75,8 +81,16 @@ export default function Engagement() {
               <Skeleton className="h-10 w-full rounded-xl" />
             </ShadowCard>
           ))
+        ) : engagements.length === 0 ? (
+          <div className="col-span-1 md:col-span-2 lg:col-span-3">
+            <ShadowCard className="p-10 flex flex-col items-center justify-center text-center">
+              <Briefcase className="h-16 w-16 text-gray-300 mb-4" />
+              <h2 className="text-xl font-bold text-gray-900">No Engagements Found</h2>
+              <p className="text-gray-500 mt-2">There are currently no engagements assigned to your organization.</p>
+            </ShadowCard>
+          </div>
         ) : (
-          filteredEngagements.map((engagement) => (
+          engagements.map((engagement) => (
             <ShadowCard key={engagement.id} className="group relative flex flex-col overflow-hidden border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl">
               <div className="p-5 flex-1 space-y-3">
                 <div className="flex items-start justify-between gap-3">

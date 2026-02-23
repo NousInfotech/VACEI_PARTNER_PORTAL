@@ -291,7 +291,7 @@ export default function ClassificationEvidence({ classificationId, engagementId,
                             {uploading || isLoadingClassification || isLoadingEvidenceFolder ? (
                                 <Loader2 className="text-blue-500 animate-spin" size={24} />
                             ) : (
-                                <UploadCloud className="text-blue-500" size={24} />
+                            <UploadCloud className="text-blue-500" size={24} />
                             )}
                         </div>
                         <p className="text-sm font-medium text-gray-900">
@@ -346,30 +346,30 @@ export default function ClassificationEvidence({ classificationId, engagementId,
                                 No evidence files uploaded yet.
                             </div>
                         ) : (
-                            <div className="space-y-3">
-                                {evidenceFiles.map((file) => (
-                                    <div key={file.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100 group hover:border-blue-200 transition-colors">
-                                        <div className="flex items-center gap-4">
+                        <div className="space-y-3">
+                            {evidenceFiles.map((file) => (
+                                <div key={file.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100 group hover:border-blue-200 transition-colors">
+                                    <div className="flex items-center gap-4">
                                             <div className={`p-2 rounded-lg ${
                                                 file.type === 'PDF' ? 'bg-red-100 text-red-600' :
-                                                file.type === 'TXT' ? 'bg-gray-200 text-gray-600' : 'bg-blue-100 text-blue-600'
+                                            file.type === 'TXT' ? 'bg-gray-200 text-gray-600' : 'bg-blue-100 text-blue-600'
                                             }`}>
-                                                {file.type === 'PDF' ? <FileText size={20} /> : file.type === 'TXT' ? <FileText size={20} /> : <Image size={20} />}
-                                            </div>
-                                            <div>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-sm font-medium text-gray-900">{file.name}</span>
+                                            {file.type === 'PDF' ? <FileText size={20} /> : file.type === 'TXT' ? <FileText size={20} /> : <Image size={20} />}
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm font-medium text-gray-900">{file.name}</span>
                                                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
                                                         file.type === 'PDF' ? 'bg-red-100 text-red-700' :
-                                                        file.type === 'TXT' ? 'bg-gray-200 text-gray-700' : 'bg-blue-100 text-blue-700'
+                                                    file.type === 'TXT' ? 'bg-gray-200 text-gray-700' : 'bg-blue-100 text-blue-700'
                                                     }`}>
-                                                        {file.type}
-                                                    </span>
-                                                </div>
-                                                <p className="text-xs text-gray-500 mt-0.5">{file.size}</p>
+                                                    {file.type}
+                                                </span>
                                             </div>
+                                            <p className="text-xs text-gray-500 mt-0.5">{file.size}</p>
                                         </div>
-                                        <div className="flex items-center gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
+                                    </div>
+                                    <div className="flex items-center gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
                                             <Button 
                                                 variant="ghost" 
                                                 size="icon" 
@@ -377,8 +377,8 @@ export default function ClassificationEvidence({ classificationId, engagementId,
                                                 onClick={() => handleViewFile(file.url)}
                                                 title="View file"
                                             >
-                                                <Eye size={14} />
-                                            </Button>
+                                            <Eye size={14} />
+                                        </Button>
                                             <Button 
                                                 variant="ghost" 
                                                 size="icon" 
@@ -390,13 +390,13 @@ export default function ClassificationEvidence({ classificationId, engagementId,
                                                 {deleteEvidenceMutation.isPending ? (
                                                     <Loader2 size={14} className="animate-spin" />
                                                 ) : (
-                                                    <Trash2 size={14} />
+                                            <Trash2 size={14} />
                                                 )}
-                                            </Button>
-                                        </div>
+                                        </Button>
                                     </div>
-                                ))}
-                            </div>
+                                </div>
+                            ))}
+                        </div>
                         )}
                     </div>
                 </div>

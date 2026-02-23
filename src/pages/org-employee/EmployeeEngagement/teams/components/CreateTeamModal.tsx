@@ -37,7 +37,7 @@ export default function CreateTeamModal({ isOpen, onClose, engagementId, current
     enabled: isOpen
   });
 
-  const members = (membersResponse?.data ?? []).filter(m => m.role === 'ORG_EMPLOYEE');
+  const members = (membersResponse?.data ?? []).filter(m => m.role === 'EMPLOYEE');
 
   const filteredMembers = members.filter(member => 
     `${member.user.firstName} ${member.user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
