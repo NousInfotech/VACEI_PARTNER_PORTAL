@@ -122,6 +122,19 @@ export default function TopHeader({
 
     const currentServiceLabel = selectedServiceLabel;
 
+    // Poll unread count periodically (fallback when SSE does not connect)
+    useEffect(() => {
+        const interval = setInterval(fetchUnreadCount, 30_000);
+        return () => clearInterval(interval);
+    }, [fetchUnreadCount]);
+
+    // Refresh when user returns to tab
+    useEffect(() => {
+        const onFocus = () => fetchUnreadCount();
+        window.addEventListener('focus', onFocus);
+        return () => window.removeEventListener('focus', onFocus);
+    }, [fetchUnreadCount]);
+
     return (
         <header
             className="h-16 backdrop-blur-xl border flex items-center justify-between px-6 sticky top-0 z-40 rounded-4xl m-2 mb-0 bg-white/80 shadow-lg border-gray-200"

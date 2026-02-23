@@ -1,134 +1,115 @@
-import { apiGet, apiPatch } from '../config/base';
-import { endPoints } from '../config/endPoint';
+import axiosInstance from '../config/axiosConfig';
 
-export function getPortalRedirectUrl(url?: string | null): string | null {
-    if (!url) return null;
-    try {
-        const dummyBase = 'http://localhost';
-        const parsedUrl = new URL(url, dummyBase);
-        const path = parsedUrl.pathname;
-        const searchParams = parsedUrl.searchParams;
-
-        if (path === '/library') {
-            const engagementId = searchParams.get('engagementId');
-            if (engagementId) {
-                return `/engagement-view/${engagementId}?tab=library`;
-            }
-        }
-
-        if (path === '/compliance' && searchParams.has('engagementId')) {
-            return `/dashboard/compliance`;
-        }
-
-        if (path.startsWith('/dashboard')) return url;
-
-        if (path.startsWith('/')) {
-            return `/dashboard${url}`;
-        }
-    } catch (e) {
-        return url;
-    }
-    return url;
+export function getPortalRedirectUrl(url?: string): string {
+  if (!url) return '';
+  if (url.startsWith('/dashboard') || url.startsWith('/')) return url;
+  return `/${url}`;
 }
 
 export interface Notification {
-    id: string;
-    userId: string;
-    role: string;
-    type: string;
-    title: string;
-    content: string;
-    redirectUrl: string | null;
-    ctaUrl: string | null;
-    isRead: boolean;
-    createdAt: string;
-    channels: string[];
-    emailStatus: string | null;
-}
-
-export interface NotificationPreference {
-    emailEnabled: boolean;
-    inAppEnabled: boolean;
-    pushEnabled: boolean;
-    soundEnabled: boolean;
+  id: string;
+  userId: string;
+  role: string;
+  type: string;
+  title: string;
+  content: string;
+  redirectUrl?: string;
+  ctaUrl?: string;
+  isRead: boolean;
+  createdAt: string;
 }
 
 export interface FetchNotificationsResponse {
-    items: Notification[];
-    meta: {
-        total: number;
-        page: number;
-        limit: number;
-        totalPages: number;
-    };
+  items: Notification[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface FetchUnreadCountResponse {
+  count: number;
+}
+
+export interface NotificationPreference {
+  emailEnabled: boolean;
+  inAppEnabled: boolean;
+  pushEnabled: boolean;
+  soundEnabled: boolean;
+}
+
+export async function fetchNotificationsAPI(filters?: {
+  page?: number;
+  limit?: number;
+  read?: boolean;
+}): Promise<FetchNotificationsResponse> {
+  const params = new URLSearchParams();
+  if (filters?.page) params.append('page', String(filters.page));
+  if (filters?.limit) params.append('limit', String(filters.limit));
+  if (filters?.read !== undefined) params.append('isRead', String(filters.read));
+  const res = await axiosInstance.get(`notifications?${params}`);
+  const raw = res.data?.data ?? res.data ?? {};
+  const items = (raw.items ?? []).map((n: Notification) => ({
+    ...n,
+    redirectUrl: getPortalRedirectUrl(n.redirectUrl),
+  }));
+  return { ...raw, items };
+}
+
+export async function fetchUnreadCountAPI(): Promise<number> {
+  const res = await axiosInstance.get('notifications/unread-count');
+  const data = res.data?.data ?? res.data;
+  return data?.count ?? 0;
+}
+
+export async function markNotificationAsReadAPI(notificationId: string): Promise<void> {
+  await axiosInstance.patch(`notifications/read/${notificationId}`);
+}
+
+export async function markAllNotificationsAsReadAPI(): Promise<void> {
+  await axiosInstance.patch('notifications/read-all');
+}
+
+export async function fetchPreferencesAPI(): Promise<NotificationPreference> {
+  const res = await axiosInstance.get('notifications/preferences');
+  return res.data?.data ?? res.data;
+}
+
+export async function updatePreferencesAPI(
+  preferences: Partial<NotificationPreference>
+): Promise<NotificationPreference> {
+  const res = await axiosInstance.patch('notifications/preferences', preferences);
+  return res.data?.data ?? res.data;
 }
 
 export const notificationService = {
-    fetchNotifications: async (filters?: { page?: number; limit?: number; isRead?: boolean }) => {
-        try {
-            const response = await apiGet<any>(endPoints.NOTIFICATION.BASE, filters);
-
-            let mappedItems = response.data;
-            if (Array.isArray(mappedItems)) {
-                mappedItems = mappedItems.map(notif => ({
-                    ...notif,
-                    redirectUrl: getPortalRedirectUrl(notif.redirectUrl)
-                }));
-            }
-
-            return {
-                items: mappedItems,
-                meta: response.meta
-            } as FetchNotificationsResponse;
-        } catch (error) {
-            console.error('Error fetching notifications:', error);
-            throw error;
-        }
-    },
-
-    fetchUnreadCount: async () => {
-        try {
-            const response = await apiGet<any>(endPoints.NOTIFICATION.UNREAD_COUNT);
-            return response.data as { count: number };
-        } catch (error) {
-            console.error('Error fetching unread count:', error);
-            throw error;
-        }
-    },
-
-    markAsRead: async (id: string) => {
-        try {
-            return await apiPatch(endPoints.NOTIFICATION.MARK_READ(id));
-        } catch (error) {
-            console.error('Error marking notification as read:', error);
-            throw error;
-        }
-    },
-
-    markAllAsRead: async () => {
-        try {
-            return await apiPatch(endPoints.NOTIFICATION.MARK_ALL_READ);
-        } catch (error) {
-            console.error('Error marking all notifications as read:', error);
-            throw error;
-        }
-    },
-
-    getPreferences: async () => {
-        try {
-            return await apiGet<any>(endPoints.NOTIFICATION.PREFERENCES);
-        } catch (error) {
-            console.error('Error fetching notification preferences:', error);
-            throw error;
-        }
-    },
-
-    updatePreferences: async (data: any) => {
-        try {
-            return await apiPatch(endPoints.NOTIFICATION.PREFERENCES, data);
-        } catch (error) {
-            console.error('Error updating notification preferences:', error);
-            throw error;
-        }
-    }
+  async fetchNotifications(filters?: {
+    page?: number;
+    limit?: number;
+    isRead?: boolean;
+  }): Promise<FetchNotificationsResponse> {
+    return fetchNotificationsAPI({
+      page: filters?.page ?? 1,
+      limit: filters?.limit ?? 10,
+      read: filters?.isRead,
+    });
+  },
+  async fetchUnreadCount(): Promise<FetchUnreadCountResponse> {
+    const count = await fetchUnreadCountAPI();
+    return { count };
+  },
+  async markAsRead(id: string): Promise<void> {
+    return markNotificationAsReadAPI(id);
+  },
+  async markAllAsRead(): Promise<void> {
+    return markAllNotificationsAsReadAPI();
+  },
+  async getPreferences(): Promise<NotificationPreference | { data: NotificationPreference }> {
+    return fetchPreferencesAPI();
+  },
+  async updatePreferences(prefs: Partial<NotificationPreference>): Promise<NotificationPreference> {
+    return updatePreferencesAPI(prefs);
+  },
 };
