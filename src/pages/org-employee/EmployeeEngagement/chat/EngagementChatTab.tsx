@@ -60,10 +60,22 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
     const activeChat: Chat | null = room ? {
         ...room,
         messages: messages,
-        // Ensure participants are typed correctly if needed, matching Chat interface
-        participants: room.participants || []
+        name: room.name || 'Engagement Chat',
+        type: room.type || 'GROUP',
+        participants: (room.participants || room.members || []).map((m: any) => ({
+            ...m,
+            // Fallbacks for avatar/name rendering
+            id: m.userId || m.id,
+            name: m.firstName && m.lastName
+                ? `${m.firstName} ${m.lastName}`
+                : m.user?.firstName && m.user?.lastName
+                    ? `${m.user.firstName} ${m.user.lastName}`
+                    : m.name || m.user?.name || 'Unknown User',
+            email: m.email || m.user?.email || '',
+            role: m.role || m.user?.role || 'MEMBER',
+        }))
     } : null;
-    
+
     const { data: engagementTodos } = useQuery({
         queryKey: ['engagement-todos', engagementId],
         enabled: !!engagementId,
@@ -317,11 +329,11 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
                 onCancel={() => setConfirmState({ isOpen: false, type: 'message' })}
             />
 
-            <TodoModal 
+            <TodoModal
                 isOpen={isTodoModalOpen}
                 onClose={() => setIsTodoModalOpen(false)}
                 onSuccess={() => {
-                   // Optional: toast already handled in modal
+                    // Optional: toast already handled in modal
                 }}
                 engagementId={engagementId}
                 mode={todoMode as any}
