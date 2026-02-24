@@ -10,6 +10,7 @@ import {
   TrendingUp,
   Activity,
   BookOpen,
+  BookMarked,
   PieChart,
   Landmark,
   Building2,
@@ -28,6 +29,7 @@ import { endPoints } from '../../../config/endPoint';
 import PageHeader from "../../common/PageHeader";
 import { LibraryExplorer } from "./library/LibraryExplorer";
 import AuditContent from "./audit/AuditContent";
+import AccountingContent from "./accounting/AccountingContent";
 
 import VATCycleView from "./status-cycles/VATCycleView";
 import PayrollCycleView from "./status-cycles/PayrollCycleView";
@@ -60,6 +62,8 @@ import { cfoService, CFOStatus } from "../../../api/cfoService";
 const ENGAGEMENT_TABS = [
   { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
   { id: 'requests', label: 'Document Requests', icon: FileText },
+  { id: 'audit', label: 'AUDIT', icon: BookOpen },
+  { id: 'accounting', label: "BOOKEEPING", icon: BookMarked },
   { id: 'csp', label: 'CSP', icon: Building2 },
   { id: 'vat', label: 'VAT', icon: Activity },
   { id: 'tax', label: 'TAX', icon: Landmark },
@@ -98,6 +102,7 @@ export default function EngagementFullView() {
   const initialTab = React.useMemo(() => {
     if (!selectedService) return 'dashboard';
     const serviceMap: Record<string, string> = {
+      'ACCOUNTING': 'accounting',
       'AUDITING': 'audit',
       'VAT': 'dashboard', // default to dashboard instead of vat tab
       'PAYROLL': 'payroll',
@@ -133,13 +138,14 @@ export default function EngagementFullView() {
     if (!selectedService) return ENGAGEMENT_TABS;
 
     const serviceMap: Record<string, string> = {
-      'CSP': 'csp',
-      'VAT': 'dashboard',
-      'TAX': 'tax',
-      'MBR': 'mbr',
-      'PAYROLL': 'payroll',
-      'CFO': 'cfo',
+      'ACCOUNTING':'accounting',
       'AUDITING': 'audit',
+      'VAT': 'dashboard', // default to dashboard instead of vat tab
+      'PAYROLL': 'payroll',
+      'MBR': 'mbr',
+      'TAX': 'tax',
+      'CFO': 'cfo',
+      'CSP': 'csp'
     };
 
     const activeServiceTab = serviceMap[selectedService];
@@ -453,6 +459,8 @@ export default function EngagementFullView() {
               <LibraryExplorer engagementId={engagementId ?? undefined} />
             ) : activeTab === 'audit' ? (
               <AuditContent engagementId={engagementId ?? undefined} />
+            ) : activeTab === 'accounting' ? (
+              <AccountingContent engagementId={engagementId ?? undefined} companyId={companyId ?? undefined} />
             ) : activeTab === 'vat' ? (
               <VATCycleView />
             ) : activeTab === 'payroll' ? (

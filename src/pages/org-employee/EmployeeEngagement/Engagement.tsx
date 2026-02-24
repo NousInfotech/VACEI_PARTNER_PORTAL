@@ -88,7 +88,7 @@ export default function Engagement() {
     queryFn: () => apiGet<{ success: boolean; data: ServiceRequest }>(endPoints.SERVICE_REQUEST.GET_BY_ID(selectedRequestId!)).then(res => res.data),
   });
 
-  const engagements = (data ?? []) as OrgEngagement[];
+  const engagements = data as OrgEngagement[];
 
   const handleUpdateStatus = async (engagementId: string, status: string, reason?: string) => {
     setIsUpdating(engagementId);
