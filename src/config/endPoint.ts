@@ -43,7 +43,13 @@ export const endPoints = {
     WORKBOOK_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library/workbooks`,
   },
   ENGAGEMENT_UPDATES: '/engagement-updates',
+  SERVICE_REQUEST: {
+    GET_ALL: '/service-requests',
+    GET_BY_ID: (id: string) => `/service-requests/${id}`,
+    UPDATE_STATUS: (id: string) => `/service-requests/${id}/status`,
+  },
   DOCUMENT_REQUESTS: '/document-requests',
+  DOCUMENT_REQUEST_STATUS: (requestId: string) => `/document-requests/${requestId}/status`,
   REQUESTED_DOCUMENTS: (requestId: string) => `/document-requests/${requestId}/documents`,
   REQUESTED_DOCUMENT_BY_ID: (requestId: string, docId: string) => `/document-requests/${requestId}/documents/${docId}`,
   REQUESTED_DOCUMENT_UPLOAD: (requestId: string, docId: string) => `/document-requests/${requestId}/documents/${docId}/upload`,
