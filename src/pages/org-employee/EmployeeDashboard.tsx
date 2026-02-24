@@ -54,9 +54,9 @@ export default function EmployeeDashboard({ activeSection = "Dashboard" }: Emplo
             {/* <Button variant="header" className="rounded-xl">
               <Filter className="h-4 w-4 mr-2" /> Filter
             </Button> */}
-            <Button variant="header" className="rounded-xl">
+            {/* <Button variant="header" className="rounded-xl">
               <Plus className="h-4 w-4 mr-2" /> New Request
-            </Button>
+            </Button> */}
           </div>
         }
       />
