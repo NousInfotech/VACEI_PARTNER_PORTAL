@@ -128,6 +128,68 @@ export const endPoints = {
     DELETE_RANGE_EVIDENCE: (workbookId: string, rangeEvidenceId: string) => `/workbooks/${workbookId}/range-evidences/${rangeEvidenceId}`,
     ATTACH_EVIDENCE_TO_RANGE_EVIDENCE: (workbookId: string, rangeEvidenceId: string) => `/workbooks/${workbookId}/range-evidences/${rangeEvidenceId}/attach-evidence`,
   },
+  ACCOUNTING: {
+    CREATE_CYCLE: '/accounting-cycles',
+    GET_CYCLE: (id: string) => `/accounting-cycles/${id}`,
+    UPDATE_STATUS: (id: string) => `/accounting-cycles/${id}/status`,
+    UPDATE_CYCLE: (id: string) => `/accounting-cycles/${id}`,
+    GET_BY_ENGAGEMENT_ID: (engagementId: string) => `/accounting-cycles/engagement/${engagementId}`,
+    QUICKBOOKS_AVAILABLE: (companyId: string) =>
+      `/companies/${companyId}/accounting/quickbooks/available`,
+    TRANSACTIONS_BY_CYCLE: (cycleId: string) =>
+      `/accounting-cycles/${cycleId}/transactions`,
+    TRANSACTION_BY_ID: (cycleId: string, id: string) =>
+      `/accounting-cycles/${cycleId}/transactions/${id}`,
+    CREATE_TRANSACTION: (cycleId: string) =>
+      `/accounting-cycles/${cycleId}/transactions`,
+    UPDATE_TRANSACTION: (cycleId: string, id: string) =>
+      `/accounting-cycles/${cycleId}/transactions/${id}`,
+    DELETE_TRANSACTION: (cycleId: string, id: string) =>
+      `/accounting-cycles/${cycleId}/transactions/${id}`,
+    CHART_OF_ACCOUNTS: (companyId: string) =>
+      `/companies/${companyId}/accounting/chart-of-accounts`,
+    IMPORT_SYNC_ALL: (companyId: string) =>
+      `/companies/${companyId}/accounting/import/sync/all`,
+    MAP_INVOICE_TO_TRANSACTION: (companyId: string, qbInvoiceId: string) =>
+      `/companies/${companyId}/accounting/import/invoices/${qbInvoiceId}/map-to-transaction`,
+    MAP_BILL_TO_TRANSACTION: (companyId: string, qbBillId: string) =>
+      `/companies/${companyId}/accounting/import/bills/${qbBillId}/map-to-transaction`,
+  },
+  QUICKBOOKS: {
+    base: (companyId: string) => `/companies/${companyId}/accounting/quickbooks`,
+    INVOICES: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/invoices`,
+    CREATE_INVOICE: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/invoices`,
+    INVOICE_STATS: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/invoices/stats`,
+    INVOICE_PAYMENTS: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/invoices/payments`,
+    INVOICE_IMPORT: (companyId: string, qbInvoiceId: string) =>
+      `/companies/${companyId}/accounting/quickbooks/invoices/import/${qbInvoiceId}`,
+    BILLS: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/bills`,
+    CREATE_BILL: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/bills`,
+    BILL_IMPORT: (companyId: string, qbBillId: string) =>
+      `/companies/${companyId}/accounting/quickbooks/bills/import/${qbBillId}`,
+    JOURNAL: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/journal`,
+    JOURNAL_ITEMS: (companyId: string, id: string) =>
+      `/companies/${companyId}/accounting/quickbooks/journal/items/${id}`,
+    RECURRING_EXPENSES: (companyId: string) =>
+      `/companies/${companyId}/accounting/quickbooks/recurring-expenses/user-expenses`,
+    RECURRING_EXPENSES_SIMULATED: (companyId: string) =>
+      `/companies/${companyId}/accounting/quickbooks/recurring-expenses/simulated`,
+    REPORTS: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/reports/fetch`,
+    REPORTS_DASHBOARD: (companyId: string) =>
+      `/companies/${companyId}/accounting/quickbooks/reports/financial-dashboard-summary`,
+    AGING: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/aging/user-ar-ap`,
+    AGING_SYNCED: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/aging/synced`,
+    ACCOUNTS: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/accounts`,
+    BANK_ACCOUNTS: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/accounts/bank`,
+    SYNC_HISTORY: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/sync-history`,
+    TAX_ENTITY: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/tax-entity`,
+    QB_TRANSACTIONS: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/transactions`,
+    SEARCH: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/search`,
+    SYNC_CHART_ACCOUNTS: (companyId: string) =>
+      `/companies/${companyId}/accounting/quickbooks/sync/chart-accounts`,
+    SYNC_COMPANY_DATA: (companyId: string) =>
+      `/companies/${companyId}/accounting/quickbooks/sync/company-data`,
+  },
   INCORPORATION: {
     GET_BY_COMPANY: (companyId: string) => `/incorporation/company/${companyId}`,
   },

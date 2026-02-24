@@ -16,6 +16,7 @@ import {
   Activity,
   CheckCircle2,
   BookOpen,
+  BookMarked,
   PieChart,
   Landmark,
   Building2,
@@ -35,6 +36,7 @@ import { endPoints } from '../../../config/endPoint';
 import PageHeader from "../../common/PageHeader";
 import { LibraryExplorer } from "./library/LibraryExplorer";
 import AuditContent from "./audit/AuditContent";
+import AccountingContent from "./accounting/AccountingContent";
 
 import VATCycleView from "./status-cycles/VATCycleView";
 import PayrollCycleView from "./status-cycles/PayrollCycleView";
@@ -59,6 +61,7 @@ const ENGAGEMENT_TABS = [
   { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
   { id: 'requests', label: 'Document Requests', icon: FileText },
   { id: 'audit', label: 'AUDIT', icon: BookOpen },
+  { id: 'accounting', label: "BOOKEEPING", icon: BookMarked },
   // { id: 'vat', label: 'VAT', icon: Activity },
   { id: 'payroll', label: 'Payroll', icon: Users },
   { id: 'mbr', label: 'MBR', icon: PieChart },
@@ -106,6 +109,7 @@ export default function EngagementFullView() {
   const initialTab = React.useMemo(() => {
     if (!selectedService) return 'dashboard';
     const serviceMap: Record<string, string> = {
+      'ACCOUNTING': 'accounting',
       'AUDITING': 'audit',
       'VAT': 'dashboard', // default to dashboard instead of vat tab
       'PAYROLL': 'payroll',
@@ -141,6 +145,7 @@ export default function EngagementFullView() {
     if (!selectedService) return ENGAGEMENT_TABS;
 
     const serviceMap: Record<string, string> = {
+      'ACCOUNTING':'accounting',
       'AUDITING': 'audit',
       'VAT': 'dashboard', // default to dashboard instead of vat tab
       'PAYROLL': 'payroll',
@@ -494,6 +499,8 @@ export default function EngagementFullView() {
               <LibraryExplorer engagementId={engagementId ?? undefined} />
             ) : activeTab === 'audit' ? (
               <AuditContent engagementId={engagementId ?? undefined} />
+            ) : activeTab === 'accounting' ? (
+              <AccountingContent engagementId={engagementId ?? undefined} companyId={companyId ?? undefined} />
             ) : activeTab === 'vat' ? (
               <VATCycleView />
             ) : activeTab === 'payroll' ? (
