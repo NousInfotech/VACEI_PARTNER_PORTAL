@@ -1,5 +1,3 @@
-import { ReactNode } from 'react';
-
 export interface StatCardItem {
   label: string;
   value: string | number;

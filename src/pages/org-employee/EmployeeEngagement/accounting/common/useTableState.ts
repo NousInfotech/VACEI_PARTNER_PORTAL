@@ -50,7 +50,7 @@ export function useTableState<T>({
       result = result.filter((item) => {
         const raw = item[dateKey];
         if (raw == null) return true;
-        const d = typeof raw === 'string' ? new Date(raw) : raw as Date;
+        const d = typeof raw === 'string' ? new Date(raw) : (raw as unknown) as Date;
         if (isNaN(d.getTime())) return true;
         if (dateFrom && d < new Date(dateFrom)) return false;
         if (dateTo && d > new Date(dateTo + 'T23:59:59')) return false;
