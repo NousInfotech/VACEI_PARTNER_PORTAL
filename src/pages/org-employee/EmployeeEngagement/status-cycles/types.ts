@@ -29,13 +29,12 @@ export const PayrollCycleStatus = {
 export type PayrollCycleStatus = typeof PayrollCycleStatus[keyof typeof PayrollCycleStatus];
 
 export const EmployeePayrollStatus = {
-    PENDING_DATA: 'PENDING_DATA',
+    ACTIVE: 'ACTIVE',
+    ON_LEAVE: 'ON_LEAVE',
+    TERMINATED: 'TERMINATED',
     CALCULATED: 'CALCULATED',
+    PENDING_DATA: 'PENDING_DATA',
     ON_HOLD: 'ON_HOLD',
-    APPROVED: 'APPROVED',
-    PAID: 'PAID',
-    FAILED: 'FAILED',
-    ADJUSTED: 'ADJUSTED'
 } as const;
 
 export type EmployeePayrollStatus = typeof EmployeePayrollStatus[keyof typeof EmployeePayrollStatus];

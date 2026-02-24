@@ -31,6 +31,7 @@ import {
   DialogTitle,
 } from "../../../ui/Dialog";
 import { ScrollArea } from "../../../ui/scroll-area";
+import { cn } from "../../../lib/utils";
 
 interface OrgEngagement {
   id: string;
@@ -175,7 +176,13 @@ export default function Engagement() {
                     </Badge>
                   </TableCell>
                   <TableCell className="py-4">
-                    <Badge variant={getStatusColor(engagement.status) as any} className="uppercase tracking-wider text-white px-2.5 py-0.5">
+                    <Badge 
+                      variant={getStatusColor(engagement.status) as any} 
+                      className={cn(
+                        "uppercase tracking-wider px-2.5 py-0.5",
+                        ['ACTIVE', 'ASSIGNED', 'REJECTED'].includes(engagement.status) && "border-primary text-primary bg-white hover:bg-white"
+                      )}
+                    >
                       {engagement.status.replace(/_/g, " ")}
                     </Badge>
                   </TableCell>
