@@ -887,23 +887,24 @@ export default function AccountingContent({ engagementId, companyId }: Accountin
                       </p>
                     </div>
                   </div>
-                  {isOrgAdmin && (
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <div className="flex items-center gap-2">
-                        <label className="text-sm font-medium text-gray-700">Status:</label>
-                        <select
-                          value={cycle?.status ?? ''}
-                          onChange={(e) => handleStatusChange(e.target.value)}
-                          disabled={statusUpdateLoading}
-                          className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none disabled:opacity-60"
-                        >
-                          {CYCLE_STATUSES.map((s) => (
-                            <option key={s} value={s}>
-                              {s.replace('_', ' ')}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                  <div className="flex items-center gap-3 flex-wrap">
+                      {isOrgAdmin && (
+                        <div className="flex items-center gap-2">
+                          <label className="text-sm font-medium text-gray-700">Status:</label>
+                          <select
+                            value={cycle?.status ?? ''}
+                            onChange={(e) => handleStatusChange(e.target.value)}
+                            disabled={statusUpdateLoading}
+                            className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none disabled:opacity-60"
+                          >
+                            {CYCLE_STATUSES.map((s) => (
+                              <option key={s} value={s}>
+                                {s.replace('_', ' ')}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                       {quickbooksAvailable && (
                         <Button
                           variant="outline"
@@ -917,7 +918,6 @@ export default function AccountingContent({ engagementId, companyId }: Accountin
                         </Button>
                       )}
                     </div>
-                  )}
                 </div>
                 {statusUpdateError && (
                   <p className="mb-4 text-sm text-red-600 font-medium">{statusUpdateError}</p>
@@ -966,23 +966,21 @@ export default function AccountingContent({ engagementId, companyId }: Accountin
                 {transactionsForbidden ? (
                   <div className="py-12 text-center text-muted-foreground">
                     <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/60" />
-                    <p className="font-medium">Only organization admins can view and manage transactions.</p>
+                    <p className="font-medium">You do not have access to view transactions for this engagement.</p>
                   </div>
                 ) : (
                   <>
-                    {isOrgAdmin && (
-                      <div className="mb-4">
-                        <Button
-                          onClick={() => openTransactionModal(null)}
-                          className="gap-2 rounded-xl"
-                        >
-                          <Plus className="h-4 w-4" />
-                          Add transaction
-                        </Button>
-                      </div>
-                    )}
+                    <div className="mb-4">
+                      <Button
+                        onClick={() => openTransactionModal(null)}
+                        className="gap-2 rounded-xl"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Add transaction
+                      </Button>
+                    </div>
                     {transactionsLoading ? (
-                      <TableSkeleton columns={isOrgAdmin ? 8 : 7} rows={5} />
+                      <TableSkeleton columns={8} rows={5} />
                     ) : transactionsError ? (
                       <p className="text-sm text-red-600">Failed to load transactions.</p>
                     ) : (
@@ -997,13 +995,13 @@ export default function AccountingContent({ engagementId, companyId }: Accountin
                             <TableHead className="text-right">Amount</TableHead>
                             <TableHead>Currency</TableHead>
                             <TableHead>QB Sync</TableHead>
-                            {isOrgAdmin && <TableHead className="w-24">Actions</TableHead>}
+                            <TableHead className="w-24">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {transactions.length === 0 ? (
                             <TableRow>
-                              <TableCell colSpan={isOrgAdmin ? 8 : 7} className="text-center text-muted-foreground py-8">
+                              <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                                 No data available here
                               </TableCell>
                             </TableRow>
@@ -1022,28 +1020,26 @@ export default function AccountingContent({ engagementId, companyId }: Accountin
                               </TableCell>
                               <TableCell>{tx.currency ?? 'USD'}</TableCell>
                               <TableCell>{tx.quickbooksSyncStatus ?? '—'}</TableCell>
-                              {isOrgAdmin && (
-                                <TableCell>
-                                  <div className="flex items-center gap-2">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => openTransactionModal(tx)}
-                                      className="h-8 w-8 p-0"
-                                    >
-                                      <Pencil className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => setDeleteConfirmId(tx.id)}
-                                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </TableCell>
-                              )}
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openTransactionModal(tx)}
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setDeleteConfirmId(tx.id)}
+                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -1090,7 +1086,7 @@ export default function AccountingContent({ engagementId, companyId }: Accountin
               </div>
             ) : activeTab === 'chart-of-accounts' ? (
               <div className="p-6">
-                {cycleCompanyId && quickbooksAvailable && isOrgAdmin && (
+                {cycleCompanyId && quickbooksAvailable && (
                   <div className="mb-4">
                     <Button
                       variant="outline"
