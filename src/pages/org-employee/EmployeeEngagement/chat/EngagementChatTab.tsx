@@ -62,7 +62,7 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
         messages: messages,
         name: room.name || 'Engagement Chat',
         type: room.type || 'GROUP',
-        participants: (room.participants || room.members || []).map((m: any) => ({
+        participants: (room.participants || (room as any).members || []).map((m: any) => ({
             ...m,
             // Fallbacks for avatar/name rendering
             id: m.userId || m.id,
