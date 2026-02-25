@@ -8,10 +8,14 @@ import { AuthProvider } from './context/AuthContext'
 import EngagementFullView from './pages/org-employee/EmployeeEngagement/EngagementFullView'
 import WorkbookViewerPage from './pages/common/WorkbookViewerPage'
 import Messages from './pages/messages/Messages'
+import Notifications from './pages/common/Notifications'
+import Settings from './pages/common/Settings'
+import { Toaster } from 'sonner'
 
 const App = () => {
   return (
     <AuthProvider>
+      <Toaster position="top-right" expand={true} richColors={true} />
       <Router>
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
@@ -25,9 +29,11 @@ const App = () => {
             <Route path="/dashboard/compliance" element={<Dashboard activeSection="Compliance" />} />
             <Route path="/dashboard/templates" element={<Dashboard activeSection="Document Request Templates" />} />
             <Route path="/dashboard/employees" element={<Dashboard activeSection="Employees" />} />
+            <Route path="/dashboard/employees/create" element={<Dashboard activeSection="Create Employee" />} />
             <Route path="/dashboard/messages" element={<Messages />} />
+            <Route path="/notifications" element={<Notifications />} />
             <Route path="/dashboard/support" element={<Messages isSingleChat={true} contextualChatId="support-chat" />} />
-            <Route path="/dashboard/settings" element={<Dashboard activeSection="Settings" />} />
+            <Route path="/dashboard/settings" element={<Settings />} />
             <Route path="/dashboard/procedure-prompts" element={<Dashboard activeSection="Procedure Prompt" />} />
             <Route path="/dashboard/procedure-prompts/create" element={<Dashboard activeSection="Create Procedure Prompt" />} />
             <Route path="/dashboard/procedure-prompts/:id/edit" element={<Dashboard activeSection="Edit Procedure Prompt" />} />

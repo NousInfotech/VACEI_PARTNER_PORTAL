@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPostFormData } from '../config/base';
+import { apiDelete, apiGet, apiPost, apiPostFormData } from '../config/base';
 import { endPoints } from '../config/endPoint';
 import { supabase } from '../lib/supabase';
 import { getDecodedUserId } from '../utils/authUtils';
@@ -64,7 +64,7 @@ export const chatService = {
 
     /**
      * Send a message to a chat room.
-     * Prefers Supabase direct insert for realtime, falls back to REST API.
+     * Prefers REST API so backend creates notifications; falls back to Supabase direct insert.
      */
     sendMessage: async (
         roomId: string,
@@ -73,43 +73,42 @@ export const chatService = {
         const currentUserId = getDecodedUserId();
         if (!currentUserId) throw new Error('User not authenticated');
 
-        // Attempt Supabase insert first
+        // Prefer REST API so backend creates notifications for other room members
         try {
-            const { data, error } = await supabase
-                .from('ChatMessage')
-                .insert({
-                    roomId,
-                    senderId: currentUserId,
-                    content: content.text,
-                    fileUrl: content.fileUrl || content.gifUrl,
-                    fileName: content.fileName,
-                    fileSize: content.fileSize,
-                    type: content.type.toUpperCase(), // Ensure backend enum match
-                    sentAt: new Date().toISOString(),
-                    ...(content.replyToMessageId && { replyToMessageId: content.replyToMessageId }),
-                })
-                .select()
-                .single();
-
-            if (error) {
-                throw error;
-            }
-
-            return data;
+            const { replyToMessageId: _replyId, ...rest } = content;
+            const res = await apiPost<Message | { data?: Message }>(endPoints.CHAT.MESSAGES(roomId), {
+                ...rest,
+                content: content.text,
+                type: content.type?.toUpperCase?.() || 'TEXT',
+                ...(_replyId && { replyToMessageId: _replyId }),
+            });
+            return (res as any)?.data ?? res;
         } catch (error) {
-            console.warn('Supabase insert failed, falling back to REST API:', error);
+            console.warn('REST send failed, falling back to Supabase:', error);
 
-            // Fallback to REST API
             try {
-                const { replyToMessageId: _replyId, ...rest } = content;
-                return await apiPost<Message>(endPoints.CHAT.MESSAGES(roomId), {
-                    ...rest,
-                    type: content.type.toUpperCase(),
-                    ...(_replyId && { replyToMessageId: _replyId }),
-                });
-            } catch (restError) {
-                console.error('Message send failed via REST:', restError);
-                throw restError;
+                const { data, error } = await supabase
+                    .from('ChatMessage')
+                    .insert({
+                        roomId,
+                        senderId: currentUserId,
+                        content: content.text,
+                        fileUrl: content.fileUrl || content.gifUrl,
+                        fileName: content.fileName,
+                        fileSize: content.fileSize,
+                        type: content.type?.toUpperCase?.() || 'TEXT',
+                        sentAt: new Date().toISOString(),
+                        ...(content.replyToMessageId && { replyToMessageId: content.replyToMessageId }),
+                    })
+                    .select()
+                    .single();
+
+                if (error) throw error;
+                chatService.notifyRoomMembers(roomId, content.text || '', data?.id).catch(() => {});
+                return data;
+            } catch (supabaseError) {
+                console.error('Message send failed', supabaseError);
+                throw supabaseError;
             }
         }
     },
@@ -127,6 +126,23 @@ export const chatService = {
         } catch (error) {
             console.error('Error uploading file:', error);
             throw error;
+        }
+    },
+
+    clearRoom: async (roomId: string) => {
+        try {
+            await apiDelete(endPoints.CHAT.CLEAR_MESSAGES(roomId));
+        } catch (error) {
+            console.error('Error clearing chat:', error);
+            throw error;
+        }
+    },
+
+    notifyRoomMembers: async (roomId: string, content: string, messageId?: string) => {
+        try {
+            await apiPost(endPoints.CHAT.NOTIFY_MEMBERS(roomId), { content, messageId });
+        } catch (e) {
+            console.warn('Failed to notify room members:', e);
         }
     },
 

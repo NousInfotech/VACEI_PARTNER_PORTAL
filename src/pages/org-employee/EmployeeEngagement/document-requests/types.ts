@@ -27,6 +27,7 @@ export interface DocumentRequestItem {
   status: 'DRAFT' | 'ACTIVE' | 'COMPLETED';
   deadline: string | null;
   createdAt: string;
+  unassignedFiles: { id: string; file_name: string; url: string }[];
   requestedDocuments: RequestedDocumentItem[];
 }
 

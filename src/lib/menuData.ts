@@ -45,7 +45,7 @@ export const menuData: MenuItem[] = [
         href: "/dashboard/engagements",
         section: "primary",
         description: "Active projects & tasks",
-        roles: ["ORG_EMPLOYEE", "ORG_ADMIN"]
+        roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
     },
     {
         slug: "compliance",

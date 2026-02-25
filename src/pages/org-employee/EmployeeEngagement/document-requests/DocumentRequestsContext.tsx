@@ -35,6 +35,8 @@ interface DocumentRequestsContextType {
   deleteContainerMutation: any;
   clearMutation: any;
   hardDeleteMutation: any;
+  attachFilesMutation: any;
+  updateStatusMutation: any;
   engagementId?: string;
   isTodoModalOpen: boolean;
   setIsTodoModalOpen: (open: boolean) => void;
@@ -246,6 +248,24 @@ export const DocumentRequestsProvider: React.FC<{ engagementId?: string; childre
     },
   });
 
+  const attachFilesMutation = useMutation({
+    mutationFn: async ({ documentRequestId, requestedDocumentId, fileId }: { documentRequestId: string; requestedDocumentId: string; fileId: string }) => {
+      return apiPatch(endPoints.REQUESTED_DOCUMENT_BY_ID(documentRequestId, requestedDocumentId) + '/attach', { fileId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["document-requests", engagementId] });
+    },
+  });
+  
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ requestId, status }: { requestId: string; status: string }) => {
+      return apiPatch(endPoints.DOCUMENT_REQUEST_STATUS(requestId), { status });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["document-requests", engagementId] });
+    },
+  });
+
   const updateGroupMutation = useMutation({
     mutationFn: async ({ id, title, description }: { id: string; title: string; description: string | null }) => {
       return apiPatch(endPoints.DOCUMENT_REQUESTS + `/${id}`, { title, description });
@@ -426,6 +446,8 @@ export const DocumentRequestsProvider: React.FC<{ engagementId?: string; childre
     deleteContainerMutation,
     clearMutation,
     hardDeleteMutation,
+    attachFilesMutation,
+    updateStatusMutation,
     engagementId,
     isTodoModalOpen,
     setIsTodoModalOpen,
@@ -454,6 +476,7 @@ export const DocumentRequestsProvider: React.FC<{ engagementId?: string; childre
     deleteContainerMutation.isPending,
     clearMutation.isPending,
     hardDeleteMutation.isPending,
+    updateStatusMutation.isPending,
     engagementId
   ]);
 

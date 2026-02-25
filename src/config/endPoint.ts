@@ -19,6 +19,13 @@ export const endPoints = {
   NOTICE: {
     GET_TODAY: '/notices/today',
   },
+  NOTIFICATION: {
+    BASE: '/notifications',
+    UNREAD_COUNT: '/notifications/unread-count',
+    MARK_READ: (id: string) => `/notifications/read/${id}`,
+    MARK_ALL_READ: '/notifications/read-all',
+    PREFERENCES: '/notifications/preferences',
+  },
   ENGAGEMENTS: {
     GET_ALL: '/engagements',
     GET_BY_ID: (engagementId: string) => `/engagements/${engagementId}`,
@@ -36,7 +43,13 @@ export const endPoints = {
     WORKBOOK_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library/workbooks`,
   },
   ENGAGEMENT_UPDATES: '/engagement-updates',
+  SERVICE_REQUEST: {
+    GET_ALL: '/service-requests',
+    GET_BY_ID: (id: string) => `/service-requests/${id}`,
+    UPDATE_STATUS: (id: string) => `/service-requests/${id}/status`,
+  },
   DOCUMENT_REQUESTS: '/document-requests',
+  DOCUMENT_REQUEST_STATUS: (requestId: string) => `/document-requests/${requestId}/status`,
   REQUESTED_DOCUMENTS: (requestId: string) => `/document-requests/${requestId}/documents`,
   REQUESTED_DOCUMENT_BY_ID: (requestId: string, docId: string) => `/document-requests/${requestId}/documents/${docId}`,
   REQUESTED_DOCUMENT_UPLOAD: (requestId: string, docId: string) => `/document-requests/${requestId}/documents/${docId}/upload`,
@@ -50,6 +63,8 @@ export const endPoints = {
     MEMBERS: (roomId: string) => `/chat/rooms/${roomId}/members`,
     MEMBER_DELETE: (roomId: string, userId: string) => `/chat/rooms/${roomId}/members/${userId}`,
     MESSAGES: (roomId: string) => `/chat/rooms/${roomId}/messages`,
+    CLEAR_MESSAGES: (roomId: string) => `/chat/rooms/${roomId}/messages`,
+    NOTIFY_MEMBERS: (roomId: string) => `/chat/rooms/${roomId}/notify-members`,
     MARK_READ: (roomId: string) => `/chat/rooms/${roomId}/read`,
     UNREAD_COUNT: (roomId: string) => `/chat/rooms/${roomId}/unread-count`,
     UNREAD_SUMMARY: '/chat/unread-summary',
@@ -101,17 +116,79 @@ export const endPoints = {
     UPDATE_WORKBOOK: (workbookId: string) => `/workbooks/${workbookId}`,
     DELETE_WORKBOOK: (workbookId: string) => `/workbooks/${workbookId}`,
     GET_WORKBOOK_SHEETS: (workbookId: string) => `/workbooks/${workbookId}/sheets`,
-    GET_WORKBOOK_SHEET_DATA: (workbookId: string, sheetName?: string) => 
-      sheetName 
+    GET_WORKBOOK_SHEET_DATA: (workbookId: string, sheetName?: string) =>
+      sheetName
         ? `/workbooks/${workbookId}/sheets/data?sheetName=${encodeURIComponent(sheetName)}`
         : `/workbooks/${workbookId}/sheets/data`,
     // RangeEvidence endpoints (for mappings and references)
     GET_RANGE_EVIDENCES: (workbookId: string) => `/workbooks/${workbookId}/range-evidences`,
     GET_RANGE_EVIDENCE: (workbookId: string, rangeEvidenceId: string) => `/workbooks/${workbookId}/range-evidences/${rangeEvidenceId}`,
     CREATE_RANGE_EVIDENCE: (workbookId: string) => `/workbooks/${workbookId}/range-evidences`,
-      UPDATE_RANGE_EVIDENCE: (workbookId: string, rangeEvidenceId: string) => `/workbooks/${workbookId}/range-evidences/${rangeEvidenceId}`,
-      DELETE_RANGE_EVIDENCE: (workbookId: string, rangeEvidenceId: string) => `/workbooks/${workbookId}/range-evidences/${rangeEvidenceId}`,
-      ATTACH_EVIDENCE_TO_RANGE_EVIDENCE: (workbookId: string, rangeEvidenceId: string) => `/workbooks/${workbookId}/range-evidences/${rangeEvidenceId}/attach-evidence`,
+    UPDATE_RANGE_EVIDENCE: (workbookId: string, rangeEvidenceId: string) => `/workbooks/${workbookId}/range-evidences/${rangeEvidenceId}`,
+    DELETE_RANGE_EVIDENCE: (workbookId: string, rangeEvidenceId: string) => `/workbooks/${workbookId}/range-evidences/${rangeEvidenceId}`,
+    ATTACH_EVIDENCE_TO_RANGE_EVIDENCE: (workbookId: string, rangeEvidenceId: string) => `/workbooks/${workbookId}/range-evidences/${rangeEvidenceId}/attach-evidence`,
+  },
+  ACCOUNTING: {
+    CREATE_CYCLE: '/accounting-cycles',
+    GET_CYCLE: (id: string) => `/accounting-cycles/${id}`,
+    UPDATE_STATUS: (id: string) => `/accounting-cycles/${id}/status`,
+    UPDATE_CYCLE: (id: string) => `/accounting-cycles/${id}`,
+    GET_BY_ENGAGEMENT_ID: (engagementId: string) => `/accounting-cycles/engagement/${engagementId}`,
+    QUICKBOOKS_AVAILABLE: (companyId: string) =>
+      `/companies/${companyId}/accounting/quickbooks/available`,
+    TRANSACTIONS_BY_CYCLE: (cycleId: string) =>
+      `/accounting-cycles/${cycleId}/transactions`,
+    TRANSACTION_BY_ID: (cycleId: string, id: string) =>
+      `/accounting-cycles/${cycleId}/transactions/${id}`,
+    CREATE_TRANSACTION: (cycleId: string) =>
+      `/accounting-cycles/${cycleId}/transactions`,
+    UPDATE_TRANSACTION: (cycleId: string, id: string) =>
+      `/accounting-cycles/${cycleId}/transactions/${id}`,
+    DELETE_TRANSACTION: (cycleId: string, id: string) =>
+      `/accounting-cycles/${cycleId}/transactions/${id}`,
+    CHART_OF_ACCOUNTS: (companyId: string) =>
+      `/companies/${companyId}/accounting/chart-of-accounts`,
+    IMPORT_SYNC_ALL: (companyId: string) =>
+      `/companies/${companyId}/accounting/import/sync/all`,
+    MAP_INVOICE_TO_TRANSACTION: (companyId: string, qbInvoiceId: string) =>
+      `/companies/${companyId}/accounting/import/invoices/${qbInvoiceId}/map-to-transaction`,
+    MAP_BILL_TO_TRANSACTION: (companyId: string, qbBillId: string) =>
+      `/companies/${companyId}/accounting/import/bills/${qbBillId}/map-to-transaction`,
+  },
+  QUICKBOOKS: {
+    base: (companyId: string) => `/companies/${companyId}/accounting/quickbooks`,
+    INVOICES: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/invoices`,
+    CREATE_INVOICE: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/invoices`,
+    INVOICE_STATS: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/invoices/stats`,
+    INVOICE_PAYMENTS: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/invoices/payments`,
+    INVOICE_IMPORT: (companyId: string, qbInvoiceId: string) =>
+      `/companies/${companyId}/accounting/quickbooks/invoices/import/${qbInvoiceId}`,
+    BILLS: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/bills`,
+    CREATE_BILL: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/bills`,
+    BILL_IMPORT: (companyId: string, qbBillId: string) =>
+      `/companies/${companyId}/accounting/quickbooks/bills/import/${qbBillId}`,
+    JOURNAL: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/journal`,
+    JOURNAL_ITEMS: (companyId: string, id: string) =>
+      `/companies/${companyId}/accounting/quickbooks/journal/items/${id}`,
+    RECURRING_EXPENSES: (companyId: string) =>
+      `/companies/${companyId}/accounting/quickbooks/recurring-expenses/user-expenses`,
+    RECURRING_EXPENSES_SIMULATED: (companyId: string) =>
+      `/companies/${companyId}/accounting/quickbooks/recurring-expenses/simulated`,
+    REPORTS: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/reports/fetch`,
+    REPORTS_DASHBOARD: (companyId: string) =>
+      `/companies/${companyId}/accounting/quickbooks/reports/financial-dashboard-summary`,
+    AGING: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/aging/user-ar-ap`,
+    AGING_SYNCED: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/aging/synced`,
+    ACCOUNTS: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/accounts`,
+    BANK_ACCOUNTS: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/accounts/bank`,
+    SYNC_HISTORY: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/sync-history`,
+    TAX_ENTITY: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/tax-entity`,
+    QB_TRANSACTIONS: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/transactions`,
+    SEARCH: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/search`,
+    SYNC_CHART_ACCOUNTS: (companyId: string) =>
+      `/companies/${companyId}/accounting/quickbooks/sync/chart-accounts`,
+    SYNC_COMPANY_DATA: (companyId: string) =>
+      `/companies/${companyId}/accounting/quickbooks/sync/company-data`,
   },
   INCORPORATION: {
     GET_BY_COMPANY: (companyId: string) => `/incorporation/company/${companyId}`,
@@ -125,6 +202,12 @@ export const endPoints = {
     FROM_DOCUMENT_REQUEST: (engagementId: string) => `/engagements/${engagementId}/todos/from-document-request`,
     FROM_REQUESTED_DOCUMENT: (engagementId: string) => `/engagements/${engagementId}/todos/from-requested-document`,
   },
+  NOTIFICATIONS: {
+    BASE: '/notifications',
+    UNREAD_COUNT: '/notifications/unread-count',
+    READ: (id: string) => `/notifications/read/${id}`,
+    READ_ALL: '/notifications/read-all',
+  },
   PROCEDURE_PROMPT: {
     BASE: '/procedure-prompts',
     GET_ALL: '/procedure-prompts',
@@ -133,6 +216,63 @@ export const endPoints = {
     UPDATE: (id: string) => `/procedure-prompts/${id}`,
     DELETE: (id: string) => `/procedure-prompts/${id}`,
   },
+  CSP: {
+    BASE: '/csp-cycles',
+    CREATE: '/csp-cycles',
+    GET_ALL: '/csp-cycles',
+    BY_ID: (id: string) => `/csp-cycles/${id}`,
+    UPDATE_STATUS: (id: string) => `/csp-cycles/${id}/status`,
+    UPDATE: (id: string) => `/csp-cycles/${id}`,
+    DELETE: (id: string) => `/csp-cycles/${id}`,
+  },
+  VAT: {
+    BASE: '/vat-cycles',
+    CREATE: '/vat-cycles',
+    GET_ALL: '/vat-cycles',
+    BY_ID: (id: string) => `/vat-cycles/${id}`,
+    UPDATE_STATUS: (id: string) => `/vat-cycles/${id}/status`,
+    UPDATE: (id: string) => `/vat-cycles/${id}`,
+    DELETE: (id: string) => `/vat-cycles/${id}`,
+  },
+  TAX: {
+    BASE: '/tax-cycles',
+    CREATE: '/tax-cycles',
+    GET_ALL: '/tax-cycles',
+    BY_ID: (id: string) => `/tax-cycles/${id}`,
+    UPDATE_STATUS: (id: string) => `/tax-cycles/${id}/status`,
+    UPDATE: (id: string) => `/tax-cycles/${id}`,
+    DELETE: (id: string) => `/tax-cycles/${id}`,
+  },
+  MBR: {
+    BASE: '/mbr-cycles',
+    CREATE: '/mbr-cycles',
+    GET_ALL: '/mbr-cycles',
+    BY_ID: (id: string) => `/mbr-cycles/${id}`,
+    UPDATE_STATUS: (id: string) => `/mbr-cycles/${id}/status`,
+    UPDATE: (id: string) => `/mbr-cycles/${id}`,
+    DELETE: (id: string) => `/mbr-cycles/${id}`,
+  },
+  PAYROLL: {
+    BASE: '/payroll-cycles',
+    CREATE: '/payroll-cycles',
+    GET_ALL: '/payroll-cycles',
+    BY_ID: (id: string) => `/payroll-cycles/${id}`,
+    UPDATE_STATUS: (id: string) => `/payroll-cycles/${id}/status`,
+    UPDATE: (id: string) => `/payroll-cycles/${id}`,
+    DELETE: (id: string) => `/payroll-cycles/${id}`,
+    EMPLOYEES: (payrollCycleId: string) => `/payroll-cycles/${payrollCycleId}/employees`,
+    EMPLOYEE_BY_ID: (payrollCycleId: string, employeeId: string) => `/payroll-cycles/${payrollCycleId}/employees/${employeeId}`,
+  },
+  CFO: {
+    BASE: '/cfo-cycles',
+    CREATE: '/cfo-cycles',
+    GET_ALL: '/cfo-cycles',
+    BY_ID: (id: string) => `/cfo-cycles/${id}`,
+    UPDATE_STATUS: (id: string) => `/cfo-cycles/${id}/status`,
+    UPDATE: (id: string) => `/cfo-cycles/${id}`,
+    DELETE: (id: string) => `/cfo-cycles/${id}`,
+  },
+
   // Audit procedures (planning, fieldwork, completion)
   PROCEDURES: {
     BASE: '/procedures',

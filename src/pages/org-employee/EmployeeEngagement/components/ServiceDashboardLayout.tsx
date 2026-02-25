@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
     CheckCircle2,
-    AlertCircle,
     Clock,
     ArrowRight,
     Upload,
@@ -10,9 +9,8 @@ import {
     MessageSquare,
     Download,
     ExternalLink,
-    ChevronDown,
-    ChevronUp,
-    Activity
+    Activity,
+    Calendar
 } from "lucide-react";
 import { ShadowCard } from "../../../../ui/ShadowCard";
 import { Button } from "../../../../ui/Button";
@@ -78,7 +76,6 @@ interface ServiceDashboardLayoutProps {
 
 export default function ServiceDashboardLayout({ config }: ServiceDashboardLayoutProps) {
     const [activeTab, setActiveTab] = useState('overview');
-    const [isReferenceExpanded, setIsReferenceExpanded] = useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const [pendingUploadContext, setPendingUploadContext] = useState<string | null>(null);
 
@@ -160,17 +157,16 @@ export default function ServiceDashboardLayout({ config }: ServiceDashboardLayou
             )}
 
             {activeTab === 'overview' ? (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 space-y-6">
+                    <div className="lg:col-span-3 space-y-8">
                         {/* 1. Service Header */}
-                        <ShadowCard className="p-6">
+                        <ShadowCard className="p-8">
                             <div className="flex justify-between items-start mb-4">
                                 <div>
-                                    <h2 className="text-xl font-bold text-gray-900 mb-1">{config.serviceName}</h2>
-                                    <p className="text-gray-500 text-sm max-w-xl">{config.description}</p>
+                                    <h2 className="text-2xl font-bold text-gray-900 mb-2">{config.serviceName}</h2>
+                                    <p className="text-gray-500 text-sm max-w-2xl">{config.description}</p>
                                 </div>
                                 <span className={cn(
-                                    "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide",
+                                    "px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide shadow-sm",
                                     getStatusColor(config.statusPill.status)
                                 )}>
                                     {config.statusPill.label}
@@ -178,233 +174,214 @@ export default function ServiceDashboardLayout({ config }: ServiceDashboardLayou
                             </div>
                         </ShadowCard>
 
-                        {/* 2. Compliance & Actions (Top Priority) */}
-                        <ShadowCard className="p-0 overflow-hidden border-l-4 border-l-indigo-500">
-                            <div className="p-6 bg-white">
-                                <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                                    <Activity className="h-5 w-5 text-indigo-600" />
-                                    Actions & Compliance
-                                </h3>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div className="lg:col-span-2 space-y-8">
+                                {/* 2. Compliance & Actions (Top Priority) */}
+                                <ShadowCard className="p-0 overflow-hidden border-l-4 border-l-indigo-500">
+                                    <div className="p-8 bg-white">
+                                        <h3 className="text-lg font-bold text-gray-900 mb-8 flex items-center gap-2">
+                                            <Activity className="h-5 w-5 text-indigo-600" />
+                                            Actions & Compliance
+                                        </h3>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    {/* Left: Current Cycle Status */}
-                                    <div className="space-y-4 border-r border-gray-100 pr-4">
-                                        <div>
-                                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Current Coverage</p>
-                                            <p className="font-bold text-gray-900 text-lg">{config.compliance.coverage}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Status</p>
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <span className={cn(
-                                                    "px-2.5 py-0.5 rounded text-xs font-bold uppercase",
-                                                    getStageStatusColor(config.compliance.status)
-                                                )}>
-                                                    {config.compliance.status.replace(/_/g, " ")}
-                                                </span>
-                                            </div>
-                                            <p className="text-sm text-gray-600 font-medium italic">"{config.compliance.statusLine}"</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Right: What we need from you */}
-                                    <div>
-                                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Required Actions</p>
-                                        {config.compliance.requiredActions.length > 0 ? (
-                                            <div className="space-y-3">
-                                                {config.compliance.requiredActions.map((action) => (
-                                                    <div key={action.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-100 hover:border-indigo-200 transition-colors group">
-                                                        <div>
-                                                            <p className="text-sm font-semibold text-gray-900">{action.label}</p>
-                                                            {action.context && <p className="text-xs text-gray-500">{action.context}</p>}
-                                                        </div>
-                                                        <Button
-                                                            size="sm"
-                                                            variant={action.type === 'upload' ? 'default' : 'outline'}
-                                                            className={cn(
-                                                                "h-8 text-xs gap-1.5",
-                                                                action.type === 'upload' && "bg-indigo-600 hover:bg-indigo-700",
-                                                                action.type === 'confirm' && "text-green-600 border-green-200 hover:bg-green-50"
-                                                            )}
-                                                            onClick={() => handleAction(action.type, action.label, action.context)}
-                                                        >
-                                                            {action.type === 'upload' && <Upload size={14} />}
-                                                            {action.type === 'approve' && <CheckCircle2 size={14} />}
-                                                            {action.type === 'confirm' && <CheckCircle2 size={14} />}
-                                                            {action.type === 'schedule' && <Phone size={14} />}
-                                                            {action.type === 'upload' ? 'Upload' : action.type === 'approve' ? 'Approve' : action.type === 'confirm' ? 'Confirm' : 'Call'}
-                                                        </Button>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                            {/* Left: Current Cycle Status */}
+                                            <div className="space-y-6 md:border-r md:border-gray-100 md:pr-10">
+                                                <div>
+                                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Current Coverage</p>
+                                                    <p className="font-bold text-gray-900 text-xl">{config.compliance.coverage}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Status</p>
+                                                    <div className="flex items-center gap-2 mb-3">
+                                                        <span className={cn(
+                                                            "px-3 py-1 rounded text-xs font-bold uppercase",
+                                                            getStageStatusColor(config.compliance.status)
+                                                        )}>
+                                                            {config.compliance.status.replace(/_/g, " ")}
+                                                        </span>
                                                     </div>
-                                                ))}
+                                                    <p className="text-base text-gray-600 font-medium italic">"{config.compliance.statusLine}"</p>
+                                                </div>
                                             </div>
-                                        ) : (
-                                            <div className="flex items-center gap-2 text-green-600 bg-green-50 p-3 rounded-lg">
-                                                <CheckCircle2 size={18} />
-                                                <span className="text-sm font-bold">Nothing required from you right now.</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </ShadowCard>
 
-                        {/* 4. Inline Requests (Conditional) */}
-                        {config.inlineRequests && config.inlineRequests.length > 0 && (
-                            <div className="space-y-3">
-                                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Pending Requests</h3>
-                                {config.inlineRequests.map(request => (
-                                    <ShadowCard key={request.id} className="p-4 border-l-4 border-l-amber-400 flex items-center justify-between group hover:shadow-md transition-shadow">
-                                        <div className="flex items-start gap-3">
-                                            <div className="p-2 bg-amber-50 text-amber-600 rounded-lg shrink-0">
-                                                <AlertCircle size={20} />
-                                            </div>
+                                            {/* Right: What we need from you */}
                                             <div>
-                                                <h4 className="font-bold text-gray-900 text-sm">{request.title}</h4>
-                                                <p className="text-xs text-gray-500">{request.details}</p>
+                                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Required Actions</p>
+                                                {config.compliance.requiredActions.length > 0 ? (
+                                                    <div className="space-y-4">
+                                                        {config.compliance.requiredActions.map((action) => (
+                                                            <div key={action.id} className="flex items-center justify-between p-4 rounded-xl bg-gray-50 border border-gray-100 hover:border-indigo-200 transition-all group">
+                                                                <div>
+                                                                    <p className="text-sm font-bold text-gray-900">{action.label}</p>
+                                                                    {action.context && <p className="text-xs text-gray-500 mt-0.5">{action.context}</p>}
+                                                                </div>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant={action.type === 'upload' ? 'default' : 'outline'}
+                                                                    className={cn(
+                                                                        "h-9 text-xs gap-2 px-4 shadow-sm",
+                                                                        action.type === 'upload' && "bg-indigo-600 hover:bg-indigo-700",
+                                                                        action.type === 'confirm' && "text-green-600 border-green-200 hover:bg-green-50"
+                                                                    )}
+                                                                    onClick={() => handleAction(action.type, action.label, action.context)}
+                                                                >
+                                                                    {action.type === 'upload' && <Upload size={14} />}
+                                                                    {action.type === 'approve' && <CheckCircle2 size={14} />}
+                                                                    {action.type === 'confirm' && <CheckCircle2 size={14} />}
+                                                                    {action.type === 'schedule' && <Phone size={14} />}
+                                                                    {action.type === 'upload' ? 'Upload' : action.type === 'approve' ? 'Approve' : action.type === 'confirm' ? 'Confirm' : 'Call'}
+                                                                </Button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-3 text-green-600 bg-green-50 p-4 rounded-2xl border border-green-100">
+                                                        <div className="p-2 bg-white rounded-full">
+                                                            <CheckCircle2 size={24} />
+                                                        </div>
+                                                        <span className="text-sm font-bold uppercase tracking-tight">Nothing required from you right now.</span>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
-                                        <Button
-                                            size="sm"
-                                            className="gap-2"
-                                            onClick={() => handleAction(request.ctaType, request.title, request.details)}
-                                        >
-                                            {request.ctaType === 'upload' && <Upload size={14} />}
-                                            {request.ctaType === 'approve' && <CheckCircle2 size={14} />}
-                                            {request.ctaLabel}
-                                        </Button>
-                                    </ShadowCard>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* 3. Current Cycle / Coverage Summary */}
-                        <ShadowCard className="p-6 bg-linear-to-br from-gray-900 to-gray-800 text-white relative overflow-hidden">
-                            <div className="relative z-10">
-                                <div className="flex justify-between items-start mb-6">
-                                    <div>
-                                        <p className="text-white/60 text-xs font-bold uppercase tracking-widest mb-1">Active Cycle</p>
-                                        <h3 className="text-2xl font-bold text-white">{config.currentCycle.label}</h3>
                                     </div>
-                                    <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-sm">
-                                        <Clock className="h-5 w-5 text-white" />
+                                </ShadowCard>
+
+                                {/* Reference List Section - Now Prominent */}
+                                <ShadowCard className="p-8">
+                                    <div className="flex items-center justify-between mb-8">
+                                        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-3">
+                                            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                                                <FileText size={20} />
+                                            </div>
+                                            Reference Documents & Reports
+                                        </h3>
                                     </div>
-                                </div>
-
-                                <div className="flex items-center gap-3 mb-6 p-3 bg-white/10 rounded-xl backdrop-blur-sm border border-white/10">
-                                    <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
-                                    <p className="font-medium text-sm text-white/90">{config.currentCycle.statusLine}</p>
-                                </div>
-
-                                <div className="flex items-center gap-2 text-xs text-white/50 border-t border-white/10 pt-4 mt-2">
-                                    <CheckCircle2 size={14} />
-                                    {config.currentCycle.reassuranceText}
-                                </div>
-                            </div>
-                        </ShadowCard>
-
-                        {/* 5. Reference List (Collapsed) */}
-                        <div className="border border-gray-200 rounded-2xl bg-white overflow-hidden">
-                            <button
-                                onClick={() => setIsReferenceExpanded(!isReferenceExpanded)}
-                                className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
-                            >
-                                <div className="flex items-center gap-2">
-                                    <FileText size={18} className="text-gray-500" />
-                                    <h3 className="font-bold text-gray-700 text-sm">Reference Documents & Reports</h3>
-                                </div>
-                                {isReferenceExpanded ? <ChevronUp size={18} className="text-gray-400" /> : <ChevronDown size={18} className="text-gray-400" />}
-                            </button>
-
-                            {isReferenceExpanded && (
-                                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-top-2 duration-300">
-                                    {config.referenceList.map((group, idx) => (
-                                        <div key={idx} className="space-y-3">
-                                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest">{group.group}</h4>
-                                            <ul className="space-y-2">
-                                                {group.items.map((item, i) => (
-                                                    <li
-                                                        key={i}
-                                                        className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg group/item cursor-pointer transition-colors border border-transparent hover:border-gray-100"
-                                                        onClick={() => handleDownload(item.title)}
-                                                    >
-                                                        <div className="flex items-center gap-2 overflow-hidden">
-                                                            <div className={cn(
-                                                                "h-8 w-8 rounded flex items-center justify-center text-[10px] font-bold shrink-0",
-                                                                item.type === 'pdf' ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"
-                                                            )}>
-                                                                {item.type.toUpperCase()}
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                        {config.referenceList.map((group, idx) => (
+                                            <div key={idx} className="space-y-4">
+                                                <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">{group.group}</h4>
+                                                <div className="space-y-2">
+                                                    {group.items.map((item, i) => (
+                                                        <div
+                                                            key={i}
+                                                            className="flex items-center justify-between p-3.5 hover:bg-indigo-50/50 rounded-xl group/item cursor-pointer transition-all border border-gray-50 hover:border-indigo-100"
+                                                            onClick={() => handleDownload(item.title)}
+                                                        >
+                                                            <div className="flex items-center gap-3 overflow-hidden">
+                                                                <div className={cn(
+                                                                    "h-10 w-10 rounded-xl flex items-center justify-center text-xs font-black shrink-0 shadow-sm",
+                                                                    item.type === 'pdf' ? "bg-red-50 text-red-600 border border-red-100" : "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                                                                )}>
+                                                                    {item.type.toUpperCase()}
+                                                                </div>
+                                                                <span className="text-sm font-semibold text-gray-700 truncate group-hover/item:text-indigo-700 transition-colors">{item.title}</span>
                                                             </div>
-                                                            <span className="text-sm text-gray-600 truncate group-hover/item:text-indigo-600 transition-colors">{item.title}</span>
+                                                            <Download size={16} className="text-gray-300 group-hover/item:text-indigo-400 transition-all" />
                                                         </div>
-                                                        <Download size={14} className="text-gray-300 group-hover/item:text-gray-500" />
-                                                    </li>
-                                                ))}
-                                            </ul>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </ShadowCard>
+
+                                {/* Summary Card moved to bottom of main column */}
+                                <ShadowCard className="p-8 bg-linear-to-br from-gray-900 to-gray-800 text-white relative overflow-hidden rounded-[32px]">
+                                    <div className="relative z-10">
+                                        <div className="flex justify-between items-start mb-8">
+                                            <div>
+                                                <p className="text-white/40 text-xs font-black uppercase tracking-[0.2em] mb-2">Active Cycle Coverage</p>
+                                                <h3 className="text-3xl font-bold text-white tracking-tight">{config.currentCycle.label}</h3>
+                                            </div>
+                                            <div className="h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center backdrop-blur-md border border-white/10 shadow-2xl">
+                                                <Clock className="h-7 w-7 text-white" />
+                                            </div>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
+
+                                        <div className="flex items-center gap-4 mb-8 p-5 bg-white/5 rounded-2xl backdrop-blur-md border border-white/10">
+                                            <div className="h-3 w-3 rounded-full bg-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.5)] animate-pulse" />
+                                            <p className="font-semibold text-base text-white/90">{config.currentCycle.statusLine}</p>
+                                        </div>
+
+                                        <div className="flex items-center gap-2 text-sm font-medium text-white/40 pt-6 border-t border-white/5">
+                                            <CheckCircle2 size={18} className="text-emerald-500/50" />
+                                            {config.currentCycle.reassuranceText}
+                                        </div>
+                                    </div>
+                                    <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-[80px]" />
+                                </ShadowCard>
+                            </div>
+
+                            <div className="space-y-8">
+                                {/* Direct Messages - Now on the right grid but equally prominent */}
+                                <ShadowCard className="flex flex-col h-[520px] rounded-[32px] overflow-hidden">
+                                    <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                                        <h3 className="font-bold text-gray-900 flex items-center gap-3">
+                                            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                                                <MessageSquare size={18} />
+                                            </div>
+                                            Direct Messages
+                                        </h3>
+                                        <span className="px-2.5 py-1 bg-indigo-100/50 text-indigo-700 text-[10px] font-black rounded-lg">
+                                            {config.messages.length} THREADS
+                                        </span>
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto p-6 space-y-5 scrollbar-thin scrollbar-thumb-gray-200">
+                                        {config.messages.map(msg => (
+                                            <div key={msg.id} className={cn(
+                                                "p-4 rounded-[20px] max-w-[95%] text-sm shadow-sm transition-all hover:shadow-md",
+                                                msg.isSystem ? "bg-gray-100 text-gray-600 mx-auto text-center w-full" :
+                                                    "bg-indigo-50 text-indigo-900 ml-auto border border-indigo-100/50"
+                                            )}>
+                                                {!msg.isSystem && <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1.5">{msg.sender}</p>}
+                                                <p className="leading-relaxed font-medium">{msg.content}</p>
+                                                <p className="text-[10px] opacity-40 mt-2 text-right font-bold italic">{msg.date}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="p-6 border-t border-gray-100 bg-white">
+                                        <Button variant="outline" className="w-full justify-between h-12 rounded-xl group border-gray-200" disabled>
+                                            <span className="text-gray-400 font-medium italic">Type your reply...</span>
+                                            <ArrowRight size={16} className="text-gray-300 group-hover:translate-x-1 transition-transform" />
+                                        </Button>
+                                    </div>
+                                </ShadowCard>
+
+                                {/* Quick Links - Sidebar Card */}
+                                <ShadowCard className="p-6 rounded-[32px]">
+                                    <div className="space-y-5">
+                                        <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
+                                            <Activity size={18} className="text-indigo-600" />
+                                            Quick Navigation
+                                        </h3>
+                                        <div className="grid grid-cols-1 gap-3">
+                                            <a href="#" className="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-transparent hover:border-indigo-100 hover:bg-indigo-50/50 hover:text-indigo-700 transition-all group">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2.5 bg-white rounded-xl shadow-sm border border-gray-100 group-hover:border-indigo-200">
+                                                        <FileText size={18} />
+                                                    </div>
+                                                    <span className="text-sm font-bold">Service Library</span>
+                                                </div>
+                                                <ExternalLink size={16} className="opacity-0 group-hover:opacity-100 transition-opacity translate-x-2 group-hover:translate-x-0" />
+                                            </a>
+                                            <a href="#" className="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-transparent hover:border-indigo-100 hover:bg-indigo-50/50 hover:text-indigo-700 transition-all group">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2.5 bg-white rounded-xl shadow-sm border border-gray-100 group-hover:border-indigo-200">
+                                                        <Calendar size={18} />
+                                                    </div>
+                                                    <span className="text-sm font-bold">Compliance Calendar</span>
+                                                </div>
+                                                <ExternalLink size={16} className="opacity-0 group-hover:opacity-100 transition-opacity translate-x-2 group-hover:translate-x-0" />
+                                            </a>
+                                        </div>
+                                    </div>
+                                </ShadowCard>
+                            </div>
                         </div>
                     </div>
-
-                    {/* Right Column: Messages & Library */}
-                    <div className="space-y-6">
-                        {/* 7. Messages */}
-                        <ShadowCard className="flex flex-col h-[500px]">
-                            <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-                                <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                                    <MessageSquare size={18} className="text-indigo-600" />
-                                    Direct Messages
-                                </h3>
-                                <span className="text-xs font-medium text-gray-500">{config.messages.length} thread(s)</span>
-                            </div>
-                            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                                {config.messages.map(msg => (
-                                    <div key={msg.id} className={cn(
-                                        "p-3 rounded-xl max-w-[90%] text-sm",
-                                        msg.isSystem ? "bg-gray-100 text-gray-600 mx-auto text-center w-full" :
-                                            "bg-indigo-50 text-indigo-900 ml-auto border border-indigo-100"
-                                    )}>
-                                        {!msg.isSystem && <p className="text-[10px] font-bold text-indigo-400 mb-1">{msg.sender}</p>}
-                                        <p>{msg.content}</p>
-                                        <p className="text-[10px] opacity-50 mt-1 text-right">{msg.date}</p>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="p-4 border-t border-gray-100">
-                                <Button variant="outline" className="w-full justify-between" disabled>
-                                    <span className="text-gray-400">Reply to thread...</span>
-                                    <ArrowRight size={14} />
-                                </Button>
-                            </div>
-                        </ShadowCard>
-
-                        {/* 6. Library & Links */}
-                        <ShadowCard className="p-5">
-                            <div className="space-y-3">
-                                <h3 className="font-bold text-gray-900 mb-2">Quick Links</h3>
-                                <a href="#" className="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-indigo-50 hover:text-indigo-700 transition-colors group">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-white rounded-lg border border-gray-100 group-hover:border-indigo-100">
-                                            <FileText size={16} />
-                                        </div>
-                                        <span className="text-sm font-medium">Service Library</span>
-                                    </div>
-                                    <ExternalLink size={14} className="opacity-50 group-hover:opacity-100" />
-                                </a>
-                                <a href="#" className="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-indigo-50 hover:text-indigo-700 transition-colors group">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-white rounded-lg border border-gray-100 group-hover:border-indigo-100">
-                                            <Clock size={16} />
-                                        </div>
-                                        <span className="text-sm font-medium">Compliance Calendar</span>
-                                    </div>
-                                    <ExternalLink size={14} className="opacity-50 group-hover:opacity-100" />
-                                </a>
-                            </div>
-                        </ShadowCard>
-                    </div>
-                </div>
             ) : (
                 <div className="space-y-4">
                     {/* Render active tab content */}

@@ -1,5 +1,5 @@
 import * as React from "react"
-
+import { createPortal } from "react-dom"
 import { cn } from "../lib/utils"
 
 interface DialogProps {
@@ -11,14 +11,15 @@ interface DialogProps {
 const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
     if (!open) return null;
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+    return createPortal(
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
             <div
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+                className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity animate-in fade-in duration-300"
                 onClick={() => onOpenChange?.(false)}
             />
             {children}
-        </div>
+        </div>,
+        document.body
     );
 };
 

@@ -7,7 +7,7 @@ interface ChangeStatusDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     currentStatus: string;
-    onStatusChange: (newStatus: string) => void;
+    onStatusChange: (newStatus: string, reason?: string) => void;
     statusOptions: { value: string; label: string }[];
     title?: string;
 }
@@ -21,6 +21,7 @@ export default function ChangeStatusDialog({
     title = "Update Status"
 }: ChangeStatusDialogProps) {
     const [selectedStatus, setSelectedStatus] = useState(currentStatus);
+    const [reason, setReason] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSave = async () => {
@@ -30,11 +31,11 @@ export default function ChangeStatusDialog({
         }
 
         setIsLoading(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 800));
-        onStatusChange(selectedStatus);
+        // Let the parent handle the API call or logic
+        await onStatusChange(selectedStatus, reason);
         setIsLoading(false);
         onOpenChange(false);
+        setReason(""); // Reset reason
     };
 
     return (
@@ -50,7 +51,7 @@ export default function ChangeStatusDialog({
                     </button>
                 </DialogHeader>
 
-                <div className="space-y-4 py-4">
+                <div className="space-y-4 py-4 pr-2 h-[400px] overflow-y-auto">
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">Select New Status</label>
                         <div className="grid grid-cols-1 gap-2">
@@ -76,6 +77,16 @@ export default function ChangeStatusDialog({
                                 </div>
                             ))}
                         </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Reason / Note (Optional)</label>
+                        <textarea
+                            placeholder="Provide a reason for this status change..."
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-none h-20 text-sm"
+                            value={reason}
+                            onChange={(e) => setReason(e.target.value)}
+                        />
                     </div>
 
                     <div className="pt-2 flex justify-end gap-3">

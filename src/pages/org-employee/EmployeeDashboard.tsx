@@ -6,10 +6,8 @@ import {
   CheckCircle2,
   Search,
   // Filter,
-  Plus,
   Activity
 } from "lucide-react";
-import { Button } from "../../ui/Button";
 import { ShadowCard } from "../../ui/ShadowCard";
 import { PageHeader } from "../common/PageHeader";
 import { Skeleton } from "../../ui/Skeleton";
@@ -54,9 +52,9 @@ export default function EmployeeDashboard({ activeSection = "Dashboard" }: Emplo
             {/* <Button variant="header" className="rounded-xl">
               <Filter className="h-4 w-4 mr-2" /> Filter
             </Button> */}
-            <Button variant="header" className="rounded-xl">
+            {/* <Button variant="header" className="rounded-xl">
               <Plus className="h-4 w-4 mr-2" /> New Request
-            </Button>
+            </Button> */}
           </div>
         }
       />

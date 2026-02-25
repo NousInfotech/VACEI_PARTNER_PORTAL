@@ -1,10 +1,13 @@
 import { useNavigate } from "react-router-dom";
-import { useMemo } from "react";
-import { PanelLeft, PanelLeftClose, Search, Bell, LogOut, Settings } from "lucide-react";
+import { useMemo, useState, useEffect, useCallback } from "react";
+import { PanelLeft, PanelLeftClose, Search, Bell, LogOut, Settings, MessageSquare, Calendar, AlertCircle, CheckCheck } from "lucide-react";
 import { Button } from "../ui/Button";
 import { useAuth } from "../context/auth-context-core";
 import { Select } from "../ui/Select";
+import { Dropdown } from "../ui/Dropdown";
 import { AVAILABLE_SERVICES } from "../lib/types";
+import { useSSE } from "../hooks/useSSE";
+import { notificationService, type Notification } from "../api/notificationService";
 
 interface TopHeaderProps {
     onSidebarToggle: () => void;
@@ -21,10 +24,78 @@ export default function TopHeader({
 }: TopHeaderProps) {
     const navigate = useNavigate();
     const { logout, organizationMember, setSelectedService, selectedServiceLabel } = useAuth();
+    const { unreadCount, setUnreadCount, notifications: sseNotifications } = useSSE();
+    const [latestNotifications, setLatestNotifications] = useState<Notification[]>([]);
+
+    const fetchLatestNotifications = useCallback(async () => {
+        try {
+            const response = await notificationService.fetchNotifications({ page: 1, limit: 10 });
+            setLatestNotifications(response.items);
+        } catch (err) {
+            console.error('Error fetching latest notifications:', err);
+        }
+    }, []);
+
+    const fetchUnreadCount = useCallback(async () => {
+        try {
+            const response = await notificationService.fetchUnreadCount();
+            setUnreadCount(response.count);
+        } catch (err) {
+            console.error('Error fetching unread count:', err);
+        }
+    }, [setUnreadCount]);
+
+    useEffect(() => {
+        if (sseNotifications.length > 0) {
+            fetchLatestNotifications();
+            fetchUnreadCount();
+        }
+    }, [sseNotifications, fetchLatestNotifications, fetchUnreadCount]);
+
+    useEffect(() => {
+        fetchUnreadCount();
+    }, [fetchUnreadCount]);
+
+    const handleMarkAsRead = async (id: string) => {
+        try {
+            await notificationService.markAsRead(id);
+            setLatestNotifications(prev =>
+                prev.map(notif => (notif.id === id ? { ...notif, isRead: true } : notif))
+            );
+            fetchUnreadCount();
+        } catch (err) {
+            console.error('Error marking as read:', err);
+        }
+    };
+
+    const handleMarkAllAsRead = async () => {
+        try {
+            await notificationService.markAllAsRead();
+            setLatestNotifications(prev => prev.map(notif => ({ ...notif, isRead: true })));
+            setUnreadCount(0);
+        } catch (err) {
+            console.error('Error marking all as read:', err);
+        }
+    };
 
     const handleLogout = () => {
         logout();
         navigate("/login");
+    };
+
+    const getIcon = (type: string) => {
+        switch (type) {
+            case 'chat_message':
+                return <MessageSquare className="h-4 w-4 text-blue-500" />;
+            case 'meeting_scheduled':
+            case 'meeting_updated':
+                return <Calendar className="h-4 w-4 text-purple-500" />;
+            case 'error':
+            case 'meeting_canceled':
+                return <AlertCircle className="h-4 w-4 text-red-500" />;
+            default:
+                return <Bell className="h-4 w-4 text-gray-500" />;
+        }
     };
 
     const services = useMemo(() => {
@@ -50,6 +121,19 @@ export default function TopHeader({
     }, [organizationMember?.allowedServices, organizationMember?.allowedCustomServiceCycles, setSelectedService]);
 
     const currentServiceLabel = selectedServiceLabel;
+
+    // Poll unread count periodically (fallback when SSE does not connect)
+    useEffect(() => {
+        const interval = setInterval(fetchUnreadCount, 30_000);
+        return () => clearInterval(interval);
+    }, [fetchUnreadCount]);
+
+    // Refresh when user returns to tab
+    useEffect(() => {
+        const onFocus = () => fetchUnreadCount();
+        window.addEventListener('focus', onFocus);
+        return () => window.removeEventListener('focus', onFocus);
+    }, [fetchUnreadCount]);
 
     return (
         <header
@@ -98,12 +182,81 @@ export default function TopHeader({
             </div>
 
             <div className="flex items-center gap-3">
-                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl relative">
-                    <Bell className="h-5 w-5 text-gray-700" />
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-                </Button>
+                <Dropdown
+                    align="right"
+                    contentClassName="w-80 overflow-hidden"
+                    trigger={
+                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl relative" onClick={fetchLatestNotifications}>
+                            <Bell className="h-5 w-5 text-gray-700" />
+                            {unreadCount > 0 && (
+                                <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 rounded-full border-2 border-white flex items-center justify-center text-[10px] text-white font-bold">
+                                    {unreadCount > 9 ? '9+' : unreadCount}
+                                </span>
+                            )}
+                        </Button>
+                    }
+                    closeOnClick={false}
+                >
+                    <div className="flex flex-col max-h-[480px]">
+                        <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                            <h3 className="text-xs font-bold text-gray-900 uppercase tracking-widest text-[10px]">Latest Notifications</h3>
+                            {unreadCount > 0 && (
+                                <button 
+                                    onClick={handleMarkAllAsRead}
+                                    className="text-[10px] font-bold text-primary hover:underline uppercase tracking-widest flex items-center gap-1"
+                                >
+                                    <CheckCheck className="h-3 w-3" />
+                                    Mark all
+                                </button>
+                            )}
+                        </div>
+                        <div className="p-2 overflow-y-auto">
+                            {latestNotifications.length > 0 ? (
+                                latestNotifications.map((notification) => (
+                                    <div 
+                                        key={notification.id}
+                                        onClick={() => {
+                                            if (!notification.isRead) handleMarkAsRead(notification.id);
+                                            if (notification.redirectUrl) navigate(notification.redirectUrl);
+                                        }}
+                                        className={`p-3 rounded-xl mb-1 cursor-pointer transition-all hover:bg-gray-50 flex gap-3 ${!notification.isRead ? 'bg-primary/5 border border-primary/10' : 'bg-white'}`}
+                                    >
+                                        <div className={`mt-1 p-2 rounded-lg ${!notification.isRead ? 'bg-white shadow-sm' : 'bg-gray-50'}`}>
+                                            {getIcon(notification.type)}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className={`text-xs font-bold text-gray-900 truncate ${!notification.isRead ? '' : 'opacity-70'}`}>
+                                                {notification.title}
+                                            </p>
+                                            <p className={`text-[10px] text-gray-500 line-clamp-1 mt-0.5 ${!notification.isRead ? '' : 'opacity-60'}`}>
+                                                {notification.content}
+                                            </p>
+                                            <span className="text-[8px] font-bold text-gray-400 mt-1 block uppercase tracking-tighter">
+                                                {new Date(notification.createdAt).toLocaleString()}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="py-10 flex flex-col items-center justify-center text-center px-4">
+                                    <Bell className="h-8 w-8 text-gray-200 mb-2" />
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">No notifications</p>
+                                </div>
+                            )}
+                        </div>
+                        {/* <div className="p-2 border-t border-gray-100 bg-gray-50/50">
+                            <Button 
+                                variant="ghost" 
+                                className="w-full text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-primary rounded-xl h-9"
+                                onClick={() => navigate('/notifications')}
+                            >
+                                View all
+                            </Button>
+                        </div> */}
+                    </div>
+                </Dropdown>
 
-                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl">
+                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => navigate('/dashboard/settings')}>
                     <Settings className="h-5 w-5 text-gray-700" />
                 </Button>
 

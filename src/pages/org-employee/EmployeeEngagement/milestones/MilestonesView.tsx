@@ -17,6 +17,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../../../config/base';
 import { endPoints } from '../../../../config/endPoint';
 import { cn } from '../../../../lib/utils';
+import { TemplateModal } from '../components/TemplateModal';
+import { ActionConfirmModal } from '../components/ActionConfirmModal';
 
 type MilestoneStatus = 'PENDING' | 'ACHIEVED' | 'CANCELLED';
 
@@ -44,6 +46,7 @@ export default function MilestonesView({ engagementId }: { engagementId?: string
         title: '',
         description: ''
     });
+    const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
 
     const { data: milestones = [], isLoading } = useQuery({
         queryKey: ['engagement-milestones', engagementId],
@@ -147,12 +150,21 @@ export default function MilestonesView({ engagementId }: { engagementId?: string
                     <p className="text-gray-400 mt-1 text-sm font-medium">Tracking our journey towards completion</p>
                 </div>
                 
-                <Button 
-                    onClick={() => { setEditingItem(null); resetForm(); setIsAddModalOpen(true); }}
-                    className="rounded-xl h-10 px-5 bg-slate-900 hover:bg-black text-white shadow-lg transition-all text-sm"
-                >
-                    <Plus className="h-4 w-4 mr-2" /> Define Marker
-                </Button>
+                <div className="flex items-center gap-3">
+                    <Button 
+                        variant="default" 
+                        onClick={() => setIsTemplateModalOpen(true)} 
+                        className="rounded-xl h-10 px-5 font-bold text-sm border border-slate-100"
+                    >
+                        <Plus className="h-4 w-4 mr-2" /> Template
+                    </Button>
+                    <Button 
+                        onClick={() => { setEditingItem(null); resetForm(); setIsAddModalOpen(true); }}
+                        className="rounded-xl h-10 px-5 bg-slate-900 hover:bg-black text-white shadow-lg transition-all text-sm"
+                    >
+                        <Plus className="h-4 w-4 mr-2" /> Define Marker
+                    </Button>
+                </div>
             </div>
 
             {isLoading ? (
@@ -353,7 +365,7 @@ export default function MilestonesView({ engagementId }: { engagementId?: string
                             <Button 
                                 type="submit" 
                                 disabled={createMutation.isPending || updateMutation.isPending}
-                                className="grow-[2] rounded-2xl h-12 font-black bg-slate-900 text-white shadow-xl hover:bg-black transition-all"
+                                className="grow-2 rounded-2xl h-12 font-black bg-slate-900 text-white shadow-xl hover:bg-black transition-all"
                             >
                                 {createMutation.isPending || updateMutation.isPending ? (
                                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -369,31 +381,24 @@ export default function MilestonesView({ engagementId }: { engagementId?: string
                 </DialogContent>
             </Dialog>
 
-            {/* Delete Modal */}
-            <Dialog open={!!deletingItemId} onOpenChange={() => setDeletingItemId(null)}>
-                <DialogContent className="max-w-sm rounded-[2.5rem] border-none shadow-2xl p-10 text-center bg-white">
-                    <div className="h-20 w-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500 scale-110">
-                        <Trash2 className="h-10 w-10" />
-                    </div>
-                    <DialogHeader>
-                        <DialogTitle className="text-2xl font-black text-gray-900 font-primary">Discard Marker?</DialogTitle>
-                        <DialogDescription className="text-gray-500 font-medium py-3 text-sm leading-relaxed">
-                            Are you sure you want to remove this milestone from the project timeline? This action is permanent.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="flex flex-col gap-3 mt-6">
-                        <Button 
-                            variant="destructive" 
-                            className="rounded-2xl h-14 font-black shadow-xl shadow-red-100 hover:shadow-2xl transition-all bg-red-500 hover:bg-red-600 text-white border-none"
-                            onClick={() => deletingItemId && deleteMutation.mutate(deletingItemId)} 
-                            disabled={deleteMutation.isPending}
-                        >
-                            Confirm Deletion
-                        </Button>
-                        <Button variant="ghost" className="h-12 rounded-2xl text-slate-400 font-bold" onClick={() => setDeletingItemId(null)}>Keep Marker</Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            <ActionConfirmModal 
+                isOpen={!!deletingItemId}
+                onClose={() => setDeletingItemId(null)}
+                onConfirm={() => deletingItemId && deleteMutation.mutate(deletingItemId)}
+                title="Discard Marker?"
+                message="Are you sure you want to remove this milestone from the project timeline? This action is permanent."
+                confirmLabel="Confirm Deletion"
+                variant="danger"
+                loading={deleteMutation.isPending}
+            />
+
+            <TemplateModal 
+                isOpen={isTemplateModalOpen}
+                onClose={() => setIsTemplateModalOpen(false)}
+                onSuccess={() => queryClient.invalidateQueries({ queryKey: ['engagement-milestones', engagementId] })}
+                type="MILESTONE"
+                engagementId={engagementId!}
+            />
         </div>
     );
 }
