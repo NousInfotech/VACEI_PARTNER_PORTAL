@@ -26,8 +26,7 @@ export default function CSPView({ engagementId, companyId }: CSPViewProps) {
     const [selectedItem, setSelectedItem] = useState<CspItem | null>(null);
     const [isSaving, setIsSaving] = useState(false);
 
-    const isOrgAdmin = user?.role === 'ORG_ADMIN';
-    const canManageCSP = user?.role === 'ORG_ADMIN' || user?.role === 'ORG_EMPLOYEE';
+     const canManageCSP = user?.role === 'ORG_ADMIN' || user?.role === 'ORG_EMPLOYEE';
 
     const fetchCycles = async () => {
         if (!engagementId) return;

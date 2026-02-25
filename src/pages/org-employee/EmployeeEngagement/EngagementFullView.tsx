@@ -12,12 +12,10 @@ import {
   Activity,
   BookOpen,
   BookMarked,
-  PieChart,
   Landmark,
   Building2,
   ShieldCheck,
   ListChecks,
-  Plus,
   Eye,
   Copy,
 } from "lucide-react";
