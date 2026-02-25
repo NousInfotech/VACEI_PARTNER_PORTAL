@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { Skeleton } from '../../../../ui/Skeleton';
 import ServiceStatusTimeline from './ServiceStatusTimeline';
 
 interface GenericServiceOverviewProps {
@@ -15,13 +14,12 @@ export function GenericServiceOverview({
     serviceApi, 
     statusSteps 
 }: GenericServiceOverviewProps) {
-    const { data: cycles, isLoading } = useQuery({
+    const { data: cycles } = useQuery({
         queryKey: ['service-cycles', serviceName, engagementId],
         queryFn: () => serviceApi.getAll(engagementId),
         enabled: !!engagementId && !!serviceApi,
     });
 
-    if (isLoading) return <Skeleton className="h-64 w-full rounded-[32px] mb-8" />;
     
     // Find the current active cycle
     // Data structure might be { data: [...] } or just [...]

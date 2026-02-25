@@ -62,9 +62,9 @@ export default function ServiceStatusTimeline({
                     </div>
                     <div>
                         <h3 className="text-lg font-bold text-gray-900">{serviceName} Cycle: {currentCycle?.period || currentCycle?.id?.slice(0, 8) || 'Active Cycle'}</h3>
-                        <p className="text-sm text-gray-500">
+                        {/* <p className="text-sm text-gray-500">
                             {currentCycle?.id ? `ID: ${currentCycle.id}` : 'Current active service period'}
-                        </p>
+                        </p> */}
                     </div>
                 </div>
                 <span className={cn(

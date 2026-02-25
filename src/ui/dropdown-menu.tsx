@@ -145,7 +145,7 @@ const DropdownMenuContent = React.forwardRef<HTMLDivElement, DropdownMenuContent
           contentRef.current = node;
         }}
         className={cn(
-          "fixed z-50 min-w-[8rem] overflow-hidden rounded-md border bg-white p-1 text-gray-950 shadow-md",
+          "fixed z-50 min-w-32 overflow-hidden rounded-md border bg-white p-1 text-gray-950 shadow-md",
           className
         )}
         onClick={(e) => {

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Plus, CheckCircle2, Clock, ChevronDown, Calendar, FileText, AlertCircle, X, Activity } from 'lucide-react';
+import { Plus, Clock, Calendar, FileText, AlertCircle, X, Activity } from 'lucide-react';
 import { Button } from '../../../../ui/Button';
-import { cn } from '../../../../lib/utils';
 import { useAuth } from '../../../../context/auth-context-core';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -281,7 +280,7 @@ export function CreateCycleComponent({ serviceName, engagementId, companyId, ser
   const [editingCycle, setEditingCycle] = useState<Cycle | null>(null);
 
   // Fetch cycles
-  const { data: cycles = [], isLoading } = useQuery({
+  const { data: cycles = [] } = useQuery({
     queryKey: ['service-cycles', serviceName, engagementId],
     queryFn: () => service.getAll(engagementId),
     enabled: !!engagementId,
@@ -315,13 +314,6 @@ export function CreateCycleComponent({ serviceName, engagementId, companyId, ser
   });
 
   // Update Status Mutation
-  const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) => service.updateStatus(id, status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['service-cycles', serviceName, engagementId] });
-      toast.success('Status updated successfully');
-    },
-  });
 
 
   const handleCreateSubmit = (formData: any) => {
@@ -339,22 +331,6 @@ export function CreateCycleComponent({ serviceName, engagementId, companyId, ser
   };
 
 
-  const Activity = ({ className, size = 24 }: { className?: string; size?: number }) => (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      width={size} 
-      height={size} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-      className={className}
-    >
-      <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-    </svg>
-  );
 
   const isAdmin = user?.role === 'ORG_ADMIN' || user?.role === 'ORG_EMPLOYEE';
 
@@ -381,50 +357,43 @@ export function CreateCycleComponent({ serviceName, engagementId, companyId, ser
   }
 
   return (
-       
-      <div className="relative z-10 bg-gray-200 p-5 rounded-2xl">
+    <>
       <div className="space-y-6 relative z-10">
-        {isLoading ? (
-          <div className="flex items-center justify-center p-12">
-            <div className="h-8 w-8 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin" />
+        <div className="flex flex-col items-center justify-center p-12 text-center space-y-6 bg-white rounded-[32px] border border-dashed border-gray-200">
+          <div className="p-4 bg-primary/5 rounded-full text-primary border border-primary/10">
+            {isAdmin ? <Plus size={32} /> : <Clock size={32} />}
           </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center p-12 text-center space-y-6 bg-white rounded-[32px] border border-dashed border-gray-200">
-            <div className="p-4 bg-primary/5 rounded-full text-primary border border-primary/10">
-              {isAdmin ? <Plus size={32} /> : <Clock size={32} />}
-            </div>
-            <div className="space-y-1">
-              <h4 className="text-lg font-black text-gray-900 tracking-tight">
-                {isAdmin ? `No ${serviceName} Cycle Started` : `Waiting for Admin`}
-              </h4>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest max-w-[280px]">
-                {isAdmin 
-                  ? `Begin tracking your ${serviceName} operations by initiating the first cycle.`
-                  : `An administrator needs to launch the ${serviceName} cycle before you can begin tracking operations.`
-                }
-              </p>
-            </div>
-            {isAdmin && (
-              <Button 
-                onClick={() => setShowCreateModal(true)}
-                className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 h-11 px-8 rounded-xl font-black uppercase tracking-widest text-[10px] transform transition-transform hover:scale-[1.02] active:scale-[0.98]"
-              >
-                Start {serviceName} Cycle
-              </Button>
-            )}
+          <div className="space-y-1">
+            <h4 className="text-lg font-black text-gray-900 tracking-tight">
+              {isAdmin ? `No ${serviceName} Cycle Started` : `Waiting for Admin`}
+            </h4>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest max-w-[280px]">
+              {isAdmin 
+                ? `Begin tracking your ${serviceName} operations by initiating the first cycle.`
+                : `An administrator needs to launch the ${serviceName} cycle before you can begin tracking operations.`
+              }
+            </p>
           </div>
-        )}
+          {isAdmin && (
+            <Button 
+              onClick={() => setShowCreateModal(true)}
+              className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 h-11 px-8 rounded-xl font-black uppercase tracking-widest text-[10px] transform transition-transform hover:scale-[1.02] active:scale-[0.98]"
+            >
+              Start {serviceName} Cycle
+            </Button>
+          )}
+        </div>
       </div>
 
       <CreateCycleModal
         open={showCreateModal || !!editingCycle}
         onOpenChange={(open) => {
-           if (!open) {
-             setShowCreateModal(false);
-             setEditingCycle(null);
-           } else {
-             setShowCreateModal(true);
-           }
+          if (!open) {
+            setShowCreateModal(false);
+            setEditingCycle(null);
+          } else {
+            setShowCreateModal(true);
+          }
         }}
         serviceName={serviceName}
         statuses={statuses}
@@ -433,7 +402,6 @@ export function CreateCycleComponent({ serviceName, engagementId, companyId, ser
         initialData={editingCycle}
         isEdit={!!editingCycle}
       />
-      </div>
-    
+    </>
   );
 }

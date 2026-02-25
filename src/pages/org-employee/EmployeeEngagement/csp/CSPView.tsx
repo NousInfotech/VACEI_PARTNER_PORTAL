@@ -27,6 +27,7 @@ export default function CSPView({ engagementId, companyId }: CSPViewProps) {
     const [isSaving, setIsSaving] = useState(false);
 
     const isOrgAdmin = user?.role === 'ORG_ADMIN';
+    const canManageCSP = user?.role === 'ORG_ADMIN' || user?.role === 'ORG_EMPLOYEE';
 
     const fetchCycles = async () => {
         if (!engagementId) return;
@@ -63,7 +64,7 @@ export default function CSPView({ engagementId, companyId }: CSPViewProps) {
     }, [engagementId]);
 
     const handleCreateCycle = async () => {
-        if (!engagementId || !companyId || !isOrgAdmin) return;
+        if (!engagementId || !companyId || !canManageCSP) return;
         setCreatingCycle(true);
         try {
             await cspService.create({
@@ -158,12 +159,12 @@ export default function CSPView({ engagementId, companyId }: CSPViewProps) {
                     <h3 className="text-2xl font-bold text-gray-900 tracking-tight">No CSP Cycle Started</h3>
                     <p className="text-gray-500 font-medium leading-relaxed">
                         There is currently no active CSP cycle for this engagement. 
-                        {isOrgAdmin 
+                        {canManageCSP 
                             ? "Click the button below to initiate the corporate services cycle." 
                             : "Please contact your organization administrator to start the cycle."}
                     </p>
                 </div>
-                {isOrgAdmin ? (
+                {canManageCSP ? (
                     <Button 
                         size="lg" 
                         onClick={handleCreateCycle} 
@@ -201,7 +202,7 @@ export default function CSPView({ engagementId, companyId }: CSPViewProps) {
                     <h2 className="text-2xl font-bold tracking-tight text-gray-900">KYC Items</h2>
                     <p className="text-sm text-gray-500 mt-1">Manage KYC and compliance tracking items for this cycle ({activeCycle.id.substring(0, 8).toUpperCase()})</p>
                 </div>
-                {isOrgAdmin && (
+                {canManageCSP && (
                     <Button onClick={handleOpenCreateModal} className="rounded-xl shadow-sm text-sm font-semibold h-10 px-5 gap-2">
                         <PlusCircle size={16} />
                         Create KYC Item
@@ -223,7 +224,7 @@ export default function CSPView({ engagementId, companyId }: CSPViewProps) {
                         <p className="text-gray-500 max-w-sm mx-auto mb-6">
                             You haven't added any KYC items to this active CSP cycle yet. Get started by creating your first item.
                         </p>
-                        {isOrgAdmin && (
+                        {canManageCSP && (
                             <Button onClick={handleOpenCreateModal} variant="outline" className="rounded-xl font-medium">
                                 Create KYC Item
                             </Button>
@@ -266,7 +267,7 @@ export default function CSPView({ engagementId, companyId }: CSPViewProps) {
                                             {item.referenceNo || '-'}
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            {isOrgAdmin ? (
+                                            {canManageCSP ? (
                                                 <div className="flex items-center justify-end gap-2">
                                                     <button 
                                                         onClick={() => handleOpenEditModal(item)}

@@ -251,6 +251,16 @@ export default function EngagementFullView() {
     }
   });
 
+  // Consolidated cycle fetching
+  const { data: serviceCycles = [], isLoading: isLoadingCycles } = useQuery({
+    queryKey: ['service-cycles', selectedService, engagementId],
+    queryFn: () => serviceConfig?.service.getAll(engagementId!),
+    enabled: !!engagementId && !!serviceConfig,
+  });
+
+  const cycleList = (serviceCycles as any)?.data || (Array.isArray(serviceCycles) ? serviceCycles : []);
+  const hasActiveCycle = cycleList.length > 0;
+
   const getStatusColor = (status: string) => {
     switch (status?.toUpperCase()) {
       case 'ACTIVE': return 'text-green-600 bg-green-50 border-green-100';
@@ -509,29 +519,34 @@ export default function EngagementFullView() {
                   </div>
                 </div>
  
-                {selectedService && !['ACCOUNTING', 'AUDITING'].includes(selectedService) && serviceConfig && (
-                  <GenericServiceOverview
-                    engagementId={engagementId!}
-                    serviceName={serviceConfig.label}
-                    serviceApi={serviceConfig.service}
-                    statusSteps={SERVICE_STATUS_STEPS[selectedService] || []}
-                  />
+                {selectedService && serviceConfig && (
+                  <div className="space-y-6">
+                    {isLoadingCycles ? (
+                      <Skeleton className="h-64 w-full rounded-[32px]" />
+                    ) : hasActiveCycle ? (
+                      !['ACCOUNTING', 'AUDITING'].includes(selectedService) && (
+                        <GenericServiceOverview
+                          engagementId={engagementId!}
+                          serviceName={serviceConfig.label}
+                          serviceApi={serviceConfig.service}
+                          statusSteps={SERVICE_STATUS_STEPS[selectedService] || []}
+                        />
+                      )
+                    ) : (
+                      <CreateCycleComponent
+                        serviceName={serviceConfig.label}
+                        engagementId={engagementId!}
+                        companyId={companyId!}
+                        service={serviceConfig.service}
+                        statuses={serviceConfig.statuses}
+                      />
+                    )}
+                  </div>
                 )}
 
-                {serviceConfig && (
-                  <CreateCycleComponent
-                    serviceName={serviceConfig.label}
-                    engagementId={engagementId!}
-                    companyId={companyId!}
-                    service={serviceConfig.service}
-                    statuses={serviceConfig.statuses}
-                  />
-                )}
-
-                <div className="h-px bg-gray-200/50 w-full my-4" />
-
+ 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-4 duration-700 delay-150">
-                  {selectedService && (
+                  {/* {selectedService && (
                     <button 
                       onClick={() => setActiveTab(initialTab)}
                       className="group bg-primary p-8 rounded-[32px] border border-primary shadow-lg shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-500 text-left relative overflow-hidden lg:col-span-3 lg:flex lg:items-center lg:justify-between"
@@ -554,7 +569,7 @@ export default function EngagementFullView() {
                         </div>
                       </div>
                     </button>
-                  )}
+                  )} */}
                 </div>
 
               </div>

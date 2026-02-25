@@ -13,7 +13,7 @@ interface MiniChatPreviewProps {
 export function MiniChatPreview({ engagementId, chatRoomId, onViewAll }: MiniChatPreviewProps) {
   const { messages, room, isLoading, currentUserId } = useChat(engagementId, { roomId: chatRoomId });
 
-  const latestMessages = messages.slice(-5).reverse();
+  const latestMessages = messages.slice(-4).reverse();
 
   return (
     <div className="flex flex-col h-full space-y-4">

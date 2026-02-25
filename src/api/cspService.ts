@@ -101,8 +101,8 @@ export const cspService = {
   create: (data: CreateCspCycleDto) =>
     apiPost<{ data: CspCycle }>(endPoints.CSP.CREATE, data).then((res) => res.data),
 
-  updateStatus: (id: string, data: UpdateCspCycleStatusDto) =>
-    apiPatch<{ data: CspCycle }>(endPoints.CSP.UPDATE_STATUS(id), data).then((res) => res.data),
+  updateStatus: (id: string, status: string, reason?: string) =>
+    apiPatch<{ data: CspCycle }>(endPoints.CSP.UPDATE_STATUS(id), { status, reason }).then((res) => res.data),
 
   update: (id: string, data: any) =>
     apiPut<{ data: CspCycle }>(endPoints.CSP.UPDATE(id), data).then((res) => res.data),
