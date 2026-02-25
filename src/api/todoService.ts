@@ -9,6 +9,13 @@ export const TodoListType = {
 } as const;
 export type TodoListType = (typeof TodoListType)[keyof typeof TodoListType];
 
+export const TODO_CTA_BY_TYPE: Record<TodoListType, string> = {
+  [TodoListType.DOCUMENT_REQUEST]: 'view',
+  [TodoListType.CHAT]: 'reply',
+  [TodoListType.REQUESTED_DOCUMENT]: 'upload',
+  [TodoListType.CUSTOM]: 'customized',
+};
+
 export const TodoListStatus = {
   ACTION_REQUIRED: 'ACTION_REQUIRED',
   ACTION_TAKEN: 'ACTION_TAKEN',

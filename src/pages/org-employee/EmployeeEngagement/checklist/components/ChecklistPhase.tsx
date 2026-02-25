@@ -58,9 +58,9 @@ export default function ChecklistPhaseComponent({
                     isExpanded ? "bg-white border-indigo-200 shadow-lg shadow-indigo-50" : "bg-white border-gray-100 hover:border-indigo-100 hover:shadow-md"
                 )}
             >
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 flex-1">
                     <div className={cn(
-                        "h-8 w-8 rounded-full flex items-center justify-center transition-colors",
+                        "h-8 w-8 rounded-full flex items-center justify-center transition-colors shrink-0",
                         isComplete ? "bg-green-100 text-green-600" : "bg-indigo-100 text-indigo-600"
                     )}>
                         {isComplete ? <CheckCircle2 size={18} /> :
@@ -68,14 +68,16 @@ export default function ChecklistPhaseComponent({
                         }
                     </div>
                     <div className="text-left">
-                        <h3 className="text-base font-bold text-gray-900">{phase.title}</h3>
-                        <p className="text-xs text-gray-500">
+                        <h3 className="text-base font-bold text-gray-900 leading-tight">{phase.title}</h3>
+                        <p className="text-xs text-gray-500 font-medium">
                             {completedCount} / {totalCount} Steps Completed
                         </p>
                     </div>
                 </div>
 
-                {isExpanded ? <ChevronDown className="text-gray-400" /> : <ChevronRight className="text-gray-400" />}
+                <div className="ml-auto p-1 text-gray-400 group-hover:text-indigo-600 transition-colors">
+                    {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                </div>
             </button>
 
             {/* Expansion Content */}

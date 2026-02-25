@@ -1,0 +1,243 @@
+{
+  "DOC_REQUEST": [
+    {
+      "name": "Standard Onboarding Group",
+      "data": {
+        "title": "Onboarding Documents",
+        "description": "Initial set of documents required for engagement kick-off.",
+        "requestedDocuments": [
+          {
+            "documentName": "Trade License",
+            "isMandatory": true,
+            "type": "DIRECT",
+            "count": "SINGLE",
+            "description": "Copy of the most recent trade license."
+          },
+          {
+            "documentName": "Passport Copy (Director)",
+            "isMandatory": true,
+            "type": "DIRECT",
+            "count": "SINGLE",
+            "description": "Clear scanned copy of the passport."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Audit Deliverables (Multiple)",
+      "data": {
+        "title": "Audit Reports & Deliverables",
+        "description": "Standard reports produced during the audit engagement.",
+        "requestedDocuments": [
+          {
+            "documentName": "Signed Financial Statements",
+            "isMandatory": true,
+            "type": "DIRECT",
+            "count": "MULTIPLE",
+            "description": "Please provide signed copies for all entities.",
+            "children": [
+              { "documentName": "Main Entity FS", "description": "Consolidated report", "isMandatory": true },
+              { "documentName": "Subsidiary FS", "description": "Individual entity report", "isMandatory": true }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "Tax Compliance (Template Based)",
+      "data": {
+        "title": "VAT Return Documents",
+        "description": "Documents required for VAT filing.",
+        "requestedDocuments": [
+          {
+            "documentName": "VAT Input Calculation",
+            "isMandatory": true,
+            "type": "TEMPLATE",
+            "count": "SINGLE",
+            "description": "Please use the provided template to calculate input tax."
+          }
+        ]
+      }
+    },
+    {
+      "name": "CSP Annual Filing Group",
+      "data": {
+        "title": "Corporate Secretary Filings",
+        "description": "Documents required for annual corporate maintenance.",
+        "requestedDocuments": [
+          {
+            "documentName": "Register of Directors",
+            "isMandatory": true,
+            "type": "DIRECT",
+            "count": "SINGLE",
+            "description": "Updated list of current directors."
+          },
+          {
+            "documentName": "Shareholder Resolutions",
+            "isMandatory": true,
+            "type": "DIRECT",
+            "count": "MULTIPLE",
+            "description": "Resolutions passed during the year.",
+            "children": [
+              { "documentName": "AGM Minutes", "description": "Annual General Meeting minutes", "isMandatory": true },
+              { "documentName": "Dividend Declaration", "description": "If applicable", "isMandatory": false }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "CHECKLIST": [
+    {
+      "name": "Audit Procedure Template",
+      "data": [
+        {
+          "title": "1. Planning Phase",
+          "children": [
+            {
+              "title": "1.1 Client Acceptance",
+              "children": [
+                { "title": "Perform initial risk assessment" },
+                { "title": "Check independence and ethics" }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "2. Fieldwork",
+          "children": [
+            {
+              "title": "2.1 Asset Verification",
+              "children": [
+                { "title": "Verify bank statement balances" },
+                { "title": "Inspect physical assets" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Quarterly VAT Review",
+      "data": [
+        {
+          "title": "Q1 Review Tasks",
+          "children": [
+            { "title": "Verify Sales Ledger" },
+            { "title": "Reconcile Purchase VAT" },
+            { "title": "Submit Return to FTA" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "AML/KYC Onboarding",
+      "data": [
+        {
+          "title": "Initial Screening",
+          "children": [
+            { "title": "Identity Verification (KYC)" },
+            { "title": "Sanctions Screening" },
+            { "title": "UBO Identification" }
+          ]
+        },
+        {
+          "title": "Risk Grading",
+          "children": [
+            { "title": "Review source of wealth" },
+            { "title": "Assign risk score" }
+          ]
+        }
+      ]
+    }
+  ],
+  "MILESTONE": [
+    {
+      "name": "Standard Audit Lifecycle",
+      "data": [
+        { "title": "Kick-off Meeting", "description": "Engagement initiation and brief" },
+        { "title": "Fieldwork Initiation", "description": "Commencement of on-site testing" },
+        { "title": "Draft Report Issue", "description": "Submission of preliminary findings" },
+        { "title": "Final Audit Opinion", "description": "Quality assurance and final signature" },
+        { "title": "Engagement Conclusion", "description": "Final archiving and feedback" }
+      ]
+    },
+    {
+      "name": "Tax Filing Timeline",
+      "data": [
+        { "title": "Data Collection", "description": "Gathering all tax relevant data" },
+        { "title": "Tax Computation", "description": "Finalizing tax calculations" },
+        { "title": "Submission", "description": "Filing with local authorities" }
+      ]
+    },
+    {
+      "name": "CSP Renewal Roadmap",
+      "data": [
+        { "title": "Annual Review", "description": "Review of corporate structure" },
+        { "title": "License Renewal", "description": "Processing trade license renewal" },
+        { "title": "Annual Return Filing", "description": "Submission to registry" }
+      ]
+    }
+  ],
+  "REQ_DOC": [
+    {
+      "name": "Standard KYC (Individual)",
+      "data": {
+        "documentName": "KYC Documents",
+        "description": "Personal identification and address verification",
+        "type": "DIRECT",
+        "count": "MULTIPLE",
+        "isMandatory": true,
+        "multipleItems": [
+          { "label": "Passport / National ID", "instruction": "Clear color scan of the bio-data page", "isMandatory": true },
+          { "label": "Proof of Residence", "instruction": "Utility bill or bank statement (less than 3 months old)", "isMandatory": true }
+        ]
+      }
+    },
+    {
+      "name": "Corporate Constitutional Docs",
+      "data": {
+        "documentName": "Constitutional Documents",
+        "description": "Legal formation documents of the entity",
+        "type": "DIRECT",
+        "count": "MULTIPLE",
+        "isMandatory": true,
+        "multipleItems": [
+          { "label": "Certificate of Incorporation", "instruction": "Official registry certificate", "isMandatory": true },
+          { "label": "Memorandum & Articles of Association", "instruction": "Current signed version", "isMandatory": true },
+          { "label": "Register of Directors / Members", "instruction": "Certified current extract", "isMandatory": true }
+        ]
+      }
+    },
+    {
+      "name": "Financial Statements (3 Years)",
+      "data": {
+        "documentName": "Annual Financial Statements",
+        "description": "Audited or management accounts for the last 3 financial years",
+        "type": "DIRECT",
+        "count": "MULTIPLE",
+        "isMandatory": true,
+        "multipleItems": [
+          { "label": "FS - Year 1 (Most Recent)", "instruction": "Full signed set", "isMandatory": true },
+          { "label": "FS - Year 2", "instruction": "Full signed set", "isMandatory": true },
+          { "label": "FS - Year 3", "instruction": "Full signed set", "isMandatory": true }
+        ]
+      }
+    },
+    {
+      "name": "Standard VAT Return Data",
+      "data": {
+        "documentName": "VAT Return Support Data",
+        "description": "Primary records required for VAT return preparation",
+        "type": "DIRECT",
+        "count": "MULTIPLE",
+        "isMandatory": true,
+        "multipleItems": [
+          { "label": "Sales Ledger / Invoice Listing", "instruction": "Excel format preferred", "isMandatory": true },
+          { "label": "Purchase Ledger / Expense Listing", "instruction": "Excel format preferred", "isMandatory": true },
+          { "label": "Bank Statements", "instruction": "Corresponding to the return period", "isMandatory": true }
+        ]
+      }
+    }
+  ]
+}

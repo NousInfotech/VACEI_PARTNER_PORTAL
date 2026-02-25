@@ -78,7 +78,8 @@ export default function Engagement() {
 
   const engagements = (data as OrgEngagement[] || []).filter(e => {
     if (user?.role === 'ORG_ADMIN') return true;
-    return !selectedService || e.serviceType === selectedService;
+    const isEmployeeActionable = ['ACCEPTED', 'ACTIVE', 'COMPLETED'].includes(e.status);
+    return isEmployeeActionable && (!selectedService || e.serviceType === selectedService);
   });
 
   const handleUpdateStatus = async (engagementId: string, status: string, reason?: string) => {
@@ -99,7 +100,7 @@ export default function Engagement() {
   };
 
   const handleViewDetails = (engagement: OrgEngagement) => {
-    const targetUrl = `/engagement-view/${engagement.id}?service=${encodeURIComponent(engagement.serviceType)}`;
+    const targetUrl = `/engagement-view/${engagement.id}?service=${encodeURIComponent(engagement.serviceType)}&tab=dashboard`;
     const targetName = `engagement_view_${engagement.id}`;
     const win = window.open(targetUrl, targetName);
     if (win) win.focus();

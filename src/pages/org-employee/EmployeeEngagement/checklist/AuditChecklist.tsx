@@ -12,6 +12,8 @@ import ChecklistProgressBar from './components/ChecklistProgressBar';
 import { ShadowCard } from '../../../../ui/ShadowCard';
 import { checklistService } from './checklistService';
 import CreateEditChecklistModal from './components/CreateEditChecklistModal';
+import { TemplateModal } from '../components/TemplateModal';
+import { ActionConfirmModal } from '../components/ActionConfirmModal';
 
 export default function AuditChecklist({ engagementId }: { engagementId?: string }) {
     const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
@@ -21,6 +23,8 @@ export default function AuditChecklist({ engagementId }: { engagementId?: string
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<ChecklistItem | undefined>(undefined);
     const [parentItem, setParentItem] = useState<ChecklistItem | undefined>(undefined);
+    const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
     const queryClient = useQueryClient();
 
@@ -87,7 +91,11 @@ export default function AuditChecklist({ engagementId }: { engagementId?: string
 
     const deleteMutation = useMutation({
         mutationFn: (id: string) => checklistService.delete(engagementId!, id),
-        ...mutationOptions
+        ...mutationOptions,
+        onSuccess: () => {
+            mutationOptions.onSuccess();
+            setDeletingId(null);
+        }
     });
 
     const isWorking = createMutation.isPending || statusMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
@@ -158,8 +166,12 @@ export default function AuditChecklist({ engagementId }: { engagementId?: string
     };
 
     const handleDelete = (id: string) => {
-        if (window.confirm('Are you sure you want to delete this checklist item? All sub-items will also be deleted.')) {
-            deleteMutation.mutate(id);
+        setDeletingId(id);
+    };
+
+    const confirmDelete = () => {
+        if (deletingId) {
+            deleteMutation.mutate(deletingId);
         }
     };
 
@@ -203,7 +215,7 @@ export default function AuditChecklist({ engagementId }: { engagementId?: string
                         </button>
                     ))}
                 </div>
-                
+                <div className='flex items-center gap-2'>
                 <button 
                     disabled={isWorking}
                     className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
@@ -213,9 +225,18 @@ export default function AuditChecklist({ engagementId }: { engagementId?: string
                         setIsCreateModalOpen(true);
                     }}
                 >
-                    <Plus size={16} />
                     Add Phase
                 </button>
+
+                <button 
+                    disabled={isWorking}
+                    className="flex items-center gap-2 px-4 py-2 bg-white text-indigo-600 border border-indigo-200 rounded-lg text-sm font-bold hover:bg-indigo-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => setIsTemplateModalOpen(true)}
+                >
+                    <Plus size={16} />
+                    Template
+                </button>
+                </div>
             </div>
 
             {/* Content Accordion */}
@@ -290,6 +311,25 @@ export default function AuditChecklist({ engagementId }: { engagementId?: string
                 parentItem={parentItem}
                 availableParents={availableParents}
                 isLoading={isWorking}
+            />
+
+            <TemplateModal 
+                isOpen={isTemplateModalOpen}
+                onClose={() => setIsTemplateModalOpen(false)}
+                onSuccess={() => queryClient.invalidateQueries({ queryKey: ['engagement-checklists', engagementId] })}
+                type="CHECKLIST"
+                engagementId={engagementId!}
+            />
+
+            <ActionConfirmModal 
+                isOpen={!!deletingId}
+                onClose={() => setDeletingId(null)}
+                onConfirm={confirmDelete}
+                title="Delete Checklist Item"
+                message="Are you sure you want to delete this checklist item? All sub-items will also be deleted. This action cannot be undone."
+                confirmLabel="Delete Item"
+                variant="danger"
+                loading={deleteMutation.isPending}
             />
         </div>
     );

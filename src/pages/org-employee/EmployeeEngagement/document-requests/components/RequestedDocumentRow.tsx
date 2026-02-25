@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { format } from "date-fns";
 import { 
   Upload, Loader2, Eye, Download, Edit2, Trash2, FileEdit, FileUp, RotateCcw, Plus, CheckSquare 
@@ -8,6 +9,7 @@ import { Button } from "../../../../../ui/Button";
 import { cn } from "../../../../../lib/utils";
 import type { RequestedDocumentItem } from "../types";
 import { useDocumentRequests } from "../DocumentRequestsContext";
+import { ActionConfirmModal } from "../../components/ActionConfirmModal";
 
 interface RequestedDocumentRowProps {
   doc: RequestedDocumentItem;
@@ -33,6 +35,22 @@ export const RequestedDocumentRow = ({
     setTodoMode
   } = useDocumentRequests();
   
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    type: 'clear' | 'delete';
+    title: string;
+    message: React.ReactNode;
+    confirmLabel: string;
+    variant: 'danger' | 'warning';
+  }>({
+    isOpen: false,
+    type: 'clear',
+    title: '',
+    message: '',
+    confirmLabel: '',
+    variant: 'primary' as any
+  });
+  
   
   // Re-evaluating engagementId source
   const { engagementId } = useDocumentRequests();
@@ -52,17 +70,44 @@ export const RequestedDocumentRow = ({
   const isDeleting = hardDeleteMutation.isPending && hardDeleteMutation.variables?.docId === doc.id;
 
   const handleClear = () => {
-    const reason = window.prompt("Reason for clearing the document:");
-    if (!reason) return;
-    clearMutation.mutate({ documentRequestId: doc.documentRequestId, docId: doc.id, reason });
+    setConfirmModal({
+      isOpen: true,
+      type: 'clear',
+      title: 'Clear Uploaded Document',
+      message: (
+        <>
+          Are you sure you want to clear the uploaded file for <span className="text-slate-900 font-bold">"{doc.documentName}"</span>? 
+          This will move the requirement back to pending status.
+        </>
+      ),
+      confirmLabel: 'Clear Document',
+      variant: 'warning'
+    });
   };
 
   const handleHardDelete = () => {
-    const confirmDelete = window.confirm(`Are you sure you want to permanently delete "${doc.documentName}"?`);
-    if (!confirmDelete) return;
-    const reason = window.prompt("Reason for deletion (mandatory):");
-    if (!reason) return;
-    hardDeleteMutation.mutate({ documentRequestId: doc.documentRequestId, docId: doc.id, reason });
+    setConfirmModal({
+      isOpen: true,
+      type: 'delete',
+      title: 'Permanently Delete',
+      message: (
+        <>
+          Are you sure you want to permanently delete <span className="text-slate-900 font-bold">"{doc.documentName}"</span>? 
+          This action cannot be undone and will remove all history for this requirement.
+        </>
+      ),
+      confirmLabel: 'Delete Permanently',
+      variant: 'danger'
+    });
+  };
+
+  const onConfirmAction = (reason?: string) => {
+    if (confirmModal.type === 'clear') {
+      clearMutation.mutate({ documentRequestId: doc.documentRequestId, docId: doc.id, reason: reason || "No reason provided" });
+    } else {
+      hardDeleteMutation.mutate({ documentRequestId: doc.documentRequestId, docId: doc.id, reason: reason || "No reason provided" });
+    }
+    setConfirmModal(prev => ({ ...prev, isOpen: false }));
   };
 
   const isCompleted = (function check(d: RequestedDocumentItem): boolean {
@@ -215,6 +260,18 @@ export const RequestedDocumentRow = ({
           </ul>
         </div>
       )}
+
+      <ActionConfirmModal 
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={onConfirmAction}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmLabel={confirmModal.confirmLabel}
+        variant={confirmModal.variant}
+        showReasonField={true}
+        loading={isClearing || isDeleting}
+      />
     </li>
   );
 };

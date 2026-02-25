@@ -6,6 +6,13 @@ import { Input } from "../../../../../ui/input";
 import { Textarea } from "@/ui/Textarea";
 import type { FormDataMultipleItem } from "../types";
 import { useDocumentRequests } from "../DocumentRequestsContext";
+import templates from "@/data/engagementTemplates.json";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/ui/dropdown-menu";
 
 export const DocumentRequestModal = () => {
   const { 
@@ -23,6 +30,29 @@ export const DocumentRequestModal = () => {
     updateGroupMutation,
     updateRequestedDocMutation
   } = useDocumentRequests();
+
+  const reqDocTemplates = (templates as any).REQ_DOC || [];
+
+  const handleApplyTemplate = (tplData: any, e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    setFormData((prev: any) => ({
+      ...prev,
+      documentName: tplData.documentName || prev.documentName,
+      description: tplData.description || prev.description,
+      type: tplData.type || prev.type,
+      count: tplData.count || prev.count,
+      isMandatory: tplData.isMandatory !== undefined ? tplData.isMandatory : prev.isMandatory,
+      multipleItems: tplData.multipleItems 
+        ? tplData.multipleItems.map((item: any) => ({
+            ...item,
+            isMandatory: item.isMandatory ?? true,
+            templateFile: null,
+            templateInstructions: item.templateInstructions || ""
+          }))
+        : prev.multipleItems
+    }));
+  };
 
   const isPending = 
     createRequestedDocMutation.isPending || 
@@ -62,7 +92,38 @@ export const DocumentRequestModal = () => {
             <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-600 uppercase tracking-wider">Document Name</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-bold text-gray-600 uppercase tracking-wider">Document Name</label>
+                  
+                  {reqDocTemplates.length > 0 && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button type="button" className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline flex items-center gap-1">
+                          <LayoutGrid className="h-3 w-3" /> Use Template
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-[240px] rounded-2xl border-none shadow-2xl p-2 bg-white/95 backdrop-blur-xl">
+                        <div className="px-3 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 mb-1">
+                          Standard Requirements
+                        </div>
+                        {reqDocTemplates.map((tpl: any, i: number) => (
+                          <DropdownMenuItem 
+                            key={i} 
+                            onClick={(e) => handleApplyTemplate(tpl.data, e)}
+                            className="rounded-xl focus:bg-primary/5 cursor-pointer py-2 px-3 group"
+                          >
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors">{tpl.name}</span>
+                              <span className="text-[9px] text-slate-400 font-medium truncate max-w-[180px]">
+                                {tpl.data.count === 'MULTIPLE' ? `${tpl.data.multipleItems.length} nested items` : 'Single requirement'}
+                              </span>
+                            </div>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
                 <Input value={formData.documentName} onChange={e => setFormData({...formData, documentName: e.target.value})} placeholder="e.g. Passport Copy" required />
               </div>
               <div className="space-y-2">

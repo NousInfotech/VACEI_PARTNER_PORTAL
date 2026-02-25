@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, File as FileIcon } from "lucide-react";
 import { Skeleton } from "../../../../ui/Skeleton";
@@ -14,6 +15,8 @@ import { RequestedDocumentRow } from "./components/RequestedDocumentRow";
 import { DocumentRequestGroup } from "./components/DocumentRequestGroup";
 import { DocumentRequestModal } from "./components/DocumentRequestModal";
 import TodoModal from "../components/TodoModal";
+import { TemplateModal } from "../components/TemplateModal";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface DocumentRequestsViewProps {
   engagementId?: string;
@@ -30,7 +33,9 @@ const DocumentRequestsContent = () => {
     todoMode
   } = useDocumentRequests();
   const { selectedService } = useAuth();
+  const queryClient = useQueryClient();
   const serviceName = selectedService?.replace(/_/g, " ") || "Engagement";
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["document-requests", engagementId],
@@ -61,7 +66,16 @@ const DocumentRequestsContent = () => {
               <p className="text-sm text-gray-500 mt-1">Manage {serviceName.toLowerCase()} documentation and compliance.</p>
             </div>
           </div>
-          <Button onClick={() => setIsAddModalOpen(true)} className="px-6 h-11"><Plus className="h-4 w-4 mr-2" /> New Request Group</Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsTemplateModalOpen(true)} 
+              className="px-6 h-11 border-primary/20 text-primary hover:bg-primary/5"
+            >
+              <Plus className="h-4 w-4 mr-2" /> Template
+            </Button>
+            <Button onClick={() => setIsAddModalOpen(true)} className="px-6 h-11"><Plus className="h-4 w-4 mr-2" /> New Request Group</Button>
+          </div>
         </div>
       </div>
 
@@ -98,6 +112,14 @@ const DocumentRequestsContent = () => {
         sourceId={todoSourceId}
         initialData={todoInitialData}
         service={selectedService || 'AUDITING'}
+      />
+
+      <TemplateModal 
+        isOpen={isTemplateModalOpen}
+        onClose={() => setIsTemplateModalOpen(false)}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ["document-requests", engagementId] })}
+        type="DOC_REQUEST"
+        engagementId={engagementId!}
       />
     </div>
   );

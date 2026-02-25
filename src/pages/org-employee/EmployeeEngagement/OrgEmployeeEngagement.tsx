@@ -108,7 +108,7 @@ export default function OrgEmployeeEngagement({
                   </div>
                 )}
 
-                {(engagement.status === 'ACCEPTED' || engagement.status === 'ACTIVE') && (
+                {(engagement.status === 'ACCEPTED' || engagement.status === 'ACTIVE' || engagement.status === 'COMPLETED') && (
                   <Button
                     onClick={() => handleViewDetails(engagement)}
                     className="w-full gap-2 rounded-xl bg-slate-900 font-bold hover:bg-slate-800 text-white h-11"
@@ -130,7 +130,7 @@ export default function OrgEmployeeEngagement({
                   </Button>
                 )}
                 
-                {!['ASSIGNED', 'ACCEPTED', 'ACTIVE'].includes(engagement.status) && (
+                {!['ASSIGNED', 'ACCEPTED', 'ACTIVE', 'COMPLETED'].includes(engagement.status) && (
                   <p className="text-center text-xs text-slate-400 italic">No actions available</p>
                 )}
               </div>

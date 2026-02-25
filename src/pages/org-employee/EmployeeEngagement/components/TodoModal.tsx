@@ -20,7 +20,8 @@ import { Textarea } from "../../../../ui/Textarea";
 import { 
   todoService, 
   TodoListType, 
-  TodoListActorRole 
+  TodoListActorRole,
+  TODO_CTA_BY_TYPE
 } from "../../../../api/todoService";
 import type { 
   CreateTodoDto, 
@@ -62,7 +63,12 @@ export default function TodoModal({
             mode === "from-doc-req" ? TodoListType.DOCUMENT_REQUEST : 
             mode === "from-req-doc" ? TodoListType.REQUESTED_DOCUMENT : 
             initialData?.type || TodoListType.CUSTOM) as TodoListType,
-      cta: initialData?.cta || "Action Required",
+      cta: initialData?.cta || (mode === "create" ? TODO_CTA_BY_TYPE[TodoListType.CUSTOM] : TODO_CTA_BY_TYPE[
+        (mode === "from-chat" ? TodoListType.CHAT : 
+         mode === "from-doc-req" ? TodoListType.DOCUMENT_REQUEST : 
+         mode === "from-req-doc" ? TodoListType.REQUESTED_DOCUMENT : 
+         TodoListType.CUSTOM) as TodoListType
+      ]),
       role: initialData?.role || TodoListActorRole.ORG_MEMBER,
     }
   });
@@ -91,7 +97,10 @@ export default function TodoModal({
               mode === "from-doc-req" ? TodoListType.DOCUMENT_REQUEST : 
               mode === "from-req-doc" ? TodoListType.REQUESTED_DOCUMENT : 
               TodoListType.CUSTOM) as TodoListType,
-        cta: mode === "from-chat" ? "REPLY" : mode === "from-doc-req" ? "VIEW" : mode === "from-req-doc" ? "UPLOAD" : "Action Required",
+        cta: TODO_CTA_BY_TYPE[(mode === "from-chat" ? TodoListType.CHAT : 
+                               mode === "from-doc-req" ? TodoListType.DOCUMENT_REQUEST : 
+                               mode === "from-req-doc" ? TodoListType.REQUESTED_DOCUMENT : 
+                               TodoListType.CUSTOM) as TodoListType],
         role: TodoListActorRole.ORG_MEMBER,
       });
     }
@@ -162,7 +171,12 @@ export default function TodoModal({
               <Input
                 {...register("title", { required: "Title is required" })}
                 placeholder="Enter todo title..."
-                className={cn("rounded-xl border-gray-200 focus:border-primary/30", errors.title && "border-red-500")}
+                readOnly={mode !== "create" && mode !== "edit"}
+                className={cn(
+                  "rounded-xl border-gray-200 focus:border-primary/30", 
+                  errors.title && "border-red-500",
+                  (mode !== "create" && mode !== "edit") && "bg-gray-50 text-gray-500 cursor-not-allowed border-dashed"
+                )}
               />
               {errors.title && <p className="text-[10px] text-red-500 font-bold">{errors.title.message}</p>}
             </div>
@@ -177,7 +191,11 @@ export default function TodoModal({
                 {...register("description")}
                 placeholder="Details about this todo..."
                 rows={3}
-                className="rounded-xl border-gray-200 focus:border-primary/30 resize-none"
+                readOnly={mode !== "create" && mode !== "edit"}
+                className={cn(
+                  "rounded-xl border-gray-200 focus:border-primary/30 resize-none",
+                  (mode !== "create" && mode !== "edit") && "bg-gray-50 text-gray-500 cursor-not-allowed border-dashed"
+                )}
               />
             </div>
 
@@ -205,7 +223,8 @@ export default function TodoModal({
                 <Input
                   {...register("cta")}
                   placeholder="e.g. REPLY, VIEW"
-                  className="rounded-xl border-gray-200 focus:border-primary/30"
+                  readOnly
+                  className="rounded-xl border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed border-dashed font-black uppercase tracking-widest text-[10px]"
                 />
               </div>
             </div>

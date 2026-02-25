@@ -7,6 +7,7 @@ import { Button } from "../../../../../ui/Button";
 import { cn } from "../../../../../lib/utils";
 import type { DocumentRequestItem } from "../types";
 import { useDocumentRequests } from "../DocumentRequestsContext";
+import { ActionConfirmModal } from "../../components/ActionConfirmModal";
 
 interface DocumentRequestGroupProps {
   req: DocumentRequestItem;
@@ -30,6 +31,8 @@ export const DocumentRequestGroup = ({ req, children }: DocumentRequestGroupProp
     updateStatusMutation
   } = useDocumentRequests();
   
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
+  
   const { data: todos } = useQuery({
     queryKey: ['engagement-todos', engagementId],
     enabled: !!engagementId,
@@ -41,11 +44,12 @@ export const DocumentRequestGroup = ({ req, children }: DocumentRequestGroupProp
   const isDeleting = deleteContainerMutation.isPending && deleteContainerMutation.variables?.id === req.id;
 
   const handleDelete = () => {
-    const confirmDelete = window.confirm(`Are you sure you want to permanently delete the entire group "${req.title}"?`);
-    if (!confirmDelete) return;
-    const reason = window.prompt("Reason for deletion (mandatory):");
-    if (!reason) return;
-    deleteContainerMutation.mutate({ id: req.id, reason });
+    setIsDeleteModalOpen(true);
+  };
+
+  const onConfirmDelete = (reason?: string) => {
+    deleteContainerMutation.mutate({ id: req.id, reason: reason || "No reason provided" });
+    setIsDeleteModalOpen(false);
   };
 
   // Calculate Progress
@@ -249,6 +253,23 @@ export const DocumentRequestGroup = ({ req, children }: DocumentRequestGroupProp
           {children}
         </ul>
       </div>
+
+      <ActionConfirmModal 
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={onConfirmDelete}
+        title="Delete Entire Group"
+        message={
+          <>
+            Are you sure you want to permanently delete the entire group <span className="text-slate-900 font-bold">"{req.title}"</span>? 
+            This action cannot be undone and will remove all associated document requests.
+          </>
+        }
+        confirmLabel="Delete Everything"
+        variant="danger"
+        showReasonField={true}
+        loading={isDeleting}
+      />
     </div>
   );
 };
