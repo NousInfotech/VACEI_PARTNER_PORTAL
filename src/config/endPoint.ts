@@ -132,5 +132,49 @@ export const endPoints = {
     CREATE: '/procedure-prompts',
     UPDATE: (id: string) => `/procedure-prompts/${id}`,
     DELETE: (id: string) => `/procedure-prompts/${id}`,
-  }
+  },
+  // Audit procedures (planning, fieldwork, completion)
+  PROCEDURES: {
+    BASE: '/procedures',
+    GET_ALL: '/procedures',
+    GET_BY_ID: (id: string) => `/procedures/${id}`,
+    CREATE: '/procedures',
+    UPDATE: (id: string) => `/procedures/${id}`,
+    DELETE: (id: string) => `/procedures/${id}`,
+    GENERATE: '/procedures/generate-procedures-and-categories',
+    /** Fieldwork: generate answers for classification questions (body: { engagementId?, questions }) */
+    CLASSIFICATION_ANSWERS: '/procedures/ai/classification-answers',
+    GENERATE_RECOMMENDATIONS: (procedureId: string) => `/procedures/${procedureId}/generate-recommendations`,
+    /** Save/upsert procedure for engagement (POST body: procedure payload) */
+    SAVE: '/procedures',
+    /** Save fieldwork document (questions, recommendations) to Procedure.documentPayload. Body: { auditCycleId, questions, recommendations, ... } */
+    FIELDWORK_SAVE: '/procedures/fieldwork/save',
+  },
+  REVIEW: {
+    WORKFLOWS_BY_ENGAGEMENT: (engagementId: string) => `/review/workflows/engagement/${engagementId}`,
+    UPDATE_WORKFLOW: (workflowId: string) => `/review/workflows/${workflowId}`,
+    DELETE_WORKFLOW: (workflowId: string) => `/review/workflows/${workflowId}`,
+  },
+  /** Planning procedures (section-based procedures + recommendations) */
+  PLANNING_PROCEDURES: {
+    GET_BY_ENGAGEMENT: (engagementId: string) => `/planning-procedures/${engagementId}`,
+    SAVE: (engagementId: string) => `/planning-procedures/${engagementId}/save`,
+    GENERATE_SECTION_QUESTIONS: (engagementId: string) =>
+      `/planning-procedures/${engagementId}/generate/section-questions`,
+    GENERATE_SECTION_ANSWERS: (engagementId: string) =>
+      `/planning-procedures/${engagementId}/generate/section-answers`,
+    GENERATE_RECOMMENDATIONS: (engagementId: string) =>
+      `/planning-procedures/${engagementId}/generate/recommendations`,
+  },
+  /** Completion procedures */
+  COMPLETION_PROCEDURES: {
+    GET_BY_ENGAGEMENT: (engagementId: string) => `/completion-procedures/${engagementId}`,
+    SAVE: (engagementId: string) => `/completion-procedures/${engagementId}/save`,
+    GENERATE_SECTION_QUESTIONS: (engagementId: string) =>
+      `/completion-procedures/${engagementId}/generate/section-questions`,
+    GENERATE_SECTION_ANSWERS: (engagementId: string) =>
+      `/completion-procedures/${engagementId}/generate/section-answers`,
+    GENERATE_RECOMMENDATIONS: (engagementId: string) =>
+      `/completion-procedures/${engagementId}/generate/recommendations`,
+  },
 };

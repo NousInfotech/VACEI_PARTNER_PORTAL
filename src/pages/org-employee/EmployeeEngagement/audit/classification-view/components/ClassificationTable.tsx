@@ -31,24 +31,24 @@ export default function ClassificationTable({ title = "Intangible assets - Cost"
 
     return (
         <div className="space-y-4">
-            {/* Section Badge */}
-            <div className="inline-block px-3 py-1 bg-[#0F172A] text-white text-xs font-bold rounded-full">
+            {/* Section Badge - REFERENCE style */}
+            <div className="inline-block px-3 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full">
                 {title}
             </div>
 
-            {/* Table Container */}
-            <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
-                {/* Yellow Header */}
-                <div className="bg-[rgb(255,247,237)] px-4 py-3 flex justify-between items-center border-b border-gray-200">
-                    <span className="text-[#9A3412] font-bold text-sm">Already Grouped (Grouping 4)</span>
-                    <Button variant="outline" className="h-7 text-xs gap-2 bg-white border-gray-300 text-gray-700 hover:bg-gray-50">
+            {/* Table Container - REFERENCE style */}
+            <div className="border border-gray-200 rounded-lg overflow-hidden bg-card shadow-sm">
+                {/* Sub-header row */}
+                <div className="bg-muted/50 px-4 py-3 flex justify-between items-center border-b border-gray-200">
+                    <span className="text-muted-foreground font-bold text-sm">Already Grouped (Grouping 4)</span>
+                    <Button variant="outline" className="h-7 text-xs gap-2">
                         <Pencil size={12} />
                         Change Grouping
                     </Button>
                 </div>
 
                 {/* Table Header */}
-                <div className="grid grid-cols-[60px_1fr_120px_140px_120px_120px_120px_120px] bg-white text-xs font-bold text-gray-900 border-b-2 border-gray-100">
+                <div className="grid grid-cols-[60px_1fr_120px_140px_120px_120px_120px_120px] bg-card text-xs font-bold text-foreground border-b-2 border-gray-200">
                     <div className="px-4 py-3">Code</div>
                     <div className="px-4 py-3">Account Name</div>
                     <div className="px-4 py-3 text-right">Current Year</div>
@@ -61,16 +61,16 @@ export default function ClassificationTable({ title = "Intangible assets - Cost"
 
                 {/* Table Rows */}
                 {rows.map((row) => (
-                    <div key={row.code} className="grid grid-cols-[60px_1fr_120px_140px_120px_120px_120px_120px] bg-white text-sm text-gray-600 border-b border-gray-50 hover:bg-gray-50">
+                    <div key={row.code} className="grid grid-cols-[60px_1fr_120px_140px_120px_120px_120px_120px] bg-card text-sm text-muted-foreground border-b border-gray-200 hover:bg-muted/30">
                         <div className="px-4 py-4">{row.code}</div>
                         <div className="px-4 py-4">{row.accountName}</div>
-                        <div className="px-4 py-4 text-right font-medium text-gray-900">{formatNumber(row.currentYear)}</div>
+                        <div className="px-4 py-4 text-right font-medium text-foreground">{formatNumber(row.currentYear)}</div>
                         <div className="px-4 py-4 text-right">{row.reClassification}</div>
                         <div className="px-4 py-4 text-right">{row.adjustments}</div>
-                        <div className="px-4 py-4 text-right font-bold text-gray-900">{formatNumber(row.finalBalance)}</div>
-                        <div className="px-4 py-4 text-right text-gray-500">{formatNumber(row.priorYear)}</div>
+                        <div className="px-4 py-4 text-right font-bold text-foreground">{formatNumber(row.finalBalance)}</div>
+                        <div className="px-4 py-4 text-right">{formatNumber(row.priorYear)}</div>
                         <div className="px-4 py-4 flex justify-center">
-                            <button className="flex items-center gap-1.5 px-2 py-1 rounded border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                            <button className="flex items-center gap-1.5 px-2 py-1 rounded border border-gray-200 text-xs font-medium text-foreground hover:bg-muted transition-colors">
                                 <Eye size={12} />
                                 {row.linkedFiles} file
                             </button>
@@ -79,7 +79,7 @@ export default function ClassificationTable({ title = "Intangible assets - Cost"
                 ))}
 
                 {/* Totals Row */}
-                <div className="grid grid-cols-[60px_1fr_120px_140px_120px_120px_120px_120px] bg-white text-sm font-bold text-gray-900">
+                <div className="grid grid-cols-[60px_1fr_120px_140px_120px_120px_120px_120px] bg-card text-sm font-bold text-foreground">
                     <div className="px-4 py-4">TOTALS</div>
                     <div className="px-4 py-4"></div>
                     <div className="px-4 py-4 text-right">{formatNumber(totals.currentYear)}</div>

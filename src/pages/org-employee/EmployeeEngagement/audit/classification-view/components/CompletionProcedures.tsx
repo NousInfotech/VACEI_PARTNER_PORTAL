@@ -1,23 +1,47 @@
-import { useState } from "react";
-import { Sparkles, Eye } from "lucide-react";
+import { useState, useCallback } from "react";
+import { Sparkles, Eye, Loader2, RefreshCw, ArrowLeft } from "lucide-react";
+import { Button } from "@/ui/Button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
+import { useQuery } from "@tanstack/react-query";
+import { apiGet } from "@/config/base";
+import { endPoints } from "@/config/endPoint";
 import GenerateProcedures from "./GenerateProcedures";
-import ViewProcedures from "./ViewProcedures";
 import CompletionMaterialityStep from "./CompletionMaterialityStep";
 import ClassificationSelectionStep from "./ClassificationSelectionStep";
+import { CompletionProcedureView } from "../../procedures/CompletionProcedureView";
 
 interface CompletionProceduresProps {
     title: string;
+    engagementId?: string;
 }
 
 type WizardStep = 'select-mode' | 'materiality' | 'classifications';
 type Mode = 'generate' | 'view';
 type WizardMode = 'manual' | 'ai' | 'hybrid';
 
-export default function CompletionProcedures({ title }: CompletionProceduresProps) {
+export default function CompletionProcedures({ title: _title, engagementId }: CompletionProceduresProps) {
     const [mode, setMode] = useState<Mode>('generate');
     const [wizardStep, setWizardStep] = useState<WizardStep>('select-mode');
     const [activeWizardMode, setActiveWizardMode] = useState<WizardMode>('manual');
     const [materialityAmount, setMaterialityAmount] = useState<string>('0');
+
+    const { data: engagementData } = useQuery({
+        queryKey: ["engagement-view", engagementId],
+        enabled: !!engagementId,
+        queryFn: () => apiGet<any>(endPoints.ENGAGEMENTS.GET_BY_ID(engagementId!)),
+    });
+    const engagement = engagementData?.data ?? engagementData;
+
+    const { data: procedureRes, refetch: refetchProcedure } = useQuery({
+        queryKey: ["completion-procedure", engagementId],
+        enabled: !!engagementId && mode === "view",
+        queryFn: () => apiGet<any>(endPoints.COMPLETION_PROCEDURES.GET_BY_ENGAGEMENT(engagementId!)),
+    });
+    const completionProcedure = (procedureRes?.data ?? procedureRes) ?? null;
+
+    const handleProcedureUpdate = useCallback(() => {
+        refetchProcedure();
+    }, [refetchProcedure]);
 
     const handleModeSelect = (selectedMode: WizardMode) => {
         setActiveWizardMode(selectedMode);
@@ -41,54 +65,70 @@ export default function CompletionProcedures({ title }: CompletionProceduresProp
         setWizardStep('materiality');
     };
 
+    const handleBackToProcedureSelection = () => {
+        setWizardStep("select-mode");
+        setMode("generate");
+    };
+
     return (
-        <div className="space-y-8">
-            {/* Header */}
-            <div className="flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                    <div>
-                        <h1 className="text-xl font-bold text-gray-900">{title}</h1>
-                    </div>
+        <div className="h-full flex flex-col">
+            <div className="flex items-center justify-between mb-6 border border-gray-200 rounded-md px-3 py-2">
+                <div className="flex items-center gap-3">
+                    <h3 className="font-heading text-xl text-foreground text-gray-900 flex items-center gap-2">
+                        <span className="inline-flex items-center justify-center w-9 h-9 border border-gray-200 rounded-md bg-gray-50/80 text-gray-600 shrink-0" aria-hidden>
+                            <ArrowLeft className="h-5 w-5" strokeWidth={2.25} />
+                        </span>
+                        <span className="border border-gray-200 rounded-md px-2 py-1 bg-gray-50/80">Completion Procedures</span>
+                    </h3>
+                    <Button
+                        variant="outline"
+                        onClick={handleBackToProcedureSelection}
+                        className="flex items-center gap-2 bg-transparent rounded-md hover:bg-gray-100 hover:text-foreground transition-colors border-gray-200"
+                    >
+                        <RefreshCw className="h-4 w-4" />
+                        Back to Procedure Selection
+                    </Button>
                 </div>
             </div>
 
-            <div className="flex items-center bg-gray-50 p-1.5 rounded-xl border border-gray-100 w-full">
-                <button
-                    onClick={() => { setMode('generate'); setWizardStep('select-mode'); }}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${mode === 'generate'
-                        ? 'bg-white text-gray-900 shadow-sm border border-gray-200/50'
-                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100/50'
-                        }`}
-                >
-                    <Sparkles size={16} />
-                    Generate Procedures
-                </button>
-                <div className="w-px h-5 bg-gray-200 mx-1" />
-                <button
-                    onClick={() => setMode('view')}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${mode === 'view'
-                        ? 'bg-white text-gray-900 shadow-sm border border-gray-200/50'
-                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100/50'
-                        }`}
-                >
-                    <Eye size={16} />
-                    View Procedures
-                </button>
-            </div>
+            <Tabs
+                value={mode}
+                onValueChange={(v) => {
+                    if (v === "generate") {
+                        setMode("generate");
+                        setWizardStep("select-mode");
+                    } else {
+                        setMode("view");
+                    }
+                }}
+                className="flex-1"
+            >
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="generate" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-gray-200">
+                        <Sparkles className="h-4 w-4" />
+                        Generate Procedures
+                    </TabsTrigger>
+                    <TabsTrigger
+                        value="view"
+                        className="flex items-center justify-center gap-2 w-full data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-gray-200"
+                    >
+                        <Eye className="h-4 w-4" />
+                        View Procedures
+                    </TabsTrigger>
+                </TabsList>
 
-            {mode === 'generate' && (
-                <>
-                    {wizardStep === 'select-mode' && (
+                <TabsContent value="generate" className="flex-1 mt-6 px-4">
+                    {wizardStep === "select-mode" && (
                         <GenerateProcedures onProceed={handleModeSelect} />
                     )}
-                    {wizardStep === 'materiality' && (
+                    {wizardStep === "materiality" && (
                         <CompletionMaterialityStep
                             onProceed={handleMaterialityProceed}
                             onBack={handleBackToMode}
                             mode={activeWizardMode}
                         />
                     )}
-                    {wizardStep === 'classifications' && (
+                    {wizardStep === "classifications" && (
                         <ClassificationSelectionStep
                             mode={activeWizardMode}
                             stepLabel="Step 2 of 4"
@@ -97,12 +137,26 @@ export default function CompletionProcedures({ title }: CompletionProceduresProp
                             onBack={handleBackToMateriality}
                         />
                     )}
-                </>
-            )}
+                </TabsContent>
 
-            {mode === 'view' && (
-                <ViewProcedures title={title} />
-            )}
+                <TabsContent value="view" className="flex-1 mt-6 px-4 pb-4">
+                    {!engagementId ? (
+                        <div className="text-muted-foreground">Select an engagement to view completion procedures.</div>
+                    ) : procedureRes === undefined ? (
+                        <div className="flex items-center justify-center py-12 text-muted-foreground">
+                            <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                            <span>Loading...</span>
+                        </div>
+                    ) : (
+                        <CompletionProcedureView
+                            procedure={completionProcedure ?? {}}
+                            engagement={engagement}
+                            onRegenerate={refetchProcedure}
+                            onProcedureUpdate={handleProcedureUpdate}
+                        />
+                    )}
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }

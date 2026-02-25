@@ -5,11 +5,14 @@ import {
     TrendingUp,
     Scale,
     Download,
-    PanelLeftClose
+    PanelLeftClose,
+    FolderOpen,
 } from 'lucide-react';
 import { useETBData } from '../hooks/useETBData';
 import { extractClassificationGroups, organizeClassificationsByHierarchy } from '../utils/classificationUtils';
 import { useMemo } from 'react';
+import { ScrollArea } from '@/ui/scroll-area';
+import { Button } from '@/ui/Button';
 
 interface SidebarItem {
     id: string;
@@ -41,8 +44,6 @@ interface SectionsSidebarProps {
 }
 
 export default function SectionsSidebar({ activeSection, onSectionChange, onToggle, engagementId }: SectionsSidebarProps) {
-    const activeColor = 'rgb(253, 230, 138)';
-    
     // Fetch ETB data to extract classifications
     const { data: etbData, isLoading } = useETBData(engagementId);
     
@@ -105,7 +106,8 @@ export default function SectionsSidebar({ activeSection, onSectionChange, onTogg
     const renderItem = (item: SidebarItem) => {
         if (item.type === 'header') {
             return (
-                <div key={item.id} className="pk-4 pt-4 pb-2 text-xs font-bold text-gray-400 uppercase tracking-wider px-4">
+                <div key={item.id} className="text-[11px] font-bold text-gray-800 uppercase tracking-wider px-3 flex items-center gap-2 pt-4 pb-2 first:pt-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
                     {item.label}
                 </div>
             );
@@ -113,7 +115,7 @@ export default function SectionsSidebar({ activeSection, onSectionChange, onTogg
 
         if (item.type === 'sub-header') {
             return (
-                <div key={item.id} className="pk-4 pt-4 pb-2 text-sm font-bold text-gray-800 uppercase px-4 mt-2">
+                <div key={item.id} className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-3 mb-1 mt-2">
                     {item.label}
                 </div>
             );
@@ -122,56 +124,81 @@ export default function SectionsSidebar({ activeSection, onSectionChange, onTogg
         const Icon = item.icon;
         const isActive = activeSection === item.id;
 
-        const isClassificationItem = !item.icon;
+        const buttonClasses = [
+            'w-full flex items-center gap-3 text-left h-auto p-3 transition-all duration-300 rounded-xl border border-amber-200 shadow-sm hover:shadow-md',
+            isActive
+                ? 'bg-primary text-primary-foreground shadow-lg scale-[1.02] border-primary'
+                : 'bg-white hover:bg-amber-50 text-gray-700 hover:text-primary',
+        ].join(' ');
 
         return (
-            <button
-                key={item.id}
-                onClick={() => onSectionChange(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 border group ${isClassificationItem ? 'bg-white border-gray-200 shadow-sm' : 'border-transparent' // Card style for classification items
-                    }`}
-                style={{
-                    borderColor: isActive ? activeColor : (isClassificationItem ? '#E5E7EB' : 'transparent'),
-                    color: isActive ? 'black' : '#4B5563',
-                    backgroundColor: isActive ? activeColor : (isClassificationItem ? 'white' : 'transparent'),
-                }}
-            >
-                {Icon && <Icon size={18} />}
-                {item.label}
-            </button>
+            <div key={item.id} className="px-2 mb-2">
+                <Button
+                    variant={isActive ? 'default' : 'outline'}
+                    type="button"
+                    onClick={() => onSectionChange(item.id)}
+                    className={buttonClasses}
+                >
+                    {Icon && <Icon size={18} className="shrink-0" />}
+                    <div className="flex flex-col items-start flex-1 min-w-0">
+                        <div className="font-semibold text-xs whitespace-normal break-words">
+                            {item.label}
+                        </div>
+                    </div>
+                </Button>
+            </div>
         );
     };
 
     return (
-        <div className="w-full h-full border-r border-gray-100 flex flex-col shrink-0 bg-gray-50/50">
-            <div className="p-6 border-b border-gray-100 bg-white flex justify-between items-start">
+        <div className="w-full h-full border-r border-gray-200 bg-gray-50/50 flex flex-col shrink-0 min-h-0">
+            <div className="p-4 border-b bg-white/50 backdrop-blur-sm flex justify-between items-start shrink-0">
                 <div>
-                    <h3 className="font-bold text-gray-900 leading-tight">Sections</h3>
-                    <p className="text-xs text-gray-500 mt-1">Quick views and classifications</p>
+                    <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                        <FolderOpen className="h-4 w-4 text-primary shrink-0" />
+                        Sections
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-1 uppercase tracking-wider font-semibold">
+                        Quick views and classifications
+                    </p>
                 </div>
                 <button
+                    type="button"
                     onClick={onToggle}
                     className="p-1.5 hover:bg-gray-100 rounded-md text-gray-400 hover:text-gray-600 transition-colors"
+                    aria-label="Toggle sidebar"
                 >
                     <PanelLeftClose size={18} />
                 </button>
             </div>
-            <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-                {/* Planning Procedures */}
-                <div className="space-y-1">
-                    {PLANNING_SECTIONS.map(renderItem)}
-                </div>
+            <ScrollArea className="flex-1 min-h-0">
+                <nav className="p-3 space-y-6">
+                    {/* Planning Procedures */}
+                    <div className="space-y-4 mb-6">
+                        <div className="text-[11px] font-bold text-gray-800 uppercase tracking-wider px-3 flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                            PLANNING
+                        </div>
+                        {PLANNING_SECTIONS.filter((i) => i.type === 'item').map(renderItem)}
+                    </div>
 
-                {/* General Tools */}
-                <div className="space-y-1">
-                    {GENERAL_SECTIONS.map(renderItem)}
-                </div>
+                    {/* General Tools */}
+                    <div className="space-y-4 mb-6">
+                        <div className="text-[11px] font-bold text-gray-800 uppercase tracking-wider px-3 flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                            GENERAL
+                        </div>
+                        {GENERAL_SECTIONS.map(renderItem)}
+                    </div>
 
-                {/* Classifications */}
-                <div className="space-y-1">
-                    {classificationItems.map(renderItem)}
-                </div>
-            </nav>
+                    {/* Classifications */}
+                    {classificationItems.length > 0 && (
+                        <div className="space-y-4 mb-6">
+                            {classificationItems.map(renderItem)}
+                        </div>
+                    )}
+                </nav>
+            </ScrollArea>
         </div>
     );
 }

@@ -1,7 +1,5 @@
 import { useState, useMemo } from "react";
 import ClassificationHeader from "./components/ClassificationHeader";
-import type { TabItem } from "./components/ClassificationTabs";
-import ClassificationTabs from "./components/ClassificationTabs";
 import ClassificationSummary from "./components/ClassificationSummary";
 import ClassificationTable, { type TableRow } from "./components/ClassificationTable";
 import ClassificationEvidence from "./components/ClassificationEvidence";
@@ -11,6 +9,12 @@ import { useETBData } from "../hooks/useETBData";
 import { useClassification } from "../hooks/useClassification";
 import { extractClassificationGroups, getRowsForClassification } from "../utils/classificationUtils";
 import { Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { apiGet } from "@/config/base";
+import { endPoints } from "@/config/endPoint";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
+import { Badge } from "@/ui/badge";
 
 interface ClassificationViewProps {
     classificationId?: string;
@@ -22,7 +26,8 @@ interface ClassificationViewProps {
 
 export default function ClassificationView({ classificationId, engagementId, title: propTitle }: ClassificationViewProps) {
     // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
-    const [activeTab, setActiveTab] = useState('Lead Sheet');
+    // Tab values match REFERENCE-PORTAL ClassificationSection (lead-sheet, evidence, procedures, work-book)
+    const [activeTab, setActiveTab] = useState<string>('lead-sheet');
 
     // Fetch ETB data
     const { data: etbData, isLoading, trialBalanceId } = useETBData(engagementId);
@@ -79,25 +84,24 @@ export default function ClassificationView({ classificationId, engagementId, tit
         }), { currentYear: 0, priorYear: 0, adjustments: 0, finalBalance: 0 });
     }, [classificationGroup, tableRows]);
 
+    // Fetch engagement when Procedures tab is active so we can pass it to ClassificationProcedures (avoids refetch in ProceduresTab)
+    const { data: engagementData } = useQuery({
+        queryKey: ["engagement-view", engagementId],
+        enabled: !!engagementId && activeTab === "procedures",
+        queryFn: () => apiGet<any>(endPoints.ENGAGEMENTS.GET_BY_ID(engagementId!)),
+    });
+    const engagement = engagementData?.data ?? engagementData;
+
     // Determine title
     const title = propTitle || classificationGroup?.label || 'Classification';
-
-    // Dynamic Tabs Logic
-    const tabs: TabItem[] = [
-        { id: 'Lead Sheet', label: 'Lead Sheet' },
-        { id: 'Evidence', label: 'Evidence' },
-        { id: 'Procedures', label: 'Procedures' },
-        { id: 'WorkBook', label: 'WorkBook' },
-    ];
-
 
     // NOW conditional returns are safe
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center h-full">
-                <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-                    <p className="text-sm text-gray-500">Loading classification data...</p>
+            <div className="flex items-center justify-center h-64">
+                <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                    <p className="text-sm">Loading classification data...</p>
                 </div>
             </div>
         );
@@ -105,61 +109,79 @@ export default function ClassificationView({ classificationId, engagementId, tit
 
     if (!classificationGroup && classificationId) {
         return (
-            <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                    <p className="text-sm text-gray-500">Classification not found</p>
+            <div className="flex items-center justify-center h-64">
+                <div className="text-center text-muted-foreground">
+                    <p className="text-sm">Classification not found</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="p-8 h-full flex flex-col space-y-8 overflow-y-auto">
-            <ClassificationHeader title={title} accountCount={tableRows.length} />
-            <ClassificationTabs
-                activeTab={activeTab}
-                onTabChange={setActiveTab}
-                tabs={tabs}
-            />
+        <div className="h-full flex flex-col p-6">
+            <Card className="flex-1 flex flex-col">
+                <CardHeader>
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle className="text-lg">{title}</CardTitle>
+                                <Badge variant="outline" className="mt-1">
+                                    {tableRows.length} {tableRows.length === 1 ? 'account' : 'accounts'}
+                                </Badge>
+                            </div>
+                            <div className="flex gap-2 flex-wrap">
+                                <ClassificationHeader title={title} accountCount={tableRows.length} actionsOnly />
+                            </div>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="flex-1 flex flex-col min-h-0">
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+                        <TabsList className="grid w-full grid-cols-4">
+                            <TabsTrigger value="lead-sheet">Lead Sheet</TabsTrigger>
+                            <TabsTrigger value="evidence">Evidence</TabsTrigger>
+                            <TabsTrigger value="procedures">Procedures</TabsTrigger>
+                            <TabsTrigger value="work-book">WorkBook</TabsTrigger>
+                        </TabsList>
 
-            {activeTab === 'Lead Sheet' && (
-                <>
-                    <ClassificationSummary
-                        currentYear={summary.currentYear}
-                        priorYear={summary.priorYear}
-                        adjustments={summary.adjustments}
-                        finalBalance={summary.finalBalance}
-                    />
-                    <ClassificationTable
-                        title={`${title} - Cost`}
-                        rows={tableRows}
-                    />
-                </>
-            )}
+                        <TabsContent value="lead-sheet" className="flex-1 flex flex-col mt-4 space-y-6">
+                            <ClassificationSummary
+                                currentYear={summary.currentYear}
+                                priorYear={summary.priorYear}
+                                adjustments={summary.adjustments}
+                                finalBalance={summary.finalBalance}
+                            />
+                            <ClassificationTable
+                                title={`${title} - Cost`}
+                                rows={tableRows}
+                            />
+                        </TabsContent>
 
-            {activeTab === 'Evidence' && (
-                <ClassificationEvidence 
-                    classificationId={dbClassificationId}
-                    engagementId={engagementId}
-                    trialBalanceId={trialBalanceId}
-                    isLoadingClassification={isLoadingClassification}
-                />
-            )}
+                        <TabsContent value="evidence" className="flex-1 flex flex-col mt-4">
+                            <ClassificationEvidence
+                                classificationId={dbClassificationId}
+                                engagementId={engagementId}
+                                trialBalanceId={trialBalanceId}
+                                isLoadingClassification={isLoadingClassification}
+                            />
+                        </TabsContent>
 
-            {activeTab === 'Procedures' && (
-                <ClassificationProcedures title={title} />
-            )}
+                        <TabsContent value="procedures" className="flex-1 flex flex-col mt-4">
+                            <ClassificationProcedures title={title} engagementId={engagementId} engagement={engagement} />
+                        </TabsContent>
 
-            {/* Workbook Tab */}
-            {activeTab === 'WorkBook' && (
-                <ClassificationWorkbook
-                    title={title}
-                    engagementId={engagementId}
-                    classification={title} // Pass classification string (label) for filtering
-                    classificationId={dbClassificationId ?? undefined} // Pass classification ID (UUID) for evidence creation
-                    classificationRows={tableRows}
-                />
-            )}
+                        <TabsContent value="work-book" className="flex-1 flex flex-col mt-4">
+                            <ClassificationWorkbook
+                                title={title}
+                                engagementId={engagementId}
+                                classification={title}
+                                classificationId={dbClassificationId ?? undefined}
+                                classificationRows={tableRows}
+                            />
+                        </TabsContent>
+                    </Tabs>
+                </CardContent>
+            </Card>
         </div>
     );
 }

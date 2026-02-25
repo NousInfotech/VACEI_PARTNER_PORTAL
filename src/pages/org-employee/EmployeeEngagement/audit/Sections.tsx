@@ -48,16 +48,16 @@ export default function Sections({ engagementId }: SectionsProps) {
             // Planning Procedures
             case 'planning-procedures':
                 return (
-                    <div className="p-8">
-                        <PlanningProcedures title="Planning Procedures" />
+                    <div className="flex-1 mt-6 px-4 pb-4">
+                        <PlanningProcedures title="Planning Procedures" engagementId={engagementId} />
                     </div>
                 );
 
             // Completion Procedures
             case 'completion-procedures':
                 return (
-                    <div className="p-8">
-                        <CompletionProcedures title="Completion Procedures" />
+                    <div className="flex-1 mt-6 px-4 pb-4">
+                        <CompletionProcedures title="Completion Procedures" engagementId={engagementId} />
                     </div>
                 );
 
@@ -76,7 +76,7 @@ export default function Sections({ engagementId }: SectionsProps) {
 
     return (
         <div className="flex bg-white rounded-2xl overflow-hidden min-h-[600px] h-[calc(100vh-140px)] relative">
-            <div className={`${isSidebarOpen ? 'w-72 border-r' : 'w-0'} transition-all duration-300 overflow-hidden bg-gray-50/50 border-gray-100 flex flex-col shrink-0`}>
+            <div className={`${isSidebarOpen ? 'w-72 border-r border-gray-200' : 'w-0'} transition-all duration-300 overflow-hidden bg-gray-50/50 flex flex-col shrink-0 min-h-0`}>
                 <SectionsSidebar
                     activeSection={activeSection}
                     onSectionChange={setActiveSection}

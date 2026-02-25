@@ -5,9 +5,9 @@ interface SummaryCardProps {
 
 function SummaryCard({ label, value }: SummaryCardProps) {
     return (
-        <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col justify-center h-24 shadow-sm">
-            <span className="text-xs text-gray-500 font-medium mb-1">{label}</span>
-            <span className="text-xl font-bold text-gray-900">{value}</span>
+        <div className="bg-card border border-gray-200 rounded-lg p-4 flex flex-col justify-center h-24 shadow-sm text-card-foreground">
+            <span className="text-xs text-muted-foreground font-medium mb-1">{label}</span>
+            <span className="text-xl font-semibold text-foreground">{value}</span>
         </div>
     );
 }
