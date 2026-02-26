@@ -81,20 +81,25 @@ export const ClassificationStep: React.FC<ClassificationStepProps> = ({
       const classification =
         row.classification ||
         [row.group1, row.group2, row.group3].filter(Boolean).join(" > ");
+      const trimmed = classification?.trim() ?? "";
+      const hasValidClassification =
+        trimmed.length > 0 &&
+        trimmed.toLowerCase() !== "unclassified";
+      const meetsMateriality = Math.abs(row.finalBalance ?? 0) >= materiality;
       return {
         rowId,
         code: row.code,
         accountName: row.accountName,
         finalBalance: row.finalBalance ?? 0,
         classification,
-        isValid: Math.abs(row.finalBalance ?? 0) >= materiality,
+        isValid: meetsMateriality && hasValidClassification,
       };
     });
     setValiditySelections(initialSelections);
     const validRows = initialSelections.filter((s) => s.isValid && s.classification);
     const uniqueClassifications = [
       ...new Set(validRows.map((r) => getDeepestClassification(r.classification))),
-    ].filter(Boolean);
+    ].filter((c) => Boolean(c) && c !== "Unclassified");
     setSelectedClassifications(uniqueClassifications);
   }, [etbRows, materiality]);
 
@@ -108,7 +113,7 @@ export const ClassificationStep: React.FC<ClassificationStepProps> = ({
         ...new Set(
           validRows.map((r) => getDeepestClassification(r.classification))
         ),
-      ];
+      ].filter((c) => Boolean(c) && c !== "Unclassified");
       setSelectedClassifications(uniqueClassifications);
       return next;
     });
@@ -127,7 +132,7 @@ export const ClassificationStep: React.FC<ClassificationStepProps> = ({
         ...new Set(
           validRows.map((r) => getDeepestClassification(r.classification))
         ),
-      ];
+      ].filter((c) => Boolean(c) && c !== "Unclassified");
       setSelectedClassifications(uniqueClassifications);
       return next;
     });
@@ -387,7 +392,7 @@ export const ClassificationStep: React.FC<ClassificationStepProps> = ({
           onClick={handleProceed}
           disabled={selectedClassifications.length === 0}
           variant="default"
-          className="flex items-center gap-2 !bg-blue-600 !text-white hover:!bg-blue-700"
+          className="flex items-center gap-2"
         >
           Proceed to Procedures
           <ArrowRight className="h-4 w-4" />
