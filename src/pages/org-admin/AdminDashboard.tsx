@@ -6,7 +6,9 @@ import {
   LayoutDashboard, 
   ArrowRight,
   UserPlus,
-  Briefcase
+  Briefcase,
+  Settings,
+  FileText
 } from "lucide-react";
 import { apiGet } from "../../config/base";
 import { endPoints } from "../../config/endPoint";
@@ -56,21 +58,24 @@ export default function AdminDashboard({ activeSection }: AdminDashboardProps) {
       value: employeesResponse?.meta?.total || employeesResponse?.data?.length || "0", 
       icon: Users, 
       color: "text-blue-600", 
-      bg: "bg-blue-50" 
+      bg: "bg-blue-50",
+      path: "/dashboard/employees"
     },
     { 
       label: "Active Engagements", 
       value: engagementsResponse?.meta?.total || engagementsResponse?.data?.length || "0", 
       icon: ShieldCheck, 
       color: "text-green-600", 
-      bg: "bg-green-50" 
+      bg: "bg-green-50",
+      path: "/dashboard/engagements"
     },
     { 
       label: "Assigned Services", 
       value: organizationMember?.allowedServices?.length || "0", 
       icon: Briefcase, 
       color: "text-purple-600", 
-      bg: "bg-purple-50" 
+      bg: "bg-purple-50",
+      path: "/dashboard/engagements"
     },
   ];
 
@@ -86,8 +91,22 @@ export default function AdminDashboard({ activeSection }: AdminDashboardProps) {
       title: "View Engagements", 
       description: "Manage active projects", 
       icon: Briefcase, 
-      path: "/dashboard/messages", // Messages acts as engagement hub in some views, or update path
+      path: "/dashboard/engagements", 
       color: "bg-indigo-600"
+    },
+    { 
+      title: "Procedure Prompt", 
+      description: "Manage AI configurations", 
+      icon: FileText, 
+      path: "/dashboard/procedure-prompts", 
+      color: "bg-emerald-600"
+    },
+    { 
+      title: "System Settings", 
+      description: "Configure portal preferences", 
+      icon: Settings, 
+      path: "/dashboard/settings", 
+      color: "bg-amber-600"
     }
   ];
 
@@ -141,13 +160,19 @@ export default function AdminDashboard({ activeSection }: AdminDashboardProps) {
           ))
         ) : (
           stats.map((stat, index) => (
-            <ShadowCard key={index} className="p-6 flex items-center gap-4 hover:translate-y-[-4px] transition-transform cursor-default border-none shadow-sm hover:shadow-md">
-              <div className={`p-4 rounded-2xl ${stat.bg} shrink-0`}>
+            <ShadowCard 
+              key={index} 
+              className="p-6 flex items-center gap-4 hover:translate-y-[-4px] transition-all cursor-pointer border-none shadow-sm hover:shadow-lg group"
+              onClick={() => stat.path && navigate(stat.path)}
+            >
+              <div className={`p-4 rounded-2xl ${stat.bg} shrink-0 group-hover:scale-110 transition-transform duration-300`}>
                 <stat.icon className={`h-8 w-8 ${stat.color}`} />
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">{stat.label}</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                <div className="flex items-center justify-between mt-1">
+                  <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+                 </div>
               </div>
             </ShadowCard>
           ))
@@ -157,7 +182,7 @@ export default function AdminDashboard({ activeSection }: AdminDashboardProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Notice Board */}
         <div className="lg:col-span-2 space-y-8">
-          <div className="bg-white rounded-2xl p-0 shadow-sm border border-gray-100 overflow-hidden">
+          <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 overflow-hidden min-h-[400px]">
             <NoticeBoard />
           </div>
         </div>

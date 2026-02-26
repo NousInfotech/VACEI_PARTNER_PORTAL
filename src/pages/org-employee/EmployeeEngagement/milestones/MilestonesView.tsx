@@ -182,7 +182,7 @@ export default function MilestonesView({ engagementId }: { engagementId?: string
                     <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-100 -translate-x-1/2 z-0" />
 
                     <div className="space-y-8 relative z-10">
-                        {milestones.sort((a, b) => a.order - b.order).map((milestone, index) => (
+                        {(Array.isArray(milestones) ? [...milestones] : []).sort((a, b) => a.order - b.order).map((milestone, index) => (
                             <div key={milestone.id} className="flex items-center w-full relative group">
                                 {/* Left aligned Icon */}
                                 <div className="absolute left-8 -translate-x-1/2 flex items-center justify-center">

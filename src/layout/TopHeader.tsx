@@ -8,6 +8,7 @@ import { Dropdown } from "../ui/Dropdown";
 import { AVAILABLE_SERVICES } from "../lib/types";
 import { useSSE } from "../hooks/useSSE";
 import { notificationService, type Notification } from "../api/notificationService";
+import BackButton from "../pages/common/BackButton";
 
 interface TopHeaderProps {
     onSidebarToggle: () => void;
@@ -151,20 +152,9 @@ export default function TopHeader({
                     )}
                 </button>
 
-                <div className="flex items-center gap-2 w-64">
-                    <div className="relative flex w-full">
-                        <input
-                            type="text"
-                            placeholder="Search..."
-                            className="bg-gray-50 text-gray-900 border border-gray-200 border-r-0 placeholder-gray-500 rounded-l-lg focus:outline-none w-full h-[37px] ps-4 text-sm"
-                        />
-                        <Button
-                            className="h-[37px] rounded-l-none px-3"
-                        >
-                            <Search className="h-4 w-4" />
-                        </Button>
-                    </div>
-                </div>
+                <div className="h-6 w-px bg-gray-200" />
+
+                <BackButton className="h-10 px-3 rounded-xl" />
 
                 {organizationMember && role !== 'Admin' && (
                     <div className="flex items-center gap-2 ml-4">
