@@ -35,7 +35,10 @@ export function extractClassificationGroups(etbRows: ExtendedTBRow[]): Classific
             group1: g1.group,
             group2: g2.group,
             group3: g3.group,
-            accountIds: (g3.rows || []) as string[],
+            accountIds: (g3.rows || []).map((rowId) => {
+              const row = etbRows.find((r) => r.id === rowId);
+              return row?.accountId ?? String(rowId);
+            }),
             totals: {
               currentYear: g3.totals.currentYear || 0,
               priorYear: g3.totals.priorYear || 0,
