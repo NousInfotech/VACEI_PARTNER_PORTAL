@@ -37,7 +37,18 @@ const MOCK_DATA: AccountRow[] = [
 ];
 
 export default function ClassificationSelectionStep({ onProceed, onBack, mode = 'manual', materialityAmount = '0', stepLabel = 'Step 1 of 2' }: ClassificationSelectionStepProps) {
-    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(MOCK_DATA.filter(r => r.valid).map(r => r.id)));
+    const materialityNum = Number(materialityAmount) || 0;
+    const defaultSelectedIds = useMemo(() => {
+        return new Set(
+            MOCK_DATA.filter(
+                (r) =>
+                    Math.abs(r.finalBalance) >= materialityNum &&
+                    Boolean(r.classification?.trim()) &&
+                    r.classification.trim() !== 'Unclassified'
+            ).map((r) => r.id)
+        );
+    }, [materialityNum]);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(defaultSelectedIds);
 
     const toggleSelection = (id: string) => {
         const newSelected = new Set(selectedIds);
