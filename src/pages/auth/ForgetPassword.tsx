@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Mail, ArrowLeft } from "lucide-react";
 import AlertMessage from "../common/AlertMessage";
 import { Button } from "../../ui/Button";
@@ -7,6 +7,7 @@ import { apiPost } from "../../config/base";
 import { endPoints } from "../../config/endPoint";
 
 export default function ForgetPassword() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [errors, setErrors] = useState<{ email?: string }>({});
   const [loading, setLoading] = useState(false);
@@ -31,14 +32,15 @@ export default function ForgetPassword() {
     setAlertMessage(null);
 
     try {
-      const response = await apiPost<{ data?: { message?: string } }>(endPoints.AUTH.FORGOT_PASSWORD, {
+      await apiPost<{ data?: { message?: string } }>(endPoints.AUTH.FORGOT_PASSWORD, {
         email,
       } as Record<string, unknown>);
 
-      setAlertMessage(response.data?.message || "If an account with that email exists, a password reset OTP has been sent to your inbox.");
+      setAlertMessage("OTP sent successfully! Redirecting...");
       setMessageVariant("success");
-      setEmail("");
-      setErrors({});
+      setTimeout(() => {
+        navigate(`/reset-password?email=${encodeURIComponent(email)}`);
+      }, 1500);
     } catch (err) {
       const errorMessage = (err as Error).message || "An unknown error occurred. Please try again.";
       setAlertMessage(errorMessage);

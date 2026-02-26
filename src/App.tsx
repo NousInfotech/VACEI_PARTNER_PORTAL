@@ -3,6 +3,8 @@ import Login from './pages/auth/Login'
 import ForgetPassword from './pages/auth/ForgetPassword'
 import Dashboard from './pages/common/Dashboard'
 import MainLayout from './layout/MainLayout'
+import VerifyMFA from './pages/auth/VerifyMFA'
+import ResetPassword from './pages/auth/ResetPassword'
 import NotFound from './pages/common/NotFound'
 import { AuthProvider } from './context/AuthContext'
 import EngagementFullView from './pages/org-employee/EmployeeEngagement/EngagementFullView'
@@ -12,15 +14,20 @@ import Notifications from './pages/common/Notifications'
 import Settings from './pages/common/Settings'
 import { Toaster } from 'sonner'
 
+import { NotificationProvider } from './context/NotificationContext'
+
 const App = () => {
   return (
     <AuthProvider>
-      <Toaster position="top-right" expand={true} richColors={true} />
-      <Router>
+      <NotificationProvider>
+        <Toaster position="top-right" expand={true} richColors={true} />
+        <Router>
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/verify-mfa" element={<VerifyMFA />} />
           <Route path="/forgot-password" element={<ForgetPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           <Route element={<MainLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
@@ -45,6 +52,7 @@ const App = () => {
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </Router>
+      </NotificationProvider>
     </AuthProvider>
   )
 }

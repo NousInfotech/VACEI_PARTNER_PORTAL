@@ -1,13 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useEffect } from "react";
 import { PanelLeft, PanelLeftClose, Search, Bell, LogOut, Settings, MessageSquare, Calendar, AlertCircle, CheckCheck } from "lucide-react";
 import { Button } from "../ui/Button";
 import { useAuth } from "../context/auth-context-core";
 import { Select } from "../ui/Select";
 import { Dropdown } from "../ui/Dropdown";
 import { AVAILABLE_SERVICES } from "../lib/types";
-import { useSSE } from "../hooks/useSSE";
-import { notificationService, type Notification } from "../api/notificationService";
+import { useNotifications } from "../context/NotificationContext";
 
 interface TopHeaderProps {
     onSidebarToggle: () => void;
@@ -24,45 +23,16 @@ export default function TopHeader({
 }: TopHeaderProps) {
     const navigate = useNavigate();
     const { logout, organizationMember, setSelectedService, selectedServiceLabel } = useAuth();
-    const { unreadCount, setUnreadCount, notifications: sseNotifications } = useSSE();
-    const [latestNotifications, setLatestNotifications] = useState<Notification[]>([]);
-
-    const fetchLatestNotifications = useCallback(async () => {
-        try {
-            const response = await notificationService.fetchNotifications({ page: 1, limit: 10 });
-            setLatestNotifications(response.items);
-        } catch (err) {
-            console.error('Error fetching latest notifications:', err);
-        }
-    }, []);
-
-    const fetchUnreadCount = useCallback(async () => {
-        try {
-            const response = await notificationService.fetchUnreadCount();
-            setUnreadCount(response.count);
-        } catch (err) {
-            console.error('Error fetching unread count:', err);
-        }
-    }, [setUnreadCount]);
-
-    useEffect(() => {
-        if (sseNotifications.length > 0) {
-            fetchLatestNotifications();
-            fetchUnreadCount();
-        }
-    }, [sseNotifications, fetchLatestNotifications, fetchUnreadCount]);
+    const { unreadCount, markAsRead, markAllAsRead, notifications: latestNotifications, fetchNotifications: fetchLatestNotifications, fetchUnreadCount } = useNotifications();
 
     useEffect(() => {
         fetchUnreadCount();
-    }, [fetchUnreadCount]);
+        fetchLatestNotifications(1, 10);
+    }, [fetchUnreadCount, fetchLatestNotifications]);
 
-    const handleMarkAsRead = async (id: string) => {
+    const handleMarkAsReadInternal = async (id: string) => {
         try {
-            await notificationService.markAsRead(id);
-            setLatestNotifications(prev =>
-                prev.map(notif => (notif.id === id ? { ...notif, isRead: true } : notif))
-            );
-            fetchUnreadCount();
+            await markAsRead(id);
         } catch (err) {
             console.error('Error marking as read:', err);
         }
@@ -70,9 +40,7 @@ export default function TopHeader({
 
     const handleMarkAllAsRead = async () => {
         try {
-            await notificationService.markAllAsRead();
-            setLatestNotifications(prev => prev.map(notif => ({ ...notif, isRead: true })));
-            setUnreadCount(0);
+            await markAllAsRead();
         } catch (err) {
             console.error('Error marking all as read:', err);
         }
@@ -186,7 +154,7 @@ export default function TopHeader({
                     align="right"
                     contentClassName="w-80 overflow-hidden"
                     trigger={
-                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl relative" onClick={fetchLatestNotifications}>
+                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl relative" onClick={() => fetchLatestNotifications(1, 10)}>
                             <Bell className="h-5 w-5 text-gray-700" />
                             {unreadCount > 0 && (
                                 <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 rounded-full border-2 border-white flex items-center justify-center text-[10px] text-white font-bold">
@@ -216,7 +184,7 @@ export default function TopHeader({
                                     <div 
                                         key={notification.id}
                                         onClick={() => {
-                                            if (!notification.isRead) handleMarkAsRead(notification.id);
+                                            if (!notification.isRead) handleMarkAsReadInternal(notification.id);
                                             if (notification.redirectUrl) navigate(notification.redirectUrl);
                                         }}
                                         className={`p-3 rounded-xl mb-1 cursor-pointer transition-all hover:bg-gray-50 flex gap-3 ${!notification.isRead ? 'bg-primary/5 border border-primary/10' : 'bg-white'}`}

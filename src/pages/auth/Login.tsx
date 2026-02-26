@@ -47,6 +47,11 @@ export default function Login() {
         try {
             const response = await login(email, password);
             
+            if (response.mfaRequired) {
+                navigate(`/verify-mfa?email=${encodeURIComponent(email)}`);
+                return;
+            }
+
             if (response.success) {
                 setAlertMessage({ message: response.message || "Login successful! Redirecting...", variant: "success" });
                 
