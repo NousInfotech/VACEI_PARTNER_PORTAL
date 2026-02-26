@@ -2,8 +2,9 @@ import axiosInstance from '../config/axiosConfig';
 
 export function getPortalRedirectUrl(url?: string): string {
   if (!url) return '';
-  if (url.startsWith('/dashboard') || url.startsWith('/')) return url;
-  return `/${url}`;
+  const cleaned = url.replace(/^\/(partner|platform|client)/, '');
+  if (cleaned.startsWith('/dashboard') || cleaned.startsWith('/')) return cleaned;
+  return `/${cleaned}`;
 }
 
 export interface Notification {

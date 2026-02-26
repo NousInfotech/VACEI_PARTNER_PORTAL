@@ -158,6 +158,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     };
                 }
 
+                if (response.data.mfaRequired) {
+                    return {
+                        success: true,
+                        message: response.message || "MFA Required",
+                        mfaRequired: true
+                    };
+                }
+
                 const memberData = response.data.organizationMember;
                 const token = response.data.token;
                 
@@ -201,6 +209,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const verifyMfa = async (email: string, otp: string) => {
+        try {
+            const response = await apiPost<LoginResponse>(endPoints.AUTH.VERIFY_MFA, { email, otp } as Record<string, unknown>);
+            if (response.data) {
+                const userData = response.data.user;
+                const memberData = response.data.organizationMember;
+                const token = response.data.token;
+
+                setUser(userData);
+                setOrganizationMember(memberData);
+                
+                // Set default service
+                if (memberData?.allowedServices && memberData.allowedServices.length > 0) {
+                    setSelectedService(memberData.allowedServices[0]);
+                }
+
+                localStorage.setItem("user", JSON.stringify(userData));
+                if (memberData) localStorage.setItem("organizationMember", JSON.stringify(memberData));
+                if (token) localStorage.setItem("token", token);
+                if (response.data.refreshToken) localStorage.setItem("refreshToken", response.data.refreshToken);
+                localStorage.setItem("userRole", userData.role);
+
+                return { success: true, message: "Verification successful!" };
+            }
+            return { success: false, message: response.message || "Verification failed" };
+        } catch (error) {
+            console.error("MFA verification failed:", error);
+            return { success: false, message: (error as Error).message || "Verification failed" };
+        }
+    };
+
     const logout = async () => {
         try {
             await apiPost(endPoints.AUTH.LOGOUT);
@@ -220,6 +259,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setSelectedService, 
             isAuthenticated: !!user, 
             login, 
+            verifyMfa,
             logout, 
             isLoading, 
             checkAuth 

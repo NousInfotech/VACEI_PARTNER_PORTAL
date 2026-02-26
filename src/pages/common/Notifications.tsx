@@ -1,14 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-    notificationService, 
     type Notification 
 } from '../../api/notificationService';
 import PageHeader from './PageHeader';
 import { Button } from '../../ui/Button';
 import { Skeleton } from '../../ui/Skeleton';
 import { ShadowCard } from '../../ui/ShadowCard';
-import { useSSE } from '../../hooks/useSSE';
+import { useNotifications } from '../../context/NotificationContext';
 import { Bell, CheckCheck, Filter, AlertCircle, MessageSquare, Calendar } from 'lucide-react';
 import { Badge } from '../../ui/badge';
 
@@ -89,71 +88,42 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMar
 };
 
 export default function Notifications() {
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [unreadCount, setUnreadCount] = useState<number>(0);
-    const [loading, setLoading] = useState<boolean>(true);
+    const { 
+        notifications, 
+        unreadCount, 
+        fetchNotifications, 
+        markAsRead, 
+        markAllAsRead,
+        totalItems,
+    } = useNotifications();
+
+    const [loading, setLoading] = useState<boolean>(false);
     const [currentPage, setCurrentPage] = useState<number>(1);
-    const [totalPages, setTotalPages] = useState<number>(1);
     const [showUnreadOnly, setShowUnreadOnly] = useState<boolean>(false);
 
-    const { notifications: sseNotifications } = useSSE();
+    const totalPages = Math.ceil(totalItems / 10);
 
-    const fetchNotifications = useCallback(async () => {
-        setLoading(true);
-        try {
-            const response = await notificationService.fetchNotifications({
-                page: currentPage,
-                limit: 10,
-                isRead: showUnreadOnly ? false : undefined,
-            });
-            setNotifications(response.items);
-            setTotalPages(response.meta.totalPages);
-        } catch (err) {
-            console.error('Error fetching notifications:', err);
-        } finally {
+    useEffect(() => {
+        const load = async () => {
+            setLoading(true);
+            await fetchNotifications(currentPage, 10, showUnreadOnly ? false : undefined);
             setLoading(false);
-        }
-    }, [currentPage, showUnreadOnly]);
+        };
+        load();
+    }, [currentPage, showUnreadOnly, fetchNotifications]);
 
-    const fetchUnreadCount = useCallback(async () => {
+    const handleMarkAsReadInternal = async (id: string) => {
         try {
-            const response = await notificationService.fetchUnreadCount();
-            setUnreadCount(response.count);
-        } catch (err) {
-            console.error('Error fetching unread count:', err);
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchNotifications();
-        fetchUnreadCount();
-    }, [fetchNotifications, fetchUnreadCount]);
-
-    useEffect(() => {
-        if (sseNotifications.length > 0) {
-            fetchNotifications();
-            fetchUnreadCount();
-        }
-    }, [sseNotifications, fetchNotifications, fetchUnreadCount]);
-
-    const handleMarkAsRead = async (id: string) => {
-        try {
-            await notificationService.markAsRead(id);
-            setNotifications((prev) =>
-                prev.map((notif) => (notif.id === id ? { ...notif, isRead: true } : notif))
-            );
-            fetchUnreadCount();
+            await markAsRead(id);
         } catch (err) {
             console.error('Error marking as read:', err);
         }
     };
 
-    const handleMarkAllAsRead = async () => {
+    const handleMarkAllAsReadLocal = async () => {
         if (unreadCount === 0) return;
         try {
-            await notificationService.markAllAsRead();
-            setNotifications((prev) => prev.map((notif) => ({ ...notif, isRead: true })));
-            setUnreadCount(0);
+            await markAllAsRead();
         } catch (err) {
             console.error('Error marking all as read:', err);
         }
@@ -195,7 +165,7 @@ export default function Notifications() {
                 <Button 
                     variant="ghost" 
                     size="sm" 
-                    onClick={handleMarkAllAsRead}
+                    onClick={handleMarkAllAsReadLocal}
                     disabled={unreadCount === 0}
                     className="text-primary hover:text-primary hover:bg-primary/10 rounded-xl"
                 >
@@ -216,7 +186,7 @@ export default function Notifications() {
                         <NotificationItem 
                             key={notif.id} 
                             notification={notif} 
-                            onMarkAsRead={handleMarkAsRead}
+                            onMarkAsRead={handleMarkAsReadInternal}
                         />
                     ))
                 ) : (
