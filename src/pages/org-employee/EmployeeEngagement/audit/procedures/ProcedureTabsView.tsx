@@ -73,6 +73,8 @@ export interface ProcedureTabsViewProps {
   mode: "manual" | "ai" | "hybrid";
   /** When set (e.g. from Sections → Classification), only show questions matching this classification */
   currentClassification?: string | null;
+  /** When stepData has no auditCycleId (e.g. from view tab), pass from parent so classification-answers can use AI */
+  auditCycleId?: string | null;
   onComplete?: (data: any) => void;
   onBack?: () => void;
   updateProcedureParams?: (
@@ -91,9 +93,10 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
   stepData,
   mode,
   currentClassification,
+  auditCycleId: auditCycleIdProp,
   onComplete,
   onBack: _onBack,
-  updateProcedureParams: _updateProcedureParams,
+  updateProcedureParams,
   onProcedureUpdate,
   generateQuestionsRef,
   onGeneratingChange,
@@ -183,6 +186,16 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
     if (stepData?.reviewComments !== undefined)
       setReviewComments(stepData.reviewComments || "");
   }, [stepData]);
+
+  // Sync questions and recommendations from stepData when it changes (e.g. after save, when switching to View tab).
+  useEffect(() => {
+    if (Array.isArray(stepData?.questions) && stepData.questions.length > 0) {
+      setQuestions(normalize(stepData.questions));
+    }
+    if (Array.isArray(stepData?.recommendations)) {
+      setRecommendations(stepData.recommendations);
+    }
+  }, [stepData?.questions, stepData?.recommendations]);
 
   const normalizeClassification = (c: string) =>
     (c || "").trim().replace(/\s*>\s*/g, " > ").trim();
@@ -381,8 +394,12 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
         setGeneratingAnswers(false);
         return;
       }
+      const procedureId = stepData?.id ?? stepData?._id ?? undefined;
+      const auditCycleId = stepData?.auditCycleId ?? auditCycleIdProp ?? undefined;
       const data = await apiPost<any>(endPoints.PROCEDURES.CLASSIFICATION_ANSWERS, {
         engagementId,
+        ...(procedureId && { procedureId }),
+        ...(auditCycleId && { auditCycleId }),
         questions: questionsWithoutAnswers,
       }).catch(() => null);
       const dataObj = (data as any)?.data ?? (data as any);
@@ -420,6 +437,15 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
   };
 
   const handleSaveAnswers = async () => {
+    const auditCycleIdForSave = stepData?.auditCycleId ?? auditCycleIdProp;
+    if (!auditCycleIdForSave) {
+      toast({
+        title: "Cannot save",
+        description: "Audit cycle is not loaded. Please wait or refresh and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
     setIsSaving(true);
     try {
       const payload = {
@@ -430,14 +456,14 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
         procedureType: "procedures",
         mode,
       };
-      const auditCycleId = stepData?.auditCycleId;
-      const endpoint = auditCycleId
-        ? endPoints.PROCEDURES.FIELDWORK_SAVE
-        : endPoints.PROCEDURES.SAVE;
-      const body = auditCycleId ? { ...payload, auditCycleId } : payload;
-      const res = await apiPost<any>(endpoint, body);
+      const body = { ...payload, auditCycleId: auditCycleIdForSave };
+      const res = await apiPost<any>(endPoints.PROCEDURES.FIELDWORK_SAVE, body);
       const data = (res as any)?.data ?? res;
-      onProcedureUpdate?.({ ...payload, _id: (res as any)?._id ?? data?._id ?? (res as any)?.procedure?.id });
+      onProcedureUpdate?.({
+        ...payload,
+        auditCycleId: auditCycleIdForSave,
+        _id: (res as any)?._id ?? data?._id ?? (res as any)?.procedure?.id ?? data?.id,
+      });
       toast({
         title: "Answers Saved",
         description: "Your answers have been saved successfully.",
@@ -665,16 +691,39 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
         procedureType: "procedures",
         mode,
       };
-      const auditCycleId = stepData?.auditCycleId;
-      const endpoint = auditCycleId
-        ? endPoints.PROCEDURES.FIELDWORK_SAVE
-        : endPoints.PROCEDURES.SAVE;
-      const body = auditCycleId ? { ...payload, auditCycleId } : payload;
-      const saved = await apiPost<any>(endpoint, body);
+      // Fieldwork is stored per audit cycle; always use fieldwork save endpoint and require auditCycleId
+      const auditCycleIdForSave = stepData?.auditCycleId ?? auditCycleIdProp;
+      if (!auditCycleIdForSave) {
+        toast({
+          title: "Cannot save",
+          description: "Audit cycle is not loaded. Please wait or refresh and try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const body = { ...payload, auditCycleId: auditCycleIdForSave };
+      const saved = await apiPost<any>(endPoints.PROCEDURES.FIELDWORK_SAVE, body);
       const savedData = (saved as any)?.data ?? saved;
-      const procedureId = (saved as any)?._id ?? savedData?._id ?? (saved as any)?.procedure?.id;
-      onProcedureUpdate?.({ ...payload, _id: procedureId });
-      onComplete?.({ ...payload, _id: procedureId });
+      const procedureId = (saved as any)?._id ?? savedData?._id ?? savedData?.id ?? (saved as any)?.procedure?.id;
+      const completePayload = {
+        ...payload,
+        ...(savedData && typeof savedData === "object"
+          ? {
+              questions: savedData.questions ?? payload.questions,
+              recommendations: savedData.recommendations ?? payload.recommendations,
+              ...savedData,
+            }
+          : {}),
+        _id: procedureId ?? savedData?.id,
+        auditCycleId: payload.auditCycleId ?? savedData?.auditCycleId ?? auditCycleIdForSave,
+      };
+      onProcedureUpdate?.(completePayload);
+      // Notify parent first so state/ref are set before URL change; then switch to View (keeps View tab active)
+      onComplete?.(completePayload);
+      updateProcedureParams?.(
+        { procedureTab: "view", procedureType: "fieldwork", mode: null, step: null },
+        false
+      );
       toast({
         title: "Procedures Saved",
         description: "Your audit procedures have been saved successfully.",
