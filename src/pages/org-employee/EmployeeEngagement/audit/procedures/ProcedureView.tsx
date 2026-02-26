@@ -14,6 +14,8 @@ interface ProcedureViewProps {
   onProcedureUpdate?: (updatedProcedure: any) => void;
   /** When false, step instruction text is not shown (e.g. when rendering multiple sections and instruction is at top). */
   showStepInstruction?: boolean;
+  /** Pass so classification-answers API can use AI when procedure has no auditCycleId */
+  auditCycleId?: string | null;
 }
 
 /** Format currency for subtitle (matches REFERENCE ProcedureView) */
@@ -33,6 +35,7 @@ export const ProcedureView: React.FC<ProcedureViewProps> = ({
   currentClassification,
   onProcedureUpdate,
   showStepInstruction = true,
+  auditCycleId,
 }) => {
   const stepData = procedure ?? {};
   const mode = (procedure?.mode as "manual" | "ai" | "hybrid") || "manual";
@@ -93,6 +96,7 @@ export const ProcedureView: React.FC<ProcedureViewProps> = ({
             stepData={stepData}
             mode={mode}
             currentClassification={currentClassification}
+            auditCycleId={auditCycleId ?? stepData?.auditCycleId}
             onProcedureUpdate={onProcedureUpdate}
             generateQuestionsRef={generateQuestionsRef}
             onGeneratingChange={setHeaderGenerating}
@@ -120,6 +124,7 @@ export const ProcedureView: React.FC<ProcedureViewProps> = ({
         stepData={stepData}
         mode={mode}
         currentClassification={currentClassification}
+        auditCycleId={auditCycleId ?? stepData?.auditCycleId}
         onProcedureUpdate={onProcedureUpdate}
       />
     </div>

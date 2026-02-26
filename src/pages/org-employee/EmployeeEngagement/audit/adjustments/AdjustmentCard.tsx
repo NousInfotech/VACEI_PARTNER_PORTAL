@@ -18,6 +18,7 @@ interface AdjustmentCardProps {
     onEdit: () => void;
     onHistory?: () => void;
     onDelete?: () => void;
+    onManageEvidence?: () => void;
 }
 
 export default function AdjustmentCard({
@@ -28,7 +29,8 @@ export default function AdjustmentCard({
     attachmentCount,
     onEdit,
     onHistory,
-    onDelete
+    onDelete,
+    onManageEvidence,
 }: AdjustmentCardProps) {
     const formatCurrency = (amount: number | null) => {
         if (amount === null) return "-";
@@ -105,10 +107,16 @@ export default function AdjustmentCard({
                         {attachmentCount === 0 && (
                             <span className="text-xs text-gray-400">No evidence files linked</span>
                         )}
-                        <button className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">
-                            <Eye size={16} />
-                            Manage
-                        </button>
+                        {onManageEvidence && (
+                            <button
+                                type="button"
+                                onClick={onManageEvidence}
+                                className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors"
+                            >
+                                <Eye size={16} />
+                                Manage
+                            </button>
+                        )}
                     </div>
                 </div>
 

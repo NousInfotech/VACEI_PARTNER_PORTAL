@@ -34,8 +34,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/ui/Dialog";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { ScrollArea } from "@/ui/scroll-area";
 import FloatingNotesButton from "./FloatingNotesButton";
 import NotebookInterface from "./NotebookInterface";
@@ -46,6 +44,9 @@ import {
   assignSectionToRecommendations,
   normalizeRecommendations,
   isFieldVisible,
+  FieldAnswerDisplay,
+  FieldAnswerEditor,
+  answerToEditString,
 } from "./procedureViewHelpers";
 import { getDecodedUserId } from "@/utils/authUtils";
 import { apiGet, apiPost, apiPut, apiDelete, apiPostFormData } from "@/config/base";
@@ -1486,7 +1487,7 @@ export const CompletionProcedureView: React.FC<CompletionProcedureViewProps> = (
                               f.__uid;
                             const editAnswerValue =
                               editQuestionTexts[`answer-${questionKey}`] ??
-                              String(f.answer ?? "");
+                              answerToEditString(f);
 
                             return (
                               <Card key={f.__uid}>
@@ -1495,74 +1496,47 @@ export const CompletionProcedureView: React.FC<CompletionProcedureViewProps> = (
                                     {idx + 1}. {f.label || f.key}
                                   </div>
                                   {isEditingAnswer ? (
-                                    <div className="space-y-3">
-                                      <Textarea
-                                        value={editAnswerValue}
-                                        onChange={(e) =>
-                                          setEditQuestionTexts((prev) => ({
-                                            ...prev,
-                                            [`answer-${questionKey}`]:
-                                              e.target.value,
-                                          }))
-                                        }
-                                        placeholder="Answer"
-                                        className="min-h-[100px]"
-                                      />
-                                      <div className="flex gap-2">
-                                        <Button
-                                          size="sm"
-                                          onClick={() => {
-                                            setField(sIdx, f.__uid, {
-                                              answer: editAnswerValue,
-                                            });
-                                            setEditingQuestionIds((prev) => {
-                                              const next = { ...prev };
-                                              delete next[`answer-${questionKey}`];
-                                              return next;
-                                            });
-                                            setEditQuestionTexts((prev) => {
-                                              const next = { ...prev };
-                                              delete next[`answer-${questionKey}`];
-                                              return next;
-                                            });
-                                          }}
-                                        >
-                                          <Save className="h-4 w-4 mr-1" />
-                                          Save
-                                        </Button>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          onClick={() => {
-                                            setEditingQuestionIds((prev) => {
-                                              const next = { ...prev };
-                                              delete next[`answer-${questionKey}`];
-                                              return next;
-                                            });
-                                            setEditQuestionTexts((prev) => {
-                                              const next = { ...prev };
-                                              delete next[`answer-${questionKey}`];
-                                              return next;
-                                            });
-                                          }}
-                                        >
-                                          <X className="h-4 w-4 mr-1" />
-                                          Cancel
-                                        </Button>
-                                      </div>
-                                    </div>
+                                    <FieldAnswerEditor
+                                      field={f}
+                                      value={editAnswerValue}
+                                      onChange={(v) =>
+                                        setEditQuestionTexts((prev) => ({
+                                          ...prev,
+                                          [`answer-${questionKey}`]: v,
+                                        }))
+                                      }
+                                      onSave={(savedValue) => {
+                                        setField(sIdx, f.__uid, {
+                                          answer: savedValue,
+                                        });
+                                        setEditingQuestionIds((prev) => {
+                                          const next = { ...prev };
+                                          delete next[`answer-${questionKey}`];
+                                          return next;
+                                        });
+                                        setEditQuestionTexts((prev) => {
+                                          const next = { ...prev };
+                                          delete next[`answer-${questionKey}`];
+                                          return next;
+                                        });
+                                      }}
+                                      onCancel={() => {
+                                        setEditingQuestionIds((prev) => {
+                                          const next = { ...prev };
+                                          delete next[`answer-${questionKey}`];
+                                          return next;
+                                        });
+                                        setEditQuestionTexts((prev) => {
+                                          const next = { ...prev };
+                                          delete next[`answer-${questionKey}`];
+                                          return next;
+                                        });
+                                      }}
+                                    />
                                   ) : (
                                     <>
                                       <div className="text-sm text-muted-foreground mb-3">
-                                        {f.answer ? (
-                                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                            {String(f.answer)}
-                                          </ReactMarkdown>
-                                        ) : (
-                                          <span className="italic">
-                                            No answer.
-                                          </span>
-                                        )}
+                                        <FieldAnswerDisplay field={f} />
                                       </div>
                                       <Button
                                         variant="ghost"
@@ -1574,14 +1548,12 @@ export const CompletionProcedureView: React.FC<CompletionProcedureViewProps> = (
                                           }));
                                           setEditQuestionTexts((prev) => ({
                                             ...prev,
-                                            [`answer-${questionKey}`]: String(
-                                              f.answer ?? ""
-                                            ),
+                                            [`answer-${questionKey}`]: answerToEditString(f),
                                           }));
                                         }}
                                       >
                                         <Edit2 className="h-4 w-4 mr-1" />
-                                        {f.answer ? "Edit Answer" : "Add Answer"}
+                                        {f.answer !== undefined && f.answer !== null && f.answer !== "" ? "Edit Answer" : "Add Answer"}
                                       </Button>
                                     </>
                                   )}

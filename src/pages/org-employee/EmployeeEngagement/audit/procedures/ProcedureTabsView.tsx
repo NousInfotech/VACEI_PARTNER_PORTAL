@@ -32,13 +32,16 @@ import {
   Edit,
   Download,
 } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { useToast } from "@/hooks/use-toast";
 import { apiGet, apiPost } from "@/config/base";
 import { endPoints } from "@/config/endPoint";
 import { getDecodedUserId } from "@/utils/authUtils";
 import { formatClassificationForDisplay } from "./steps/procedureClassificationMapping";
+import {
+  FieldAnswerDisplay,
+  FieldAnswerEditor,
+  answerToEditString,
+} from "./procedureViewHelpers";
 
 function normalize(items?: any[]) {
   if (!Array.isArray(items)) return [];
@@ -73,6 +76,8 @@ export interface ProcedureTabsViewProps {
   mode: "manual" | "ai" | "hybrid";
   /** When set (e.g. from Sections → Classification), only show questions matching this classification */
   currentClassification?: string | null;
+  /** When stepData has no auditCycleId (e.g. from view tab), pass from parent so classification-answers can use AI */
+  auditCycleId?: string | null;
   onComplete?: (data: any) => void;
   onBack?: () => void;
   updateProcedureParams?: (
@@ -91,9 +96,10 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
   stepData,
   mode,
   currentClassification,
+  auditCycleId: auditCycleIdProp,
   onComplete,
   onBack: _onBack,
-  updateProcedureParams: _updateProcedureParams,
+  updateProcedureParams,
   onProcedureUpdate,
   generateQuestionsRef,
   onGeneratingChange,
@@ -183,6 +189,16 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
     if (stepData?.reviewComments !== undefined)
       setReviewComments(stepData.reviewComments || "");
   }, [stepData]);
+
+  // Sync questions and recommendations from stepData when it changes (e.g. after save, when switching to View tab).
+  useEffect(() => {
+    if (Array.isArray(stepData?.questions) && stepData.questions.length > 0) {
+      setQuestions(normalize(stepData.questions));
+    }
+    if (Array.isArray(stepData?.recommendations)) {
+      setRecommendations(stepData.recommendations);
+    }
+  }, [stepData?.questions, stepData?.recommendations]);
 
   const normalizeClassification = (c: string) =>
     (c || "").trim().replace(/\s*>\s*/g, " > ").trim();
@@ -322,6 +338,8 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
               key: f.key ?? f.id,
               question: f.label ?? f.question ?? "",
               answer: (f as any)?.answer ?? "",
+              type: f.type,
+              options: f.options,
             }))
           : []);
       const normalized = normalize(generatedQuestions);
@@ -381,8 +399,12 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
         setGeneratingAnswers(false);
         return;
       }
+      const procedureId = stepData?.id ?? stepData?._id ?? undefined;
+      const auditCycleId = stepData?.auditCycleId ?? auditCycleIdProp ?? undefined;
       const data = await apiPost<any>(endPoints.PROCEDURES.CLASSIFICATION_ANSWERS, {
         engagementId,
+        ...(procedureId && { procedureId }),
+        ...(auditCycleId && { auditCycleId }),
         questions: questionsWithoutAnswers,
       }).catch(() => null);
       const dataObj = (data as any)?.data ?? (data as any);
@@ -420,6 +442,15 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
   };
 
   const handleSaveAnswers = async () => {
+    const auditCycleIdForSave = stepData?.auditCycleId ?? auditCycleIdProp;
+    if (!auditCycleIdForSave) {
+      toast({
+        title: "Cannot save",
+        description: "Audit cycle is not loaded. Please wait or refresh and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
     setIsSaving(true);
     try {
       const payload = {
@@ -430,14 +461,14 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
         procedureType: "procedures",
         mode,
       };
-      const auditCycleId = stepData?.auditCycleId;
-      const endpoint = auditCycleId
-        ? endPoints.PROCEDURES.FIELDWORK_SAVE
-        : endPoints.PROCEDURES.SAVE;
-      const body = auditCycleId ? { ...payload, auditCycleId } : payload;
-      const res = await apiPost<any>(endpoint, body);
+      const body = { ...payload, auditCycleId: auditCycleIdForSave };
+      const res = await apiPost<any>(endPoints.PROCEDURES.FIELDWORK_SAVE, body);
       const data = (res as any)?.data ?? res;
-      onProcedureUpdate?.({ ...payload, _id: (res as any)?._id ?? data?._id ?? (res as any)?.procedure?.id });
+      onProcedureUpdate?.({
+        ...payload,
+        auditCycleId: auditCycleIdForSave,
+        _id: (res as any)?._id ?? data?._id ?? (res as any)?.procedure?.id ?? data?.id,
+      });
       toast({
         title: "Answers Saved",
         description: "Your answers have been saved successfully.",
@@ -665,16 +696,39 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
         procedureType: "procedures",
         mode,
       };
-      const auditCycleId = stepData?.auditCycleId;
-      const endpoint = auditCycleId
-        ? endPoints.PROCEDURES.FIELDWORK_SAVE
-        : endPoints.PROCEDURES.SAVE;
-      const body = auditCycleId ? { ...payload, auditCycleId } : payload;
-      const saved = await apiPost<any>(endpoint, body);
+      // Fieldwork is stored per audit cycle; always use fieldwork save endpoint and require auditCycleId
+      const auditCycleIdForSave = stepData?.auditCycleId ?? auditCycleIdProp;
+      if (!auditCycleIdForSave) {
+        toast({
+          title: "Cannot save",
+          description: "Audit cycle is not loaded. Please wait or refresh and try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const body = { ...payload, auditCycleId: auditCycleIdForSave };
+      const saved = await apiPost<any>(endPoints.PROCEDURES.FIELDWORK_SAVE, body);
       const savedData = (saved as any)?.data ?? saved;
-      const procedureId = (saved as any)?._id ?? savedData?._id ?? (saved as any)?.procedure?.id;
-      onProcedureUpdate?.({ ...payload, _id: procedureId });
-      onComplete?.({ ...payload, _id: procedureId });
+      const procedureId = (saved as any)?._id ?? savedData?._id ?? savedData?.id ?? (saved as any)?.procedure?.id;
+      const completePayload = {
+        ...payload,
+        ...(savedData && typeof savedData === "object"
+          ? {
+              questions: savedData.questions ?? payload.questions,
+              recommendations: savedData.recommendations ?? payload.recommendations,
+              ...savedData,
+            }
+          : {}),
+        _id: procedureId ?? savedData?.id,
+        auditCycleId: payload.auditCycleId ?? savedData?.auditCycleId ?? auditCycleIdForSave,
+      };
+      onProcedureUpdate?.(completePayload);
+      // Notify parent first so state/ref are set before URL change; then switch to View (keeps View tab active)
+      onComplete?.(completePayload);
+      updateProcedureParams?.(
+        { procedureTab: "view", procedureType: "fieldwork", mode: null, step: null },
+        false
+      );
       toast({
         title: "Procedures Saved",
         description: "Your audit procedures have been saved successfully.",
@@ -1167,153 +1221,133 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
                     No answers available. Go to Questions tab to add questions.
                   </div>
                 ) : (
-                  questionsWithAnswers.map((q: any, idx: number) => (
-                    <Card key={q.id || q.__uid || idx}>
-                      <CardContent className="pt-6">
-                        <div className="font-medium mb-2">
-                          {idx + 1}. {q.question || "—"}
-                        </div>
-                        {editingAnswerId === q.__uid ? (
-                          <div className="space-y-3">
-                            <Textarea
-                              value={editAnswerValue}
-                              onChange={(e) => setEditAnswerValue(e.target.value)}
-                              placeholder="Answer"
-                              className="min-h-[100px]"
-                            />
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                onClick={() => {
-                                  setQuestions((prev) =>
-                                    prev.map((question) =>
-                                      question.__uid === q.__uid
-                                        ? { ...question, answer: editAnswerValue }
-                                        : question
-                                    )
-                                  );
-                                  setEditingAnswerId(null);
-                                  setEditAnswerValue("");
-                                }}
-                              >
-                                <Save className="h-4 w-4 mr-1" />
-                                Save
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setEditingAnswerId(null);
-                                  setEditAnswerValue("");
-                                }}
-                              >
-                                <X className="h-4 w-4 mr-1" />
-                                Cancel
-                              </Button>
-                            </div>
+                  questionsWithAnswers.map((q: any, idx: number) => {
+                    const fieldLike = {
+                      __uid: q.__uid,
+                      key: q.key,
+                      label: q.question,
+                      answer: q.answer,
+                      type: q.type,
+                      options: q.options,
+                    };
+                    return (
+                      <Card key={q.id || q.__uid || idx}>
+                        <CardContent className="pt-6">
+                          <div className="font-medium mb-2">
+                            {idx + 1}. {q.question || "—"}
                           </div>
-                        ) : (
-                          <>
-                            <div className="text-sm text-muted-foreground mb-3">
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {String(q.answer || "No answer.")}
-                              </ReactMarkdown>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setEditingAnswerId(q.__uid);
-                                  setEditAnswerValue(q.answer || "");
-                                }}
-                              >
-                                <Edit className="h-4 w-4 mr-1" />
-                                Edit Answer
-                              </Button>
-                              {q.framework && <Badge variant="default">{q.framework}</Badge>}
-                              {q.reference && <Badge variant="default">{q.reference}</Badge>}
-                            </div>
-                          </>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))
+                          {editingAnswerId === q.__uid ? (
+                            <FieldAnswerEditor
+                              field={fieldLike}
+                              value={editAnswerValue}
+                              onChange={setEditAnswerValue}
+                              onSave={(savedValue) => {
+                                setQuestions((prev) =>
+                                  prev.map((question) =>
+                                    question.__uid === q.__uid
+                                      ? { ...question, answer: savedValue }
+                                      : question
+                                  )
+                                );
+                                setEditingAnswerId(null);
+                                setEditAnswerValue("");
+                              }}
+                              onCancel={() => {
+                                setEditingAnswerId(null);
+                                setEditAnswerValue("");
+                              }}
+                            />
+                          ) : (
+                            <>
+                              <div className="text-sm text-muted-foreground mb-3">
+                                <FieldAnswerDisplay field={fieldLike} />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setEditingAnswerId(q.__uid);
+                                    setEditAnswerValue(answerToEditString(fieldLike));
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4 mr-1" />
+                                  Edit Answer
+                                </Button>
+                                {q.framework && <Badge variant="default">{q.framework}</Badge>}
+                                {q.reference && <Badge variant="default">{q.reference}</Badge>}
+                              </div>
+                            </>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })
                 )
               ) : (
                 <>
-                  {questionsWithAnswers.map((q: any, idx: number) => (
-                    <Card key={q.__uid || idx} className="border border-gray-200">
-                      <CardContent className="pt-6">
-                        <div className="font-medium mb-2">
-                          {idx + 1}. {q.question || "—"}
-                        </div>
-                        {editingAnswerId === q.__uid ? (
-                          <div className="space-y-3">
-                            <Textarea
-                              value={editAnswerValue}
-                              onChange={(e) => setEditAnswerValue(e.target.value)}
-                              placeholder="Answer"
-                              className="min-h-[100px]"
-                            />
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                onClick={() => {
-                                  setQuestions((prev) =>
-                                    prev.map((question) =>
-                                      question.__uid === q.__uid
-                                        ? { ...question, answer: editAnswerValue }
-                                        : question
-                                    )
-                                  );
-                                  setEditingAnswerId(null);
-                                  setEditAnswerValue("");
-                                }}
-                              >
-                                <Save className="h-4 w-4 mr-1" />
-                                Save
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setEditingAnswerId(null);
-                                  setEditAnswerValue("");
-                                }}
-                              >
-                                <X className="h-4 w-4 mr-1" />
-                                Cancel
-                              </Button>
-                            </div>
+                  {questionsWithAnswers.map((q: any, idx: number) => {
+                    const fieldLike = {
+                      __uid: q.__uid,
+                      key: q.key,
+                      label: q.question,
+                      answer: q.answer,
+                      type: q.type,
+                      options: q.options,
+                    };
+                    return (
+                      <Card key={q.__uid || idx} className="border border-gray-200">
+                        <CardContent className="pt-6">
+                          <div className="font-medium mb-2">
+                            {idx + 1}. {q.question || "—"}
                           </div>
-                        ) : (
-                          <>
-                            <div className="text-sm text-muted-foreground mb-3">
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {String(q.answer || "No answer.")}
-                              </ReactMarkdown>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setEditingAnswerId(q.__uid);
-                                  setEditAnswerValue(q.answer || "");
-                                }}
-                              >
-                                <Edit2 className="h-4 w-4 mr-1" />
-                                Edit Answer
-                              </Button>
-                              {q.framework && <Badge variant="default">{q.framework}</Badge>}
-                              {q.reference && <Badge variant="default">{q.reference}</Badge>}
-                            </div>
-                          </>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
+                          {editingAnswerId === q.__uid ? (
+                            <FieldAnswerEditor
+                              field={fieldLike}
+                              value={editAnswerValue}
+                              onChange={setEditAnswerValue}
+                              onSave={(savedValue) => {
+                                setQuestions((prev) =>
+                                  prev.map((question) =>
+                                    question.__uid === q.__uid
+                                      ? { ...question, answer: savedValue }
+                                      : question
+                                  )
+                                );
+                                setEditingAnswerId(null);
+                                setEditAnswerValue("");
+                              }}
+                              onCancel={() => {
+                                setEditingAnswerId(null);
+                                setEditAnswerValue("");
+                              }}
+                            />
+                          ) : (
+                            <>
+                              <div className="text-sm text-muted-foreground mb-3">
+                                <FieldAnswerDisplay field={fieldLike} />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setEditingAnswerId(q.__uid);
+                                    setEditAnswerValue(answerToEditString(fieldLike));
+                                  }}
+                                >
+                                  <Edit2 className="h-4 w-4 mr-1" />
+                                  Edit Answer
+                                </Button>
+                                {q.framework && <Badge variant="default">{q.framework}</Badge>}
+                                {q.reference && <Badge variant="default">{q.reference}</Badge>}
+                              </div>
+                            </>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                   {unansweredQuestions.length > 0 && (
                     <div className="mt-6">
                       <h4 className="text-lg font-semibold mb-4">Unanswered Questions</h4>

@@ -2,6 +2,9 @@ import type React from "react";
 import { Button } from "@/ui/Button";
 import { Input } from "@/ui/input";
 import { Checkbox } from "@/ui/checkbox";
+import { Textarea } from "@/ui/Textarea";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -168,6 +171,275 @@ export function SelectEditor({
         </option>
       ))}
     </select>
+  );
+}
+
+/** Resolve display value for select: answer can be index (number) or option label (string). */
+export function getSelectDisplayLabel(field: any): string {
+  const opts = Array.isArray(field.options) ? field.options : [];
+  const a = field.answer;
+  if (typeof a === "number" && a >= 0 && a < opts.length) return opts[a];
+  if (typeof a === "string" && opts.includes(a)) return a;
+  return String(a ?? "");
+}
+
+/** Convert field.answer to string suitable for FieldAnswerEditor (e.g. select → option label). */
+export function answerToEditString(field: any): string {
+  const t = normalizeType(field?.type);
+  if (t === "select") return getSelectDisplayLabel(field);
+  if (t === "checkbox")
+    return field?.answer === true || field?.answer === "true"
+      ? "true"
+      : field?.answer === false || field?.answer === "false"
+        ? "false"
+        : String(field?.answer ?? "");
+  if (t === "multiselect" && Array.isArray(field?.answer))
+    return (field.answer as string[]).join(", ");
+  return String(field?.answer ?? "");
+}
+
+/** Read-only display of an answer according to field type (checkbox, select, number, textarea, etc.). */
+export function FieldAnswerDisplay({ field }: { field: any }) {
+  const t = normalizeType(field?.type);
+  const answer = field?.answer;
+
+  const isEmpty =
+    answer === undefined ||
+    answer === null ||
+    (typeof answer === "string" && answer.trim() === "") ||
+    (Array.isArray(answer) && answer.length === 0);
+  if (isEmpty) {
+    return <span className="italic text-muted-foreground">No answer.</span>;
+  }
+
+  if (t === "checkbox") {
+    const isExplicitFalse = answer === false || answer === "false" || (typeof answer === "string" && /^(no|false)$/i.test(String(answer).trim()));
+    const checked = !isExplicitFalse && (answer === true || answer === "true" || (typeof answer === "string" && answer.toLowerCase() === "yes") || (typeof answer === "string" && answer.trim().length > 0));
+    const isLongText = typeof answer === "string" && answer.length > 50 && !/^(yes|no|true|false)$/i.test(answer.trim());
+    return (
+      <div className="space-y-2">
+        <label className="flex items-center gap-2 text-sm">
+          <Checkbox checked={checked} disabled className="pointer-events-none" />
+          <span>{checked ? "Yes" : "No"}</span>
+        </label>
+        {isLongText && (
+          <div className="text-sm text-muted-foreground pl-6 border-l-2">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{String(answer)}</ReactMarkdown>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (t === "select") {
+    const label = getSelectDisplayLabel(field);
+    return <span className="text-sm">{label || "—"}</span>;
+  }
+
+  if (t === "multiselect") {
+    const arr = Array.isArray(answer) ? answer : [];
+    if (arr.length === 0) return <span className="text-sm text-muted-foreground">—</span>;
+    return (
+      <ul className="list-disc list-inside text-sm space-y-1">
+        {arr.map((item: string, i: number) => (
+          <li key={i}>{String(item)}</li>
+        ))}
+      </ul>
+    );
+  }
+
+  if (t === "number") {
+    const num = typeof answer === "number" ? answer : Number(answer);
+    return <span className="text-sm">{Number.isNaN(num) ? String(answer) : num}</span>;
+  }
+
+  if (t === "table") {
+    const rows = Array.isArray(answer) ? answer : [];
+    const cols = Array.isArray((field as any).columns) ? (field as any).columns : [];
+    if (cols.length === 0 || rows.length === 0) return <span className="text-sm text-muted-foreground">—</span>;
+    return (
+      <div className="overflow-x-auto rounded border text-sm">
+        <table className="min-w-full">
+          <thead className="bg-muted/50">
+            <tr>
+              {cols.map((c: string) => (
+                <th key={c} className="px-3 py-2 text-left font-medium">{c}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row: any, rIdx: number) => (
+              <tr key={rIdx} className="border-t">
+                {cols.map((c: string) => (
+                  <td key={c} className="px-3 py-2">{String(row?.[c] ?? "")}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  // text, textarea: support array (e.g. list of items) or string
+  if (Array.isArray(answer)) {
+    return (
+      <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+        {answer.map((item: any, i: number) => (
+          <li key={i}>{typeof item === "object" ? JSON.stringify(item) : String(item)}</li>
+        ))}
+      </ul>
+    );
+  }
+
+  return (
+    <div className="text-sm text-muted-foreground">
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{String(answer)}</ReactMarkdown>
+    </div>
+  );
+}
+
+/** Editable input for an answer according to field type; value/onChange are string-based for state. */
+export function FieldAnswerEditor({
+  field,
+  value,
+  onChange,
+  onSave,
+  onCancel,
+}: {
+  field: any;
+  value: string;
+  onChange: (v: string) => void;
+  onSave: (savedValue: string) => void;
+  onCancel: () => void;
+}) {
+  const t = normalizeType(field?.type);
+  const opts = Array.isArray(field?.options) ? field.options : [];
+
+  const saveButton = (
+    <Button size="sm" onClick={() => onSave(value)}>
+      <span className="sr-only">Save</span>
+      Save
+    </Button>
+  );
+  const cancelButton = (
+    <Button size="sm" variant="outline" onClick={onCancel}>
+      <span className="sr-only">Cancel</span>
+      Cancel
+    </Button>
+  );
+
+  if (t === "checkbox") {
+    const checked = value !== "false" && value !== "" && (value === "true" || value === "yes" || value.length > 1);
+    return (
+      <div className="space-y-3">
+        <label className="flex items-center gap-2">
+          <Checkbox
+            checked={checked}
+            onCheckedChange={(c) => onChange(c ? (value && value !== "false" ? value : "true") : "false")}
+          />
+          <span className="text-sm">Yes / No</span>
+        </label>
+        <Textarea
+          placeholder="Details (optional)"
+          value={value === "false" || value === "true" ? "" : value}
+          onChange={(e) => onChange(e.target.value)}
+          className="min-h-[80px]"
+        />
+        <div className="flex gap-2">
+          {saveButton}
+          {cancelButton}
+        </div>
+      </div>
+    );
+  }
+
+  if (t === "select") {
+    const currentValue = value !== "" && (opts.includes(value) || opts[Number(value)] !== undefined)
+      ? (opts.includes(value) ? value : opts[Number(value)])
+      : "";
+    return (
+      <div className="space-y-3">
+        <select
+          className="w-full border rounded px-3 py-2 bg-background"
+          value={currentValue}
+          onChange={(e) => onChange(e.target.value)}
+        >
+          <option value="">Select…</option>
+          {opts.map((opt: string) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+        <div className="flex gap-2">
+          {saveButton}
+          {cancelButton}
+        </div>
+      </div>
+    );
+  }
+
+  if (t === "number") {
+    return (
+      <div className="space-y-3">
+        <Input
+          type="number"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={field?.placeholder ?? "Number"}
+        />
+        <div className="flex gap-2">
+          {saveButton}
+          {cancelButton}
+        </div>
+      </div>
+    );
+  }
+
+  if (t === "multiselect") {
+    const valueArray = (value && value.trim() ? value.split(",").map((s: string) => s.trim()) : []) as string[];
+    return (
+      <div className="space-y-3">
+        <div className="flex flex-wrap gap-2">
+          {opts.map((opt: string) => {
+            const checked = valueArray.includes(opt);
+            return (
+              <label key={opt} className="flex items-center gap-2 border rounded px-2 py-1">
+                <Checkbox
+                  checked={checked}
+                  onCheckedChange={(c) => {
+                    const next = c ? [...valueArray, opt] : valueArray.filter((x) => x !== opt);
+                    onChange(next.join(", "));
+                  }}
+                />
+                <span className="text-sm">{opt}</span>
+              </label>
+            );
+          })}
+        </div>
+        <div className="flex gap-2">
+          {saveButton}
+          {cancelButton}
+        </div>
+      </div>
+    );
+  }
+
+  // text, textarea, default
+  return (
+    <div className="space-y-3">
+      <Textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Answer"
+        className="min-h-[100px]"
+      />
+      <div className="flex gap-2">
+        {saveButton}
+        {cancelButton}
+      </div>
+    </div>
   );
 }
 

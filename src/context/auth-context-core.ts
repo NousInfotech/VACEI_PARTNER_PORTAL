@@ -8,7 +8,8 @@ export interface AuthContextType {
     selectedServiceLabel: string;
     setSelectedService: (service: string) => void;
     isAuthenticated: boolean;
-    login: (email: string, password: string) => Promise<{ success: boolean; message: string; user?: User; token?: string }>;
+    login: (email: string, password: string) => Promise<{ success: boolean; message: string; user?: User; token?: string; mfaRequired?: boolean }>;
+    verifyMfa: (email: string, otp: string) => Promise<{ success: boolean; message: string }>;
     logout: () => void;
     isLoading: boolean;
     checkAuth: () => Promise<void>;

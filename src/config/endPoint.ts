@@ -6,6 +6,7 @@ export const endPoints = {
     LOGOUT: '/auth/logout',
     CHANGE_PASSWORD: '/auth/change-password',
     ME: '/auth/me',
+    VERIFY_MFA: '/auth/verify-mfa',
   },
   ORGANIZATION: {
     CREATE_MEMBER: '/organization-members',

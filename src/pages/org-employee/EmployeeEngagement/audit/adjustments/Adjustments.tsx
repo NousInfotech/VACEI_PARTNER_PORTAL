@@ -3,6 +3,7 @@ import { Download } from "lucide-react";
 import { Button } from "../../../../../ui/Button";
 import AdjustmentCard from "./AdjustmentCard";
 import AdjustmentInlineForm from "./AdjustmentInlineForm";
+import EvidenceFilesDialog from "./EvidenceFilesDialog";
 import type { AdjustmentData, AdjustmentEntry } from "./AdjustmentDialog";
 import { useETBData } from "../hooks/useETBData";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -17,6 +18,7 @@ interface AdjustmentsProps {
 export default function Adjustments({ engagementId }: AdjustmentsProps) {
     const [isFormExpanded, setIsFormExpanded] = useState(false);
     const [editingAdjustment, setEditingAdjustment] = useState<AdjustmentData | undefined>(undefined);
+    const [evidenceDialogEntry, setEvidenceDialogEntry] = useState<{ id: string; code: string } | null>(null);
     const queryClient = useQueryClient();
 
     // Fetch ETB data
@@ -187,6 +189,10 @@ export default function Adjustments({ engagementId }: AdjustmentsProps) {
             queryClient.invalidateQueries({ queryKey: ['trial-balance-with-accounts'] });
         },
     });
+
+    const handleManageEvidence = (entry: { id: string; code: string }) => {
+        setEvidenceDialogEntry(entry);
+    };
 
     // Query for fetching single entry (only when needed)
     const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
@@ -393,15 +399,28 @@ export default function Adjustments({ engagementId }: AdjustmentsProps) {
                                 status={entry.status}
                                 description={entry.description}
                                 lines={lines}
-                    attachmentCount={0}
+                                attachmentCount={entry.Evidence?.length ?? 0}
                                 onEdit={() => handleEdit(entry.id)}
                                 onHistory={() => handleHistory(entry.id)}
                                 onDelete={() => handleDelete(entry.id)}
+                                onManageEvidence={() => handleManageEvidence({ id: entry.id, code: entry.code })}
                 />
                         );
                     })}
             </div>
             )}
+
+            <EvidenceFilesDialog
+                open={!!evidenceDialogEntry}
+                onOpenChange={(open) => !open && setEvidenceDialogEntry(null)}
+                auditEntryId={evidenceDialogEntry?.id ?? ''}
+                entryCode={evidenceDialogEntry?.code ?? ''}
+                engagementId={engagementId}
+                entityLabel="Adjustment"
+                onEvidenceChange={() => {
+                    queryClient.invalidateQueries({ queryKey: ['audit-entries', trialBalanceId] });
+                }}
+            />
         </div>
     );
 }

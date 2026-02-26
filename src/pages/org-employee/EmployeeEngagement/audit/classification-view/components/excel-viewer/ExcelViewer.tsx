@@ -3,7 +3,7 @@ import { AgGridReact } from 'ag-grid-react';
 import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiGet, apiPost, apiPostFormData } from '../../../../../../../config/base';
 import { endPoints } from '../../../../../../../config/endPoint';
 import { Loader2, FileSpreadsheet, ChevronLeft, Link, FilePlus, MessageSquare, Edit, Trash2, X, UploadCloud, XCircle, RefreshCw, FileText, List, ChevronDown, Code, Info } from 'lucide-react';
@@ -44,6 +44,7 @@ interface Selection {
 }
 
 export default function ExcelViewer({ workbookId, workbookName, workbookWebUrl, engagementId, classification, classificationId, onBack }: ExcelViewerProps) {
+  const queryClient = useQueryClient();
   const [selectedSheet, setSelectedSheet] = useState<string>('');
   const gridRef = useRef<AgGridReact>(null);
   
@@ -162,6 +163,14 @@ export default function ExcelViewer({ workbookId, workbookName, workbookWebUrl, 
   useEffect(() => {
     referencesRefetchRef.current = refetchReferences;
   }, [refetchReferences]);
+
+  // Invalidate mappings and references so Excel viewer UI updates immediately after any mutation
+  const refreshMappingsAndReferences = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['workbook-mappings', workbookId] }),
+      queryClient.invalidateQueries({ queryKey: ['workbook-references', workbookId] }),
+    ]);
+  }, [queryClient, workbookId]);
 
   // Set initial sheet when data loads
   useEffect(() => {
@@ -807,9 +816,7 @@ export default function ExcelViewer({ workbookId, workbookName, workbookWebUrl, 
       await createRangeEvidence(workbookId, mappingData);
       
       // Refresh mappings
-      if (mappingsRefetchRef.current) {
-        await mappingsRefetchRef.current();
-      }
+      await refreshMappingsAndReferences();
       
       toast({
         title: 'Success',
@@ -852,9 +859,7 @@ export default function ExcelViewer({ workbookId, workbookName, workbookWebUrl, 
       await updateRangeEvidence(workbookId, editingMapping.id, updateData);
       
       // Refresh mappings
-      if (mappingsRefetchRef.current) {
-        await mappingsRefetchRef.current();
-      }
+      await refreshMappingsAndReferences();
       
       toast({
         title: 'Success',
@@ -893,9 +898,7 @@ export default function ExcelViewer({ workbookId, workbookName, workbookWebUrl, 
       await deleteRangeEvidence(workbookId, editingMapping.id);
       
       // Refresh mappings
-      if (mappingsRefetchRef.current) {
-        await mappingsRefetchRef.current();
-      }
+      await refreshMappingsAndReferences();
       
       toast({
         title: 'Success',
@@ -1070,9 +1073,7 @@ export default function ExcelViewer({ workbookId, workbookName, workbookWebUrl, 
       }
       
       // Refresh references
-      if (referencesRefetchRef.current) {
-        await referencesRefetchRef.current();
-      }
+      await refreshMappingsAndReferences();
       
       toast({
         title: 'Success',
@@ -1110,9 +1111,7 @@ export default function ExcelViewer({ workbookId, workbookName, workbookWebUrl, 
       await deleteRangeEvidence(workbookId, editingReference.id);
       
       // Refresh references
-      if (referencesRefetchRef.current) {
-        await referencesRefetchRef.current();
-      }
+      await refreshMappingsAndReferences();
       
       toast({
         title: 'Success',
@@ -1176,11 +1175,7 @@ export default function ExcelViewer({ workbookId, workbookName, workbookWebUrl, 
         await updateRangeEvidence(workbookId, editingNotesEvidence.id, updateData);
         
         // Refresh the appropriate list
-        if (editingNotesFor === 'mapping' && mappingsRefetchRef.current) {
-          await mappingsRefetchRef.current();
-        } else if (editingNotesFor === 'reference' && referencesRefetchRef.current) {
-          await referencesRefetchRef.current();
-        }
+        await refreshMappingsAndReferences();
         
         toast({
           title: 'Success',
@@ -1202,9 +1197,7 @@ export default function ExcelViewer({ workbookId, workbookName, workbookWebUrl, 
         await createRangeEvidence(workbookId, mappingData);
         
         // Refresh mappings
-        if (mappingsRefetchRef.current) {
-          await mappingsRefetchRef.current();
-        }
+        await refreshMappingsAndReferences();
         
         toast({
           title: 'Success',
@@ -1249,11 +1242,7 @@ export default function ExcelViewer({ workbookId, workbookName, workbookWebUrl, 
       await updateRangeEvidence(workbookId, editingNotesEvidence.id, updateData);
       
       // Refresh the appropriate list
-      if (editingNotesFor === 'mapping' && mappingsRefetchRef.current) {
-        await mappingsRefetchRef.current();
-      } else if (editingNotesFor === 'reference' && referencesRefetchRef.current) {
-        await referencesRefetchRef.current();
-      }
+      await refreshMappingsAndReferences();
       
       toast({
         title: 'Success',
@@ -2804,9 +2793,7 @@ export default function ExcelViewer({ workbookId, workbookName, workbookWebUrl, 
                             onClick={async () => {
                               try {
                                 await deleteRangeEvidence(workbookId, mapping.id);
-                                if (mappingsRefetchRef.current) {
-                                  await mappingsRefetchRef.current();
-                                }
+                                await refreshMappingsAndReferences();
                                 toast({
                                   title: 'Success',
                                   description: 'Mapping deleted successfully',

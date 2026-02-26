@@ -1,12 +1,19 @@
 import type { ExtendedTBRow } from '../extended-tb/data';
 
-// Parse classification string into groups
+// Normalize group key for consistent lookup (trim + case-insensitive)
+const normalizeGroupKey = (s: string): string => s.trim().toLowerCase();
+
+// Numeric coercion: safe for CSV/API (handles "", null, NaN, Infinity)
+const toNumber = (v: unknown): number =>
+  Number.isFinite(Number(v)) ? Number(v) : 0;
+
+// Parse classification string into groups (trimmed to avoid duplicate nodes from whitespace)
 const parseClassification = (classification: string = ""): {
   grouping1: string | null;
   grouping2: string | null;
   grouping3: string | null;
 } => {
-  const parts = classification.split(" > ").filter(Boolean);
+  const parts = classification.split(" > ").map((p) => p.trim()).filter(Boolean);
   return {
     grouping1: parts[0] || null,
     grouping2: parts[1] || null,
@@ -76,79 +83,95 @@ export const buildLeadSheetIndex = (tree: TreeNode[]): Record<string, string> =>
   return index;
 };
 
-// Build lead sheet tree from normalized ETB rows
-export const buildLeadSheetTree = (rows: ExtendedTBRow[]): TreeNode[] => {
-  const tree: TreeNode[] = [];
-  let idCounter = 1;
+// Internal node type during build: has _map for O(1) lookup (removed before return)
+interface TreeNodeWithMap extends TreeNode {
+  _map?: Map<string, TreeNodeWithMap>;
+}
 
-  const getOrCreate = <T extends { group: string }>(
-    arr: T[],
-    key: string | null,
-    factory: () => T
-  ): T => {
-    if (!key) {
-      const node = factory();
-      arr.push(node);
-      return node;
-    }
-    let node = arr.find((n) => n.group === key);
-    if (!node) {
-      node = factory();
-      arr.push(node);
-    }
-    return node;
-  };
+// Build lead sheet tree from normalized ETB rows — O(n) via Map lookups (no repeated .find())
+export const buildLeadSheetTree = (rows: ExtendedTBRow[]): TreeNode[] => {
+  const tree: TreeNodeWithMap[] = [];
+  let idCounter = 1;
+  const normalize = normalizeGroupKey;
+
+  // O(1) lookup for grouping1
+  const g1Map = new Map<string, TreeNodeWithMap>();
 
   for (const row of rows) {
-    // Use group1, group2, group3 if available, otherwise parse from classification
-    const grouping1 = row.group1 || parseClassification(row.classification).grouping1;
-    const grouping2 = row.group2 || parseClassification(row.classification).grouping2;
-    const grouping3 = row.group3 || parseClassification(row.classification).grouping3;
+    const { grouping1, grouping2, grouping3 } = parseClassification(
+      row.classification
+    );
 
-    // Reference code requires grouping1, grouping2, and grouping3
-    // Skip rows that don't have all three levels
     if (!grouping1 || !grouping2 || !grouping3) continue;
 
-    const g1 = getOrCreate(tree, grouping1, () => ({
-      level: "grouping1",
-      group: grouping1,
-      children: [],
-    }));
+    const k1 = normalize(grouping1);
+    const k2 = normalize(grouping2);
+    const k3 = normalize(grouping3);
 
-    const g2 = getOrCreate(g1.children, grouping2, () => ({
-      level: "grouping2",
-      group: grouping2,
-      children: [],
-    }));
-
-    const g3 = getOrCreate(g2.children, grouping3, () => ({
-      level: "grouping3",
-      id: `LS_${idCounter++}`,
-      group: grouping3,
-      children: [], // Leaf nodes have empty children array
-      totals: {
-        currentYear: 0,
-        priorYear: 0,
-        adjustments: 0,
-        reclassification: 0,
-        finalBalance: 0,
-      },
-      rows: [],
-    }));
-
-    if (g3.totals) {
-      g3.totals.currentYear += row.currentYear || 0;
-      g3.totals.priorYear += row.priorYear || 0;
-      g3.totals.adjustments += row.adjustments || 0;
-      g3.totals.reclassification += row.reClassification || 0;
-      g3.totals.finalBalance += row.finalBalance || 0;
+    // ---------- grouping1 ----------
+    let g1 = g1Map.get(k1);
+    if (!g1) {
+      g1 = {
+        level: "grouping1",
+        group: grouping1,
+        children: [],
+        _map: new Map(),
+      };
+      g1Map.set(k1, g1);
+      tree.push(g1);
     }
-    if (g3.rows && row.accountId) {
-      g3.rows.push(row.accountId);
-    } else if (g3.rows) {
-      g3.rows.push(row.id);
+
+    // ---------- grouping2 ----------
+    let g2 = g1._map!.get(k2);
+    if (!g2) {
+      g2 = {
+        level: "grouping2",
+        group: grouping2,
+        children: [],
+        _map: new Map(),
+      };
+      g1._map!.set(k2, g2);
+      g1.children.push(g2);
     }
+
+    // ---------- grouping3 ----------
+    let g3 = g2._map!.get(k3);
+    if (!g3) {
+      g3 = {
+        level: "grouping3",
+        id: `LS_${idCounter++}`,
+        group: grouping3,
+        children: [],
+        totals: {
+          currentYear: 0,
+          priorYear: 0,
+          adjustments: 0,
+          reclassification: 0,
+          finalBalance: 0,
+        },
+        rows: [],
+      };
+      g2._map!.set(k3, g3);
+      g2.children.push(g3);
+    }
+
+    // ---------- totals ----------
+    g3.totals!.currentYear += toNumber(row.currentYear);
+    g3.totals!.priorYear += toNumber(row.priorYear);
+    g3.totals!.adjustments += toNumber(row.adjustments);
+    g3.totals!.reclassification += toNumber(row.reClassification);
+    g3.totals!.finalBalance += toNumber(row.finalBalance);
+    g3.rows!.push(row.id);
   }
+
+  // Remove internal maps so output is clean TreeNode[] (no type/UI leakage)
+  const cleanup = (nodes: TreeNodeWithMap[]): void => {
+    for (const n of nodes) {
+      delete n._map;
+      if (n.children?.length) cleanup(n.children as TreeNodeWithMap[]);
+    }
+  };
+  cleanup(tree);
 
   return tree;
 };
@@ -157,9 +180,9 @@ export const buildLeadSheetTree = (rows: ExtendedTBRow[]): TreeNode[] => {
 export const deriveIncomeStatement = (tree: TreeNode[], currentYear: number) => {
   const priorYear = currentYear - 1;
   const leadIndex = buildLeadSheetIndex(tree);
-  const equity = tree.find((n) => n.group === "Equity");
+  const equity = tree.find((n) => normalizeGroupKey(n.group) === normalizeGroupKey("Equity"));
   const pl = equity?.children.find(
-    (n) => n.group === "Current Year Profits & Losses"
+    (n) => normalizeGroupKey(n.group) === normalizeGroupKey("Current Year Profits & Losses")
   );
 
   const empty = (year: number) => ({
@@ -239,9 +262,9 @@ export const deriveRetainedEarnings = (
 ) => {
   const priorYear = currentYear - 1;
 
-  const equity = tree.find((n) => n.group === "Equity");
-  const eqBlock = equity?.children.find((n) => n.group === "Equity");
-  const re = eqBlock?.children.find((n) => n.group === "Retained earnings");
+  const equity = tree.find((n) => normalizeGroupKey(n.group) === normalizeGroupKey("Equity"));
+  const eqBlock = equity?.children.find((n) => normalizeGroupKey(n.group) === normalizeGroupKey("Equity"));
+  const re = eqBlock?.children.find((n) => normalizeGroupKey(n.group) === normalizeGroupKey("Retained earnings"));
 
   const priorValue = re?.totals?.priorYear || 0;
   const net = incomeStatement.current_year.net_result;
@@ -261,16 +284,16 @@ export const collectGroupAccounts = (
   groupName: string,
   skip: { grouping2?: string[]; grouping3?: string[] } = {}
 ): string[] => {
-  const node = tree.find((n) => n.group === groupName);
+  const node = tree.find((n) => normalizeGroupKey(n.group) === normalizeGroupKey(groupName));
   if (!node) return [];
 
   const ids: string[] = [];
 
   for (const g2 of node.children) {
-    if (skip.grouping2?.includes(g2.group)) continue;
+    if (skip.grouping2?.some((s) => normalizeGroupKey(s) === normalizeGroupKey(g2.group))) continue;
 
     for (const g3 of g2.children) {
-      if (skip.grouping3?.includes(g3.group)) continue;
+      if (skip.grouping3?.some((s) => normalizeGroupKey(s) === normalizeGroupKey(g3.group))) continue;
       if (g3.id) {
         ids.push(g3.id);
       }
@@ -293,15 +316,15 @@ export const deriveBalanceSheet = (
     field: "priorYear" | "finalBalance",
     skip: { grouping2?: string[]; grouping3?: string[] } = {}
   ) => {
-    const node = tree.find((n) => n.group === group);
+    const node = tree.find((n) => normalizeGroupKey(n.group) === normalizeGroupKey(group));
     if (!node) return 0;
 
     let total = 0;
     for (const g2 of node.children) {
-      if (skip.grouping2?.includes(g2.group)) continue;
+      if (skip.grouping2?.some((s) => normalizeGroupKey(s) === normalizeGroupKey(g2.group))) continue;
 
       for (const g3 of g2.children) {
-        if (skip.grouping3?.includes(g3.group)) continue;
+        if (skip.grouping3?.some((s) => normalizeGroupKey(s) === normalizeGroupKey(g3.group))) continue;
         total += g3.totals?.[field] || 0;
       }
     }

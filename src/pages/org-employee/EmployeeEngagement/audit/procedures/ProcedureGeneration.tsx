@@ -390,7 +390,12 @@ export const ProcedureGeneration: React.FC<ProcedureGenerationProps> = ({
     );
   }
 
-  const procedureForTabs = { ...stepData, ...(existingProcedure || {}) };
+  // Always keep auditCycleId so save always has it (existingProcedure can overwrite; restore from parent)
+  const procedureForTabs = {
+    ...stepData,
+    ...(existingProcedure || {}),
+    auditCycleId: stepData.auditCycleId ?? existingProcedure?.auditCycleId ?? auditCycleId,
+  };
   const hasQuestionsForTabs =
     (procedureForTabs?.questions && procedureForTabs.questions.length > 0) ||
     (stepData?.questions && stepData.questions.length > 0);
@@ -402,6 +407,7 @@ export const ProcedureGeneration: React.FC<ProcedureGenerationProps> = ({
         stepData={procedureForTabs}
         mode={selectedMode || "ai"}
         currentClassification={currentClassification}
+        auditCycleId={auditCycleId}
         onProcedureUpdate={(data) => {
           setStepData((prev: any) => ({
             ...prev,
@@ -412,16 +418,14 @@ export const ProcedureGeneration: React.FC<ProcedureGenerationProps> = ({
           }));
         }}
         onComplete={(data) => {
-          setShowTabsView(false);
+          // Do not set showTabsView(false) or clear step here: parent handleProcedureComplete
+          // will set procedureTab to "view" and switch tabs; clearing step would show step 0 (Set Materiality).
           onComplete({
             ...data,
             mode: selectedMode,
             status: "completed",
             procedureType: "procedures",
           });
-          if (updateProcedureParams) {
-            updateProcedureParams({ mode: null, step: null }, false);
-          }
         }}
         onBack={() => {
           setShowTabsView(false);
