@@ -7,6 +7,13 @@ export const endPoints = {
     CHANGE_PASSWORD: '/auth/change-password',
     ME: '/auth/me',
     VERIFY_MFA: '/auth/verify-mfa',
+    MFA_VERIFY: '/auth/mfa/verify',
+    MFA_PREFERENCES: '/auth/mfa/preferences',
+    MFA_SETUP_TOTP: '/auth/mfa/setup-totp',
+    MFA_VERIFY_TOTP_SETUP: '/auth/mfa/verify-totp-setup',
+    MFA_WEBAUTHN_REGISTER_CHALLENGE: '/auth/mfa/webauthn/register-challenge',
+    MFA_WEBAUTHN_REGISTER_VERIFY: '/auth/mfa/webauthn/register-verify',
+    MFA_WEBAUTHN_LOGIN_CHALLENGE: '/auth/mfa/webauthn/login-challenge',
   },
   ORGANIZATION: {
     CREATE_MEMBER: '/organization-members',
@@ -42,6 +49,8 @@ export const endPoints = {
     LIBRARY_FOLDER_BY_TYPE: (engagementId: string, type: string) => `/engagements/${engagementId}/library?type=${type}`,
     EVIDENCE_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library/evidences`,
     WORKBOOK_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library/workbooks`,
+    FILINGS: (engagementId: string) => `/engagements/${engagementId}/filings`,
+    FILING_STATUS: (engagementId: string, filingId: string) => `/engagements/${engagementId}/filings/${filingId}/status`,
   },
   ENGAGEMENT_UPDATES: '/engagement-updates',
   SERVICE_REQUEST: {
@@ -110,6 +119,11 @@ export const endPoints = {
     GET_CLASSIFICATION: (classificationId: string) => `/classifications/${classificationId}`,
     CREATE_CLASSIFICATION: '/classifications',
     FIND_CLASSIFICATION_BY_GROUPS: '/classifications/find-by-groups',
+    /** Classification reviews (Review / Sign-off / Review History) - matches REFERENCE-PORTAL */
+    GET_CLASSIFICATION_REVIEWS: (classificationId: string) => `/classifications/${classificationId}/reviews`,
+    CREATE_CLASSIFICATION_REVIEW: (classificationId: string) => `/classifications/${classificationId}/reviews`,
+    UPDATE_CLASSIFICATION_REVIEW: (classificationId: string, reviewId: string) =>
+      `/classifications/${classificationId}/reviews/${reviewId}`,
     // Workbook endpoints
     GET_WORKBOOKS: '/workbooks',
     GET_WORKBOOK: (workbookId: string) => `/workbooks/${workbookId}`,
@@ -283,6 +297,9 @@ export const endPoints = {
     UPDATE: (id: string) => `/procedures/${id}`,
     DELETE: (id: string) => `/procedures/${id}`,
     GENERATE: '/procedures/generate-procedures-and-categories',
+    /** Regenerate questions for existing procedure category (POST, no body). */
+    GENERATE_QUESTIONS: (procedureId: string, categoryId: string) =>
+      `/procedures/${procedureId}/categories/${categoryId}/generate-questions`,
     /** Fieldwork: generate answers for classification questions (body: { engagementId?, questions }) */
     CLASSIFICATION_ANSWERS: '/procedures/ai/classification-answers',
     GENERATE_RECOMMENDATIONS: (procedureId: string) => `/procedures/${procedureId}/generate-recommendations`,

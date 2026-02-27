@@ -5,6 +5,7 @@ export const TodoListType = {
   DOCUMENT_REQUEST: 'DOCUMENT_REQUEST',
   CHAT: 'CHAT',
   REQUESTED_DOCUMENT: 'REQUESTED_DOCUMENT',
+  FILING: 'FILING',
   CUSTOM: 'CUSTOM',
 } as const;
 export type TodoListType = (typeof TodoListType)[keyof typeof TodoListType];
@@ -13,6 +14,7 @@ export const TODO_CTA_BY_TYPE: Record<TodoListType, string> = {
   [TodoListType.DOCUMENT_REQUEST]: 'view',
   [TodoListType.CHAT]: 'reply',
   [TodoListType.REQUESTED_DOCUMENT]: 'upload',
+  [TodoListType.FILING]: 'view',
   [TodoListType.CUSTOM]: 'customized',
 };
 
@@ -78,30 +80,30 @@ export interface UpdateTodoDto {
 }
 
 export const todoService = {
-  list: (engagementId: string) => 
+  list: (engagementId: string) =>
     apiGet<{ data: Todo[] }>(endPoints.TODO.BY_ENGAGEMENT(engagementId)).then(res => res.data),
-  
-  getById: (id: string) => 
+
+  getById: (id: string) =>
     apiGet<{ data: Todo }>(endPoints.TODO.BY_ID(id)).then(res => res.data),
-  
-  create: (engagementId: string, data: CreateTodoDto) => 
+
+  create: (engagementId: string, data: CreateTodoDto) =>
     apiPost<{ data: Todo }>(endPoints.TODO.BY_ENGAGEMENT(engagementId), data).then(res => res.data),
-  
-  createFromChat: (engagementId: string, messageId: string, data: CreateTodoDto) => 
+
+  createFromChat: (engagementId: string, messageId: string, data: CreateTodoDto) =>
     apiPost<{ data: Todo }>(`${endPoints.TODO.FROM_CHAT(engagementId)}?messageId=${messageId}`, data).then(res => res.data),
-  
-  createFromDocumentRequest: (engagementId: string, docReqId: string, data: CreateTodoDto) => 
+
+  createFromDocumentRequest: (engagementId: string, docReqId: string, data: CreateTodoDto) =>
     apiPost<{ data: Todo }>(`${endPoints.TODO.FROM_DOCUMENT_REQUEST(engagementId)}?documentRequestId=${docReqId}`, data).then(res => res.data),
-  
-  createFromRequestedDocument: (engagementId: string, reqDocId: string, data: CreateTodoDto) => 
+
+  createFromRequestedDocument: (engagementId: string, reqDocId: string, data: CreateTodoDto) =>
     apiPost<{ data: Todo }>(`${endPoints.TODO.FROM_REQUESTED_DOCUMENT(engagementId)}?requestedDocumentId=${reqDocId}`, data).then(res => res.data),
-  
-  update: (id: string, data: UpdateTodoDto) => 
+
+  update: (id: string, data: UpdateTodoDto) =>
     apiPatch<{ data: Todo }>(endPoints.TODO.BY_ID(id), data).then(res => res.data),
-  
-  updateStatus: (id: string, status: TodoListStatus, reason?: string) => 
+
+  updateStatus: (id: string, status: TodoListStatus, reason?: string) =>
     apiPatch<{ data: Todo }>(endPoints.TODO.UPDATE_STATUS(id), { status, reason }).then(res => res.data),
-  
-  delete: (id: string) => 
+
+  delete: (id: string) =>
     apiDelete<{ data: any }>(endPoints.TODO.BY_ID(id)).then(res => res.data),
 };
