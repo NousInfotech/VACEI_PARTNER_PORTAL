@@ -1,13 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { useMemo, useEffect } from "react";
-import { PanelLeft, PanelLeftClose, Search, Bell, LogOut, Settings, MessageSquare, Calendar, AlertCircle, CheckCheck } from "lucide-react";
+import { PanelLeft, PanelLeftClose, Bell, LogOut, Settings, MessageSquare, Calendar, AlertCircle, CheckCheck } from "lucide-react";
 import { Button } from "../ui/Button";
 import { useAuth } from "../context/auth-context-core";
 import { Select } from "../ui/Select";
 import { Dropdown } from "../ui/Dropdown";
 import { AVAILABLE_SERVICES } from "../lib/types";
-import { useSSE } from "../hooks/useSSE";
-import { notificationService, type Notification } from "../api/notificationService";
 import BackButton from "../pages/common/BackButton";
 import { useNotifications } from "../context/NotificationContext";
 

@@ -42,6 +42,8 @@ export const endPoints = {
     LIBRARY_FOLDER_BY_TYPE: (engagementId: string, type: string) => `/engagements/${engagementId}/library?type=${type}`,
     EVIDENCE_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library/evidences`,
     WORKBOOK_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library/workbooks`,
+    FILINGS: (engagementId: string) => `/engagements/${engagementId}/filings`,
+    FILING_STATUS: (engagementId: string, filingId: string) => `/engagements/${engagementId}/filings/${filingId}/status`,
   },
   ENGAGEMENT_UPDATES: '/engagement-updates',
   SERVICE_REQUEST: {

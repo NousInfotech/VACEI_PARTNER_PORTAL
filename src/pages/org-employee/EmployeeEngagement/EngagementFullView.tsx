@@ -48,6 +48,7 @@ import MBRView from "./mbr/MBRView";
 import TaxView from "./tax/TaxView";
 // import MessagesView from "./messages/MessagesView";
 import DocumentRequestsView from "./document-requests/DocumentRequestsView";
+import FilingsView from "./filings/FilingsView";
 import TeamsView from "./teams/TeamsView";
 import CFOView from "./cfo/CFOView";
 import CSPView from "./csp/CSPView";
@@ -95,6 +96,7 @@ const ENGAGEMENT_TABS = [
   { id: 'milestones', label: 'Milestones', icon: Landmark },
   { id: 'updates', label: 'Updates', icon: MessageSquare },
   { id: 'chat', label: 'Chat', icon: MessageSquare },
+  { id: 'filing', label: 'Filing', icon: FileText },
   { id: 'teams', label: 'Team', icon: Users },
   { id: 'services-coverage', label: 'Services & Coverage', icon: CheckSquare }, 
 ];
@@ -740,6 +742,8 @@ export default function EngagementFullView() {
               <MilestonesView engagementId={engagementId ?? undefined} />
             ) : activeTab === 'requests' ? (
               <DocumentRequestsView engagementId={engagementId ?? undefined} />
+            ) : activeTab === 'filing' ? (
+              <FilingsView engagementId={engagementId!} />
             ) : (
               <ShadowCard className="p-10 md:p-20 flex flex-col items-center justify-center text-center bg-gray-50/10 border-dashed min-h-[400px]">
                 <div className="p-8 bg-white shadow-sm rounded-full mb-8 text-gray-300 transform transition-transform hover:scale-110 duration-500">
