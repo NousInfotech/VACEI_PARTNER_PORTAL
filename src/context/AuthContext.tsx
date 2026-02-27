@@ -167,7 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     };
                 }
 
-                const memberData = response.data.organizationMember;
+                const memberData = response.data.organizationMember ?? null;
                 const token = response.data.token;
                 
                 setUser(userData);
