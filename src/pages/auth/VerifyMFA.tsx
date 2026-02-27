@@ -56,7 +56,9 @@ export default function VerifyMFA() {
     const { verifyMfa, getWebAuthnLoginChallenge } = useAuth();
 
     const email = searchParams.get("email") || "";
-    const method = (searchParams.get("method") as MfaMethod) || "email";
+    const rawMethod = searchParams.get("method")?.toLowerCase();
+    const method: MfaMethod =
+      rawMethod === "totp" || rawMethod === "webauthn" ? rawMethod : "email";
 
     const [otp, setOtp] = useState("");
     const [loading, setLoading] = useState(false);
@@ -82,7 +84,7 @@ export default function VerifyMFA() {
 
         try {
             const response = await verifyMfa(email, {
-                otp,
+                otp: otp.replace(/\s/g, "").trim(),
                 method: method === "totp" ? "totp" : "email",
             });
             if (response.success) {
