@@ -44,6 +44,9 @@ export const apiDelete = async <T>(url: string, data?: unknown): Promise<T> => {
  * Generic POST method for FormData (e.g. file uploads)
  */
 export const apiPostFormData = async <T>(url: string, data: FormData): Promise<T> => {
-  const response = await axiosInstance.post<T>(url, data);
+  const response = await axiosInstance.post<T>(url, data, {
+    // Ensure we don't send JSON here; Multer expects multipart/form-data
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
   return response.data;
 };

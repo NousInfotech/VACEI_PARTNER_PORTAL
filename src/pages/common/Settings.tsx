@@ -18,19 +18,91 @@ import {
 import { Button } from '../../ui/Button';
 import { ShadowCard } from '../../ui/ShadowCard';
 import { toast } from 'sonner';
+import { apiPost } from '../../config/base';
+import { endPoints } from '../../config/endPoint';
+import { useAuth } from '../../context/auth-context-core';
+import { fetchPreferencesAPI, updatePreferencesAPI, type NotificationPreference } from '../../api/notificationService';
 
 const Settings: React.FC = () => {
+    const { user } = useAuth();
     const [activeTab, setActiveTab] = React.useState('profile');
     const [isSaving, setIsSaving] = React.useState(false);
 
-    const handleSave = () => {
-        setIsSaving(true);
-        setTimeout(() => {
-            setIsSaving(false);
-            toast.success('Settings saved successfully', {
-                icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-            });
-        }, 1000);
+    const [notifications, setNotifications] = React.useState<NotificationPreference>({
+        emailEnabled: true,
+        inAppEnabled: true,
+        pushEnabled: false,
+        soundEnabled: true,
+    });
+
+    React.useEffect(() => {
+        const loadPrefs = async () => {
+            try {
+                const prefs = await fetchPreferencesAPI();
+                setNotifications(prefs);
+            } catch (err) {
+                console.error("Failed to load notification preferences", err);
+            }
+        };
+        loadPrefs();
+    }, []);
+
+    const togglePreference = async (key: keyof NotificationPreference) => {
+        const newValue = !notifications[key];
+        setNotifications(prev => ({ ...prev, [key]: newValue }));
+        try {
+            await updatePreferencesAPI({ [key]: newValue });
+        } catch (err) {
+            console.error("Failed to update preference", err);
+            setNotifications(prev => ({ ...prev, [key]: !newValue }));
+            toast.error('Failed to update preference');
+        }
+    };
+    
+    const [passwords, setPasswords] = React.useState({
+        currentPassword: '',
+        newPassword: '',
+        confirmNewPassword: ''
+    });
+
+    const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setPasswords(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    };
+
+    const handleSave = async () => {
+        if (activeTab === 'security') {
+            if (!passwords.currentPassword || !passwords.newPassword) {
+                toast.error('Please enter both current and new passwords to change security settings');
+                return;
+            }
+            if (passwords.newPassword !== passwords.confirmNewPassword) {
+                toast.error('New passwords do not match');
+                return;
+            }
+            setIsSaving(true);
+            try {
+                await apiPost(endPoints.AUTH.CHANGE_PASSWORD, {
+                    currentPassword: passwords.currentPassword,
+                    newPassword: passwords.newPassword
+                });
+                toast.success('Password updated successfully', {
+                    icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                });
+                setPasswords({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
+            } catch (error: any) {
+                toast.error(error?.response?.data?.message || error?.message || 'Failed to update password');
+            } finally {
+                setIsSaving(false);
+            }
+        } else {
+            setIsSaving(true);
+            setTimeout(() => {
+                setIsSaving(false);
+                toast.success('Settings saved successfully', {
+                    icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                });
+            }, 1000);
+        }
     };
 
     const tabs = [
@@ -56,23 +128,23 @@ const Settings: React.FC = () => {
                                     </button>
                                 </div>
                                 <div>
-                                    <h4 className="text-lg font-bold text-gray-900">Organization Admin</h4>
-                                    <p className="text-sm text-gray-500">Super Admin access</p>
+                                    <h4 className="text-lg font-bold text-gray-900">{user?.firstName} {user?.lastName}</h4>
+                                    <p className="text-sm text-gray-500">{user?.role?.replace('_', ' ')}</p>
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">First Name</label>
-                                    <input type="text" defaultValue="Elon" className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium text-sm" />
+                                    <input type="text" defaultValue={user?.firstName || ""} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium text-sm" />
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Last Name</label>
-                                    <input type="text" defaultValue="Musk" className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium text-sm" />
+                                    <input type="text" defaultValue={user?.lastName || ""} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium text-sm" />
                                 </div>
                                 <div className="md:col-span-2 space-y-1.5">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Email Address</label>
-                                    <input type="email" defaultValue="elon@tesla.com" className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium text-sm" />
+                                    <input type="email" defaultValue={user?.email || ""} disabled className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium text-sm text-gray-500" />
                                 </div>
                             </div>
                         </section>
@@ -116,9 +188,10 @@ const Settings: React.FC = () => {
                         <section className="space-y-4">
                             <h4 className="text-sm font-bold text-gray-900 uppercase tracking-widest border-b border-gray-100 pb-2">Delivery Channels</h4>
                             {[
-                                { title: 'Email Notifications', desc: 'System updates and critical alerts', icon: Mail, checked: true },
-                                { title: 'Push Notifications', desc: 'Real-time browser notifications', icon: Bell, checked: false },
-                                { title: 'SMS Alerts', desc: 'Urgent security notifications', icon: Smartphone, checked: true },
+                                { title: 'Email Notifications', desc: 'System updates and critical alerts', icon: Mail, key: 'emailEnabled' as const },
+                                { title: 'In-App Notifications', desc: 'Real-time alerts while using the portal', icon: Bell, key: 'inAppEnabled' as const },
+                                { title: 'Push Notifications', desc: 'Real-time browser notifications', icon: Smartphone, key: 'pushEnabled' as const },
+                                { title: 'Sound Notifications', desc: 'Alert sounds for updates', icon: Bell, key: 'soundEnabled' as const },
                             ].map((item, i) => (
                                 <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl hover:bg-gray-100/80 transition-all group">
                                     <div className="flex items-center gap-4">
@@ -131,7 +204,7 @@ const Settings: React.FC = () => {
                                         </div>
                                     </div>
                                     <label className="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" defaultChecked={item.checked} className="sr-only peer" />
+                                        <input type="checkbox" checked={Boolean(notifications[item.key])} onChange={() => togglePreference(item.key)} className="sr-only peer" />
                                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary" />
                                     </label>
                                 </div>
@@ -162,10 +235,10 @@ const Settings: React.FC = () => {
                                     <Lock size={16} className="text-gray-400" /> Change Password
                                 </p>
                                 <div className="grid grid-cols-1 gap-4">
-                                    <input type="password" placeholder="Current Password" className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-400 text-sm" />
+                                    <input name="currentPassword" type="password" placeholder="Current Password" value={passwords.currentPassword} onChange={handlePasswordChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-400 text-sm" />
                                     <div className="grid grid-cols-2 gap-4">
-                                        <input type="password" placeholder="New Password" className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-400 text-sm" />
-                                        <input type="password" placeholder="Confirm New Password" className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-400 text-sm" />
+                                        <input name="newPassword" type="password" placeholder="New Password" value={passwords.newPassword} onChange={handlePasswordChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-400 text-sm" />
+                                        <input name="confirmNewPassword" type="password" placeholder="Confirm New Password" value={passwords.confirmNewPassword} onChange={handlePasswordChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-400 text-sm" />
                                     </div>
                                 </div>
                             </div>
