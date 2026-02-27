@@ -429,32 +429,34 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
 
         const loadMessagesAndSubscribe = async () => {
             try {
+                const mapMessage = (msg: any): Message => {
+                    let t = msg.sentAt || msg.sent_at || msg.created_at;
+                    if (t && !t.endsWith('Z') && !t.includes('+') && !t.match(/-\d{2}:\d{2}$/)) t += 'Z';
+
+                    return {
+                        id: msg.id,
+                        senderId: msg.senderId || msg.sender_id,
+                        text: msg.content || msg.text,
+                        fileUrl: msg.fileUrl || msg.file_url,
+                        fileName: msg.fileName || msg.file_name,
+                        fileSize: msg.fileSize || msg.file_size,
+                        type: (msg.type || 'text').toLowerCase(),
+                        timestamp: t,
+                        status: 'sent',
+                        createdAt: new Date(t || new Date()).getTime(),
+                        replyToMessageId: msg.replyToMessageId ?? msg.reply_to_message_id ?? null,
+                        replyToMessage: msg.replyToMessage ? mapMessage(msg.replyToMessage) : (msg.reply_to_message ? mapMessage(msg.reply_to_message) : null),
+                    };
+                };
+
                 const msgs = await chatService.getMessages(roomId);
 
                 if (msgs?.data) {
-                    const mapMessage = (msg: any): Message => {
-                        let t = msg.sentAt || msg.sent_at || msg.created_at;
-                        if (t && !t.endsWith('Z') && !t.includes('+') && !t.match(/-\d{2}:\d{2}$/)) t += 'Z';
-
-                        return {
-                            id: msg.id,
-                            senderId: msg.senderId || msg.sender_id,
-                            text: msg.content || msg.text,
-                            fileUrl: msg.fileUrl || msg.file_url,
-                            fileName: msg.fileName || msg.file_name,
-                            fileSize: msg.fileSize || msg.file_size,
-                            type: (msg.type || 'text').toLowerCase(),
-                            timestamp: t,
-                            status: 'sent',
-                            createdAt: new Date(t || new Date()).getTime(),
-                            replyToMessageId: msg.replyToMessageId ?? msg.reply_to_message_id ?? null,
-                        };
-                    };
 
                     const sorted = msgs.data
                         .map((msg: any) => mapMessage(msg))
                         .sort((a: Message, b: Message) =>
-                            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+                            (a.createdAt ?? 0) - (b.createdAt ?? 0)
                         );
 
                     setMessages(sorted);
@@ -494,14 +496,22 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
                                 status: 'sent',
                                 createdAt: new Date(t || new Date()).getTime(),
                                 replyToMessageId: newMsg.replyToMessageId ?? newMsg.reply_to_message_id ?? null,
+                                replyToMessage: newMsg.replyToMessage ? mapMessage(newMsg.replyToMessage) : null,
                             };
 
                             setMessages((prev) => {
                                 if (prev.find((m) => m.id === mappedMsg.id)) return prev;
+
+                                // Resolve replyToMessage if missing from payload
+                                if (mappedMsg.replyToMessageId && !mappedMsg.replyToMessage) {
+                                    const original = prev.find((m) => m.id === mappedMsg.replyToMessageId);
+                                    if (original) {
+                                        mappedMsg.replyToMessage = original;
+                                    }
+                                }
+
                                 return [...prev, mappedMsg].sort(
-                                    (a, b) =>
-                                        new Date(a.timestamp).getTime() -
-                                        new Date(b.timestamp).getTime()
+                                    (a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0)
                                 );
                             });
                         }
