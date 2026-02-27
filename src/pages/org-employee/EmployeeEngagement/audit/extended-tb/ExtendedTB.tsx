@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     Plus,
@@ -14,7 +14,9 @@ import {
     Save,
     Loader2,
     Info,
-    X
+    X,
+    Eye,
+    MessageSquare,
 } from "lucide-react";
 import { Button } from "../../../../../ui/Button";
 import ExtendedTBTable from "./ExtendedTBTable";
@@ -23,7 +25,14 @@ import { apiGet, apiPostFormData, apiPost, apiPatch } from "../../../../../confi
 import { endPoints } from "../../../../../config/endPoint";
 import AlertMessage from "../../../../common/AlertMessage";
 import CreateAuditCycleDialog from "./CreateAuditCycleDialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../../../../../ui/Dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../../../../../ui/Dialog";
+import { Label } from "../../../../../ui/label";
+import { Textarea } from "../../../../../ui/Textarea";
+import { Checkbox } from "../../../../../ui/checkbox";
+import { Badge } from "../../../../../ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/auth-context-core";
+import { useETBClassificationId } from "../hooks/useETBClassificationId";
 
 interface ExtendedTBProps {
     isSectionsView?: boolean;
@@ -50,6 +59,19 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
     const [selectedRowForReclassifications, setSelectedRowForReclassifications] = useState<ExtendedTBRow | null>(null);
     const [reclassificationsForRow, setReclassificationsForRow] = useState<any[]>([]);
     const [loadingReclassifications, setLoadingReclassifications] = useState(false);
+
+    // Review / Sign-off / Review History (match REFERENCE-PORTAL ETB section)
+    const [reviewPointsOpen, setReviewPointsOpen] = useState(false);
+    const [reviewHistoryOpen, setReviewHistoryOpen] = useState(false);
+    const [confirmSignoffOpen, setConfirmSignoffOpen] = useState(false);
+    const [reviewComment, setReviewComment] = useState("");
+    const [isReviewDone, setIsReviewDone] = useState(false);
+    const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+    const [reviewWorkflow, setReviewWorkflow] = useState<{ reviews: Array<{ id: string; userId: string; userName: string; timestamp: string; comment: string; status: string }>; isSignedOff: boolean } | null>(null);
+    const [reviewLoading, setReviewLoading] = useState(false);
+
+    const { toast } = useToast();
+    const { organizationMember, user } = useAuth();
 
     const handleAddRow = () => {
         const newRow: ExtendedTBRow = {
@@ -314,6 +336,116 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
             setOriginalData([]);
         }
     }, [trialBalanceWithAccountsData, trialBalanceId, isLoadingTrialBalanceData]);
+
+    // ETB classification ID for Review / Sign-off / Review History (section sidebar)
+    const { etbClassificationId, isLoading: isLoadingETBClassification } = useETBClassificationId(trialBalanceId);
+    const currentUser = useMemo(() => {
+        const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim()
+            || user?.email
+            || "Current user";
+        return {
+            id: organizationMember?.id ?? "",
+            name: displayName,
+        };
+    }, [organizationMember?.id, user?.firstName, user?.lastName, user?.email]);
+
+    const loadReviewWorkflow = useCallback(async () => {
+        if (!etbClassificationId) return;
+        setReviewLoading(true);
+        try {
+            const res = await apiGet<any>(endPoints.AUDIT.GET_CLASSIFICATION_REVIEWS(etbClassificationId), { limit: 100, order: "desc" });
+            const raw = Array.isArray((res as any)?.data) ? (res as any).data : [];
+            const reviews = raw.map((r: any) => ({
+                id: r.id,
+                userId: r.organizationalMemberId ?? "",
+                userName: r.organizationalMemberId === organizationMember?.id ? currentUser.name : "User",
+                timestamp: (r as any).createdAt ?? new Date().toISOString(),
+                comment: r.comment ?? "",
+                status: r.status === "SIGN_OFF" ? "signed-off" : r.status === "IN_REVIEW" ? "in-review" : "pending",
+            }));
+            const sorted = [...reviews].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+            const latest = sorted[0];
+            setReviewWorkflow({ reviews: sorted, isSignedOff: latest?.status === "signed-off" });
+        } catch (e: any) {
+            toast({ title: "Failed to load reviews", description: e?.message ?? "Could not load review workflow", variant: "destructive" });
+            setReviewWorkflow({ reviews: [], isSignedOff: false });
+        } finally {
+            setReviewLoading(false);
+        }
+    }, [etbClassificationId, organizationMember?.id, currentUser.name, toast]);
+
+    useEffect(() => {
+        if (etbClassificationId) loadReviewWorkflow();
+    }, [etbClassificationId, loadReviewWorkflow]);
+
+    const submitReviewComment = useCallback(async () => {
+        if (!reviewComment.trim() || !etbClassificationId || !organizationMember?.id) {
+            toast({ title: "Comment required", description: "Please add review comments before submitting.", variant: "destructive" });
+            return;
+        }
+        setIsSubmittingReview(true);
+        try {
+            const res = await apiPost<any>(endPoints.AUDIT.CREATE_CLASSIFICATION_REVIEW(etbClassificationId), {
+                organizationalMemberId: organizationMember.id,
+                comment: reviewComment.trim(),
+                status: "IN_REVIEW",
+            });
+            const created = (res as any)?.data ?? res;
+            setReviewWorkflow((prev) => ({
+                reviews: [...(prev?.reviews ?? []), {
+                    id: created?.id ?? "",
+                    userId: organizationMember.id,
+                    userName: currentUser.name,
+                    timestamp: new Date().toISOString(),
+                    comment: reviewComment.trim(),
+                    status: "in-review",
+                }],
+                isSignedOff: false,
+            }));
+            setReviewPointsOpen(false);
+            setReviewComment("");
+            setIsReviewDone(false);
+            toast({ title: "Review comments saved", description: "Your review has been saved successfully." });
+        } catch (e: any) {
+            toast({ title: "Save failed", description: e?.message ?? "Could not save review comments.", variant: "destructive" });
+        } finally {
+            setIsSubmittingReview(false);
+        }
+    }, [etbClassificationId, organizationMember?.id, reviewComment, currentUser.name, toast]);
+
+    const performSignOff = useCallback(async () => {
+        if (!etbClassificationId || !organizationMember?.id) return;
+        setIsSubmittingReview(true);
+        try {
+            const res = await apiPost<any>(endPoints.AUDIT.CREATE_CLASSIFICATION_REVIEW(etbClassificationId), {
+                organizationalMemberId: organizationMember.id,
+                comment: "Extended Trial Balance signed off",
+                status: "SIGN_OFF",
+            });
+            const created = (res as any)?.data ?? res;
+            setReviewWorkflow((prev) => ({
+                reviews: [...(prev?.reviews ?? []), {
+                    id: created?.id ?? "",
+                    userId: organizationMember.id,
+                    userName: currentUser.name,
+                    timestamp: new Date().toISOString(),
+                    comment: "Extended Trial Balance signed off",
+                    status: "signed-off",
+                }],
+                isSignedOff: true,
+            }));
+            setConfirmSignoffOpen(false);
+            toast({ title: "Extended Trial Balance signed off", description: "This section is now signed off." });
+        } catch (e: any) {
+            toast({ title: "Sign-off failed", description: e?.message ?? "Could not sign off.", variant: "destructive" });
+        } finally {
+            setIsSubmittingReview(false);
+        }
+    }, [etbClassificationId, organizationMember?.id, currentUser.name, toast]);
+
+    const isSignedOff = reviewWorkflow?.isSignedOff ?? false;
+    const isReviewDisabled = isSignedOff || !currentUser.id || reviewLoading || isLoadingETBClassification;
+    const isSignOffDisabled = isSignedOff || !currentUser.id || reviewLoading || isLoadingETBClassification;
 
     // Mutation to create audit cycle
     const createAuditCycleMutation = useMutation({
@@ -831,15 +963,32 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
                 </div>
                 {isSectionsView ? (
                     <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="gap-2 text-gray-600">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-2 text-gray-600"
+                            onClick={() => setReviewPointsOpen(true)}
+                            disabled={isReviewDisabled}
+                        >
                             <ClipboardCheck size={16} />
                             Review
                         </Button>
-                        <Button variant="outline" size="sm" className="gap-2 text-gray-600">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-2 text-gray-600"
+                            onClick={() => setConfirmSignoffOpen(true)}
+                            disabled={isSignOffDisabled}
+                        >
                             <CheckCircle size={16} />
                             Sign off
                         </Button>
-                        <Button variant="outline" size="sm" className="gap-2 text-gray-600">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-2 text-gray-600"
+                            onClick={() => setReviewHistoryOpen(true)}
+                        >
                             <History size={16} />
                             Review history
                         </Button>
@@ -982,6 +1131,156 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
                 companyId={companyId}
                 isLoading={createAuditCycleMutation.isPending}
             />
+
+            {/* Review Points & Comments – matches REFERENCE-PORTAL */}
+            <Dialog open={reviewPointsOpen} onOpenChange={setReviewPointsOpen}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Review Points & Comments</DialogTitle>
+                        <DialogDescription>
+                            Add your review comments for: <span className="font-semibold">Extended Trial Balance</span>
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Eye className="h-4 w-4" />
+                            <span>Reviewing as: {currentUser.name || "Loading..."}</span>
+                        </div>
+                        <div>
+                            <Label htmlFor="etb-review-comment">Review Comments *</Label>
+                            <Textarea
+                                id="etb-review-comment"
+                                placeholder="Enter your review comments, observations, or points to address..."
+                                value={reviewComment}
+                                onChange={(e) => setReviewComment(e.target.value)}
+                                rows={6}
+                                className="mt-1"
+                            />
+                            <p className="text-sm text-muted-foreground mt-1">* Comments are required for review submission</p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <Checkbox
+                                id="etb-review-done"
+                                checked={isReviewDone}
+                                onCheckedChange={(checked) => setIsReviewDone(checked === true)}
+                            />
+                            <Label htmlFor="etb-review-done" className="text-sm font-medium">
+                                Mark this review as completed
+                            </Label>
+                        </div>
+                    </div>
+                    <DialogFooter className="gap-2">
+                        <Button variant="outline" onClick={() => setReviewPointsOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={submitReviewComment}
+                            disabled={!reviewComment.trim() || isSubmittingReview}
+                        >
+                            {isSubmittingReview ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                                <MessageSquare className="h-4 w-4 mr-2" />
+                            )}
+                            Save Review
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Confirm Sign-off – matches REFERENCE-PORTAL */}
+            <Dialog open={confirmSignoffOpen} onOpenChange={setConfirmSignoffOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Confirm Sign-off</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to sign off the Extended Trial Balance? This action cannot be undone and will lock the section for editing.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Save className="h-4 w-4" />
+                            <span>Signing off as: {currentUser.name || "Loading..."}</span>
+                        </div>
+                    </div>
+                    <DialogFooter className="gap-2">
+                        <Button variant="outline" onClick={() => setConfirmSignoffOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={performSignOff} disabled={isSubmittingReview}>
+                            {isSubmittingReview ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                                <Save className="h-4 w-4 mr-2" />
+                            )}
+                            Yes, Sign Off
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Review History – matches REFERENCE-PORTAL */}
+            <Dialog open={reviewHistoryOpen} onOpenChange={setReviewHistoryOpen}>
+                <DialogContent className="min-w-[70vw] max-w-[90vw] h-[70vh] flex flex-col p-0">
+                    <DialogHeader className="shrink-0 px-6 py-4 border-b">
+                        <DialogTitle>Review History</DialogTitle>
+                        <DialogDescription>
+                            Audit trail for: <span className="font-semibold">Extended Trial Balance</span>
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex-1 overflow-y-auto px-6 py-4">
+                        {!reviewWorkflow?.reviews?.length ? (
+                            <div className="text-center text-muted-foreground">No review history found for the Extended Trial Balance.</div>
+                        ) : (
+                            <div className="relative pl-6">
+                                <div className="absolute left-1 top-0 bottom-0 w-0.5 bg-border" />
+                                {reviewWorkflow.reviews.map((review, index) => (
+                                    <div key={review.id} className="relative mb-6 pb-2">
+                                        <div className="absolute left-0 top-0 -ml-2.5 h-5 w-5 rounded-full bg-primary flex items-center justify-center text-primary-foreground z-10 text-xs">
+                                            {review.status === "signed-off" ? "🔒" : review.status === "in-review" ? "👤" : "📝"}
+                                        </div>
+                                        <div className="ml-6 flex flex-col">
+                                            <div className="flex items-baseline justify-between mb-1">
+                                                <span className="font-semibold text-sm capitalize">
+                                                    {review.status === "signed-off" ? "Signed Off" : review.status === "in-review" ? "In Review" : "Review"}
+                                                </span>
+                                                <span className="text-xs text-muted-foreground">
+                                                    {new Date(review.timestamp).toLocaleString()}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm text-muted-foreground">
+                                                <strong className="text-foreground">Performed by:</strong> {review.userName || "N/A"}
+                                            </p>
+                                            {review.comment && (
+                                                <p className="text-sm text-muted-foreground mt-1">
+                                                    <strong className="text-foreground">Comments:</strong> {review.comment}
+                                                </p>
+                                            )}
+                                            <div className="mt-2">
+                                                <Badge
+                                                    variant="outline"
+                                                    className={`text-xs ${
+                                                        review.status === "signed-off"
+                                                            ? "bg-green-50 text-green-700 border-green-200"
+                                                            : review.status === "in-review"
+                                                                ? "bg-blue-50 text-blue-700 border-blue-200"
+                                                                : "bg-muted text-muted-foreground"
+                                                    }`}
+                                                >
+                                                    {review.status === "signed-off" ? "✓ Signed Off" : review.status === "in-review" ? "⏳ In Review" : "⏳ Pending"}
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                        {index < reviewWorkflow.reviews.length - 1 && (
+                                            <div className="ml-6 mt-4 border-t border-border" />
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* Adjustment Details Dialog */}
             <Dialog open={showAdjustmentDetails} onOpenChange={setShowAdjustmentDetails}>
