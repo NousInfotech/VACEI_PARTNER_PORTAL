@@ -288,8 +288,17 @@ export default function FilingsView({ engagementId }: FilingsViewProps) {
                       <Button 
                         size="icon" 
                         variant="ghost" 
-                        className="h-10 w-10 rounded-xl hover:bg-gray-50 text-gray-400 hover:text-primary"
-                        onClick={() => window.open(filing.file?.url, '_blank')}
+                        className="h-10 w-10 rounded-xl hover:bg-primary/10 text-gray-400 hover:text-primary transition-all duration-200 font-bold"
+                        onClick={() => {
+                          if (filing.file?.url) {
+                            const link = document.createElement('a');
+                            link.href = filing.file.url;
+                            link.download = filing.file.file_name || filing.name;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                          }
+                        }}
                         title="Download"
                       >
                         <Download size={18} />

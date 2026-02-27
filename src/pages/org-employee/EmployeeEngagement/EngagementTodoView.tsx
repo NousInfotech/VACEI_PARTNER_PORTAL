@@ -146,7 +146,7 @@ export default function EngagementTodoView({ engagementId, service }: Engagement
             <div className="grid grid-cols-1 gap-4">
                 {filteredTodos.length > 0 ? (
                     filteredTodos.map((todo: Todo) => (
-                        <ShadowCard key={todo.id} className="group relative overflow-hidden bg-white border border-gray-100 rounded-[2rem] hover:shadow-xl transition-all duration-300">
+                        <ShadowCard key={todo.id} className="group relative overflow-hidden bg-white border border-gray-100 rounded-4xl hover:shadow-xl transition-all duration-300">
                             <div className="p-6">
                                 <div className="flex justify-between items-start gap-4">
                                     <div className="flex-1 min-w-0">
@@ -160,11 +160,21 @@ export default function EngagementTodoView({ engagementId, service }: Engagement
                                                 {getStatusIcon(todo.status)}
                                                 {getStatusLabel(todo.status)}
                                             </div>
-                                            {todo.type !== 'CUSTOM' && (
-                                                <div className="px-2 py-1 bg-gray-50 text-gray-500 rounded-lg text-[10px] font-bold flex items-center gap-1">
+                                            {todo.type !== 'CUSTOM' && todo.moduleId && (
+                                                <button 
+                                                    onClick={() => {
+                                                        const type = todo.type as string;
+                                                        const tab = type === 'DOCUMENT_REQUEST' ? 'requests' : 
+                                                                    type === 'REQUESTED_DOCUMENT' ? 'requests' : 
+                                                                    type === 'FILING' ? 'filing' : 
+                                                                    type === 'CHAT' ? 'chat' : 'dashboard';
+                                                        window.location.href = `/engagement-view/${engagementId}?tab=${tab}`;
+                                                    }}
+                                                    className="px-2 py-1 bg-primary/5 text-primary hover:bg-primary/10 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 transition-all"
+                                                >
+                                                    Next
                                                     <ExternalLink size={10} />
-                                                    {todo.type.replace('_', ' ')}
-                                                </div>
+                                                </button>
                                             )}
                                         </div>
                                         <h3 className="text-lg font-bold text-gray-900 truncate mb-1">{todo.title}</h3>
@@ -213,10 +223,10 @@ export default function EngagementTodoView({ engagementId, service }: Engagement
                                                     status: todo.status === TodoListStatus.ACTION_REQUIRED ? TodoListStatus.ACTION_TAKEN : TodoListStatus.COMPLETED 
                                                 })}
                                                 className={cn(
-                                                    "h-9 px-4 rounded-xl text-xs font-bold transition-all",
+                                                    "h-9 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
                                                     todo.status === TodoListStatus.ACTION_REQUIRED 
-                                                        ? "bg-blue-600 text-white hover:bg-blue-700" 
-                                                        : "bg-green-600 text-white hover:bg-green-700"
+                                                        ? "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/20" 
+                                                        : "bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-500/20"
                                                 )}
                                             >
                                                 {todo.status === TodoListStatus.ACTION_REQUIRED ? "Mark as Done" : "Complete Task"}

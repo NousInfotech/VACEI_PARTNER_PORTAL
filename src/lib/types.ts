@@ -90,10 +90,11 @@ export interface User {
 export interface LoginResponse {
   data: {
     user: User;
-    organizationMember: OrganizationMember;
-    token: string;
+    organizationMember?: OrganizationMember;
+    token?: string;
     refreshToken?: string;
     mfaRequired?: boolean;
+    mfaMethod?: 'email' | 'totp' | 'webauthn';
     email?: string;
   };
   message?: string;
