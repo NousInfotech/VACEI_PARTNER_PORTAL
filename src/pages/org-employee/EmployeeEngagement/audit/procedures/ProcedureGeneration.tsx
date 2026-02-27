@@ -94,7 +94,15 @@ export const ProcedureGeneration: React.FC<ProcedureGenerationProps> = ({
     if (step === "tabs") {
       setShowTabsView(true);
       if (existingProcedure?.questions?.length > 0) {
-        setStepData((prev: any) => ({ ...prev, ...existingProcedure }));
+        setStepData((prev: any) => {
+          const merged = { ...prev, ...existingProcedure };
+          // Keep current stepData.questions if we already have any (e.g. from regenerate or save),
+          // so we don't overwrite with stale existingProcedure (e.g. old documentPayload fallback).
+          if (Array.isArray(prev?.questions) && prev.questions.length > 0) {
+            merged.questions = prev.questions;
+          }
+          return merged;
+        });
       }
     }
     if (stepNum !== null && stepNum !== currentStep) setCurrentStep(stepNum);

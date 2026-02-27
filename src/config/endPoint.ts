@@ -110,6 +110,11 @@ export const endPoints = {
     GET_CLASSIFICATION: (classificationId: string) => `/classifications/${classificationId}`,
     CREATE_CLASSIFICATION: '/classifications',
     FIND_CLASSIFICATION_BY_GROUPS: '/classifications/find-by-groups',
+    /** Classification reviews (Review / Sign-off / Review History) - matches REFERENCE-PORTAL */
+    GET_CLASSIFICATION_REVIEWS: (classificationId: string) => `/classifications/${classificationId}/reviews`,
+    CREATE_CLASSIFICATION_REVIEW: (classificationId: string) => `/classifications/${classificationId}/reviews`,
+    UPDATE_CLASSIFICATION_REVIEW: (classificationId: string, reviewId: string) =>
+      `/classifications/${classificationId}/reviews/${reviewId}`,
     // Workbook endpoints
     GET_WORKBOOKS: '/workbooks',
     GET_WORKBOOK: (workbookId: string) => `/workbooks/${workbookId}`,
@@ -283,6 +288,9 @@ export const endPoints = {
     UPDATE: (id: string) => `/procedures/${id}`,
     DELETE: (id: string) => `/procedures/${id}`,
     GENERATE: '/procedures/generate-procedures-and-categories',
+    /** Regenerate questions for existing procedure category (POST, no body). */
+    GENERATE_QUESTIONS: (procedureId: string, categoryId: string) =>
+      `/procedures/${procedureId}/categories/${categoryId}/generate-questions`,
     /** Fieldwork: generate answers for classification questions (body: { engagementId?, questions }) */
     CLASSIFICATION_ANSWERS: '/procedures/ai/classification-answers',
     GENERATE_RECOMMENDATIONS: (procedureId: string) => `/procedures/${procedureId}/generate-recommendations`,

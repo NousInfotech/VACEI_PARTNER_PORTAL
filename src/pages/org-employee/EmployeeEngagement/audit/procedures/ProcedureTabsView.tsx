@@ -4,6 +4,7 @@
  */
 import type React from "react";
 import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
 import { Button } from "@/ui/Button";
 import { Card, CardContent } from "@/ui/card";
@@ -108,12 +109,19 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
   const engagementId = engagement?.id ?? engagement?._id;
   const currentUserId = getDecodedUserId() ?? "";
 
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<
     "questions" | "answers" | "procedures"
   >("questions");
   const [proceduresViewMode, setProceduresViewMode] = useState<
     "procedures" | "reviews"
-  >("procedures");
+  >(() => (searchParams.get("proceduresViewMode") === "reviews" ? "reviews" : "procedures"));
+  // Sync proceduresViewMode from URL when navigating from classification header (e.g. Review History button)
+  useEffect(() => {
+    if (searchParams.get("proceduresViewMode") === "reviews") {
+      setProceduresViewMode("reviews");
+    }
+  }, [searchParams]);
   const [questionFilter, setQuestionFilter] = useState<"all" | "unanswered">(
     "all"
   );
@@ -191,9 +199,16 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
   }, [stepData]);
 
   // Sync questions and recommendations from stepData when it changes (e.g. after save, when switching to View tab).
+  // Don't overwrite local questions if we have more than stepData (e.g. just regenerated; stepData may be stale).
   useEffect(() => {
     if (Array.isArray(stepData?.questions) && stepData.questions.length > 0) {
-      setQuestions(normalize(stepData.questions));
+      setQuestions((prev) => {
+        const fromStep = normalize(stepData.questions);
+        if (prev.length > 0 && fromStep.length < prev.length) {
+          return prev;
+        }
+        return fromStep;
+      });
     }
     if (Array.isArray(stepData?.recommendations)) {
       setRecommendations(stepData.recommendations);
@@ -298,6 +313,9 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
 
   const handleGenerateQuestions = async () => {
     const auditCycleId = stepData?.auditCycleId;
+    const procedureId = stepData?.id ?? stepData?._id;
+    const categoryId = stepData?.category?.id ?? stepData?.categoryId;
+
     if (!auditCycleId) {
       toast({
         title: "Cannot generate questions",
@@ -309,32 +327,50 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
     onGeneratingChange?.(true);
     setGeneratingQuestions(true);
     try {
-      const res = await apiPost<any>(endPoints.PROCEDURES.GENERATE, {
-        auditCycleId,
-        type: "FIELDWORK",
-        materialityValue: stepData?.materiality ?? 0,
-        ...(currentClassification && String(currentClassification).trim() !== ""
-          ? { categoryTitle: String(currentClassification).trim() }
-          : {}),
-      }).catch((err: any) => {
-        toast({
-          title: "Generation failed",
-          description: err?.response?.data?.message ?? err?.message ?? "Could not generate questions.",
-          variant: "destructive",
+      let res: any;
+      if (procedureId && categoryId) {
+        // Regenerate: existing procedure + category — call regenerate endpoint so AI runs for this category
+        res = await apiPost<any>(
+          endPoints.PROCEDURES.GENERATE_QUESTIONS(procedureId, categoryId),
+          {}
+        ).catch((err: any) => {
+          toast({
+            title: "Generation failed",
+            description: err?.response?.data?.message ?? err?.message ?? "Could not generate questions.",
+            variant: "destructive",
+          });
+          return null;
         });
-        return null;
-      });
+      } else {
+        // First time or no category: create new procedure + category (may fall back to hardcoded if AI fails)
+        res = await apiPost<any>(endPoints.PROCEDURES.GENERATE, {
+          auditCycleId,
+          type: "FIELDWORK",
+          materialityValue: stepData?.materiality ?? 0,
+          ...(currentClassification && String(currentClassification).trim() !== ""
+            ? { categoryTitle: String(currentClassification).trim() }
+            : {}),
+        }).catch((err: any) => {
+          toast({
+            title: "Generation failed",
+            description: err?.response?.data?.message ?? err?.message ?? "Could not generate questions.",
+            variant: "destructive",
+          });
+          return null;
+        });
+      }
       if (res == null) {
         return;
       }
-      // API body: { success: true, data: { procedure, category, fields, questions }, message }
+      // API body: { success: true, data: { procedure?, category, fields }, message }
       const raw = (res as any)?.data ?? res;
       const dataObj = raw?.data ?? raw;
+      const fields = dataObj?.fields ?? raw?.fields ?? [];
       const generatedQuestions =
         dataObj?.questions ??
         raw?.questions ??
-        (Array.isArray(dataObj?.fields)
-          ? (dataObj.fields as any[]).map((f: any) => ({
+        (Array.isArray(fields)
+          ? (fields as any[]).map((f: any) => ({
               key: f.key ?? f.id,
               question: f.label ?? f.question ?? "",
               answer: (f as any)?.answer ?? "",
@@ -347,16 +383,16 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
       if (Array.isArray(dataObj?.recommendations ?? raw?.recommendations))
         setRecommendations(dataObj?.recommendations ?? raw?.recommendations);
       const procedure = dataObj?.procedure ?? raw?.procedure;
-      const category = dataObj?.category ?? raw?.category;
-      const procedureId = procedure?.id ?? procedure?._id ?? stepData?.id ?? stepData?._id;
-      if (procedureId && onProcedureUpdate) {
+      const category = dataObj?.category ?? raw?.category ?? stepData?.category;
+      const resolvedProcedureId = procedure?.id ?? procedure?._id ?? procedureId ?? stepData?.id ?? stepData?._id;
+      if (resolvedProcedureId && onProcedureUpdate) {
         onProcedureUpdate({
-          id: procedureId,
-          _id: procedureId,
-          procedure,
-          category,
+          id: resolvedProcedureId,
+          _id: resolvedProcedureId,
+          procedure: procedure ?? stepData?.procedure,
+          category: category ?? stepData?.category,
           questions: normalized,
-          fields: dataObj?.fields ?? raw?.fields,
+          fields: dataObj?.fields ?? raw?.fields ?? fields,
         });
       }
       toast({
