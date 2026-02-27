@@ -240,9 +240,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 return { success: true, message: "Verification successful!" };
             }
             return { success: false, message: response.message || "Verification failed" };
-        } catch (error) {
+        } catch (error: any) {
             console.error("MFA verification failed:", error);
-            return { success: false, message: (error as Error).message || "Verification failed" };
+            const backendMessage =
+                error?.response?.data?.message ||
+                error?.response?.data?.error ||
+                (error as Error).message ||
+                "Verification failed";
+            return { success: false, message: backendMessage };
         }
     };
 
