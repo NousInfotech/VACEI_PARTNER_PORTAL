@@ -48,6 +48,7 @@ import MBRView from "./mbr/MBRView";
 import TaxView from "./tax/TaxView";
 // import MessagesView from "./messages/MessagesView";
 import DocumentRequestsView from "./document-requests/DocumentRequestsView";
+import FilingsView from "./filings/FilingsView";
 import TeamsView from "./teams/TeamsView";
 import CFOView from "./cfo/CFOView";
 import CSPView from "./csp/CSPView";
@@ -68,9 +69,7 @@ import {
 } from "../../../ui/dropdown-menu";
 import { ChevronDown, CheckCircle2, Clock, XCircle } from "lucide-react";
 import { CreateCycleComponent } from "./components/CreateCycleComponent";
-import { MiniChatPreview } from './components/MiniChatPreview';
 import { GenericServiceOverview } from "./components/GenericServiceOverview";
-import { todoService, TodoListStatus } from "../../../api/todoService";
 import { cspService, CSPStatus } from "../../../api/cspService";
 import { vatService, VATStatus } from "../../../api/vatService";
 import { taxService, TAXStatus } from "../../../api/taxService";
@@ -97,6 +96,7 @@ const ENGAGEMENT_TABS = [
   { id: 'milestones', label: 'Milestones', icon: Landmark },
   { id: 'updates', label: 'Updates', icon: MessageSquare },
   { id: 'chat', label: 'Chat', icon: MessageSquare },
+  { id: 'filing', label: 'Filing', icon: FileText },
   { id: 'teams', label: 'Team', icon: Users },
   { id: 'services-coverage', label: 'Services & Coverage', icon: CheckSquare }, 
 ];
@@ -182,7 +182,7 @@ export default function EngagementFullView() {
     const activeServiceTab = serviceMap[selectedService];
 
     const tabs = ENGAGEMENT_TABS.filter(tab => {
-      if (['dashboard', 'requests', 'library', 'checklist', 'todo', 'compliance', 'milestones', 'updates', 'chat', 'teams'].includes(tab.id)) {
+      if (['dashboard', 'requests', 'library', 'checklist', 'todo', 'compliance', 'milestones', 'updates', 'chat', 'teams', 'filing'].includes(tab.id)) {
         return true;
       }
       if (tab.id === 'services-coverage' && (activeServiceTab === 'cfo' || activeServiceTab === 'csp')) {
@@ -205,18 +205,58 @@ export default function EngagementFullView() {
 
   const companyId = engagement?.companyId || engagement?.company?.id;
 
-  // Fetch todos for analytics
-  const { data: todos = [] } = useQuery({
-    queryKey: ['engagement-todos', engagementId],
-    queryFn: () => todoService.list(engagementId!),
+  // Fetch milestones for analytics
+  const { data: milestonesResponse } = useQuery({
+    queryKey: ['engagement-milestones', engagementId],
     enabled: !!engagementId,
+    queryFn: () => apiGet<any>(endPoints.ENGAGEMENTS.MILESTONES(engagementId!)),
   });
 
+  const { data: docRequestsResponse, isLoading: isLoadingDocRequests } = useQuery({
+    queryKey: ["document-requests", engagementId],
+    enabled: !!engagementId,
+    queryFn: async () => {
+      const res = await apiGet<any>(
+        endPoints.DOCUMENT_REQUESTS,
+        { engagementId } as Record<string, unknown>
+      );
+      return res?.data || [];
+    },
+  });
+
+  const docRequests = Array.isArray(docRequestsResponse) ? docRequestsResponse : docRequestsResponse ? [docRequestsResponse] : [];
+
+  const updateDocRequestStatusMutation = useMutation({
+    mutationFn: async ({ requestId, status }: { requestId: string; status: string }) => {
+      return apiPatch(endPoints.DOCUMENT_REQUEST_STATUS(requestId), { status });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["document-requests", engagementId] });
+      toast.success("Document request status updated");
+    },
+    onError: () => {
+      toast.error("Failed to update status");
+    }
+  });
+
+  const milestones = React.useMemo(() => {
+    const rawData = milestonesResponse?.data || milestonesResponse;
+    return Array.isArray(rawData) ? rawData : [];
+  }, [milestonesResponse]);
+
   const analytics = React.useMemo(() => {
-    if (todos.length === 0) return 0;
-    const completed = todos.filter(t => t.status === TodoListStatus.COMPLETED || t.status === TodoListStatus.ACTION_TAKEN).length;
-    return Math.round((completed / todos.length) * 100);
-  }, [todos]);
+    if (milestones.length === 0) return 0;
+    const achieved = milestones.filter((m: any) => m.status === 'ACHIEVED').length;
+    return Math.round((achieved / milestones.length) * 100);
+  }, [milestones]);
+
+  const milestoneStats = React.useMemo(() => {
+    return {
+      wait: milestones.filter((m: any) => m.status === 'PENDING').length,
+      done: milestones.filter((m: any) => m.status === 'ACHIEVED').length,
+      skip: milestones.filter((m: any) => m.status === 'CANCELLED').length,
+    };
+  }, [milestones]);
 
   const serviceConfig = React.useMemo(() => {
     if (!selectedService) return null;
@@ -483,36 +523,125 @@ export default function EngagementFullView() {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                          <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Completed</p>
-                            <p className="text-lg font-black text-gray-900">{todos.filter(t => t.status === TodoListStatus.COMPLETED).length} <span className="text-xs font-bold text-gray-400">Tasks</span></p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                          <div className="p-5 rounded-3xl bg-amber-50/50 border border-amber-100/50 space-y-2 group/stat hover:bg-amber-50 transition-all duration-300">
+                            <p className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] ml-1">Wait</p>
+                            <div className="flex items-baseline gap-2">
+                              <p className="text-3xl font-black text-amber-600 transition-transform group-hover/stat:scale-110 duration-300">{milestoneStats.wait}</p>
+                              <span className="text-[11px] font-bold text-amber-400/60 uppercase tracking-widest">Markers</span>
+                            </div>
                           </div>
-                          <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pending</p>
-                            <p className="text-lg font-black text-primary">{todos.filter(t => t.status !== TodoListStatus.COMPLETED).length} <span className="text-xs font-bold text-gray-400">Tasks</span></p>
+                          <div className="p-5 rounded-3xl bg-emerald-50/50 border border-emerald-100/50 space-y-2 group/stat hover:bg-emerald-50 transition-all duration-300">
+                            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] ml-1">Done</p>
+                            <div className="flex items-baseline gap-2">
+                              <p className="text-3xl font-black text-emerald-600 transition-transform group-hover/stat:scale-110 duration-300">{milestoneStats.done}</p>
+                              <span className="text-[11px] font-bold text-emerald-400/60 uppercase tracking-widest">Markers</span>
+                            </div>
                           </div>
-                          <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</p>
-                            <p className={cn("text-lg font-black uppercase tracking-tight", getStatusColor(engagement?.status || 'Active').split(' ')[0])}>
-                              {engagement?.status || 'Active'}
-                            </p>
-                          </div>
-                          <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Health</p>
-                            <p className="text-lg font-black text-primary">Stable</p>
+                          <div className="p-5 rounded-3xl bg-red-50/50 border border-red-100/50 space-y-2 group/stat hover:bg-red-50 transition-all duration-300">
+                            <p className="text-[10px] font-black text-red-500 uppercase tracking-[0.2em] ml-1">Skip</p>
+                            <div className="flex items-baseline gap-2">
+                              <p className="text-3xl font-black text-red-600 transition-transform group-hover/stat:scale-110 duration-300">{milestoneStats.skip}</p>
+                              <span className="text-[11px] font-bold text-red-400/60 uppercase tracking-widest">Markers</span>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    {/* Quick Activity / Chat Preview Right Panel */}
-                    <div className="w-full lg:w-80 bg-gray-50/50 border-l border-gray-100 p-6 flex flex-col min-h-[200px]">
-                      <MiniChatPreview 
-                        engagementId={engagementId!} 
-                        chatRoomId={engagement?.chatRoomId}
-                        onViewAll={() => setActiveTab('chat')}
-                      />
+                    {/* Document Requests Right Panel */}
+                    <div className="w-full lg:w-80 bg-gray-50/50 border-l border-gray-100 p-6 flex flex-col h-fit max-h-[600px]">
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-2">
+                          <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                            <FileText size={18} />
+                          </div>
+                          <h3 className="font-black text-gray-900 tracking-tight">Active Requests</h3>
+                        </div>
+                        <span className="bg-gray-200/50 text-gray-500 text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-widest">
+                          {docRequests.length}
+                        </span>
+                      </div>
+
+                      <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+                        {isLoadingDocRequests ? (
+                          [1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full rounded-2xl" />)
+                        ) : docRequests.length === 0 ? (
+                          <div className="text-center py-10 bg-white rounded-2xl border border-dashed border-gray-200">
+                            <FileText className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">No active requests</p>
+                          </div>
+                        ) : (
+                          docRequests.map((req: any) => (
+                            <div key={req.id} className="group p-4 rounded-2xl bg-white border border-gray-100 hover:border-primary/20 hover:shadow-sm transition-all duration-300">
+                              <div className="flex flex-col gap-3">
+                                <h4 className="text-xs font-bold text-gray-700 leading-tight group-hover:text-primary transition-colors line-clamp-2">
+                                  {req.title}
+                                </h4>
+                                
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm" 
+                                      disabled={updateDocRequestStatusMutation.isPending}
+                                      className={cn(
+                                        "w-full h-8 rounded-xl text-[9px] font-black uppercase tracking-widest justify-between px-3 border border-transparent transition-all",
+                                        req.status === 'COMPLETED' ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100" :
+                                        req.status === 'ACTIVE' ? "bg-blue-50 text-blue-600 hover:bg-blue-100" :
+                                        "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                                      )}
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <div className={cn(
+                                          "w-1.5 h-1.5 rounded-full",
+                                          req.status === 'COMPLETED' ? "bg-emerald-500" :
+                                          req.status === 'ACTIVE' ? "bg-blue-500" :
+                                          "bg-gray-400"
+                                        )} />
+                                        {req.status}
+                                      </div>
+                                      <ChevronDown size={12} className="opacity-50" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-40 rounded-2xl p-1 border-gray-100 shadow-xl">
+                                    <DropdownMenuItem 
+                                      onClick={() => updateDocRequestStatusMutation.mutate({ requestId: req.id, status: 'DRAFT' })}
+                                      className="rounded-xl flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-gray-500 focus:bg-gray-50"
+                                    >
+                                      Draft
+                                      {req.status === 'DRAFT' && <CheckCircle2 size={12} className="text-primary" />}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem 
+                                      onClick={() => updateDocRequestStatusMutation.mutate({ requestId: req.id, status: 'ACTIVE' })}
+                                      className="rounded-xl flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-blue-600 focus:bg-blue-50"
+                                    >
+                                      Active
+                                      {req.status === 'ACTIVE' && <CheckCircle2 size={12} className="text-blue-500" />}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem 
+                                      onClick={() => updateDocRequestStatusMutation.mutate({ requestId: req.id, status: 'COMPLETED' })}
+                                      className="rounded-xl flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-emerald-600 focus:bg-emerald-50"
+                                    >
+                                      Completed
+                                      {req.status === 'COMPLETED' && <CheckCircle2 size={12} className="text-emerald-500" />}
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setActiveTab('requests')}
+                        className="w-full mt-4 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-primary hover:bg-primary/5 transition-all"
+                      >
+                        Manage All Requests
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -613,6 +742,8 @@ export default function EngagementFullView() {
               <MilestonesView engagementId={engagementId ?? undefined} />
             ) : activeTab === 'requests' ? (
               <DocumentRequestsView engagementId={engagementId ?? undefined} />
+            ) : activeTab === 'filing' ? (
+              <FilingsView engagementId={engagementId!} />
             ) : (
               <ShadowCard className="p-10 md:p-20 flex flex-col items-center justify-center text-center bg-gray-50/10 border-dashed min-h-[400px]">
                 <div className="p-8 bg-white shadow-sm rounded-full mb-8 text-gray-300 transform transition-transform hover:scale-110 duration-500">

@@ -48,7 +48,8 @@ export default function Login() {
             const response = await login(email, password);
             
             if (response.mfaRequired) {
-                navigate(`/verify-mfa?email=${encodeURIComponent(email)}`);
+                const method = response.mfaMethod || 'email';
+                navigate(`/verify-mfa?email=${encodeURIComponent(email)}&method=${method}`);
                 return;
             }
 

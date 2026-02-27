@@ -148,7 +148,7 @@ export const RequestedDocumentRow = ({
               <Button 
                 variant="outline" 
                 size="icon" 
-                className="h-9 w-9 text-blue-500 border-blue-200 hover:bg-blue-50" 
+                className="h-9 w-9 text-blue-500 border-blue-200 hover:bg-primary/5 hover:text-primary transition-all duration-200" 
                 onClick={() => {
                   setTodoInitialData(linkedTodo);
                   setTodoSourceId(doc.id);
@@ -163,7 +163,7 @@ export const RequestedDocumentRow = ({
               <Button 
                 variant="outline" 
                 size="icon" 
-                className="h-9 w-9 text-amber-500 border-amber-200 hover:bg-amber-50" 
+                className="h-9 w-9 text-amber-500 border-amber-200 hover:bg-primary/5 hover:text-primary transition-all duration-200" 
                 onClick={() => {
                   setTodoInitialData({
                     title: `Upload: ${doc.documentName}`,
@@ -191,7 +191,7 @@ export const RequestedDocumentRow = ({
                   e.target.value = '';
                 }} 
               />
-              <Button variant="outline" size="sm" className="h-9 border-blue-200 text-blue-700 hover:bg-blue-50">
+              <Button variant="outline" size="sm" className="h-9 border-blue-200 text-blue-700 hover:bg-primary/5 hover:text-primary transition-all duration-200">
                 {isUploading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
                 {isUploading ? "Uploading..." : "Upload"}
               </Button>
@@ -200,8 +200,37 @@ export const RequestedDocumentRow = ({
           
           {doc.file && (
             <>
-              <Button variant="outline" size="icon" className="h-9 w-9 border-blue-200 text-blue-700 hover:bg-blue-50" onClick={() => window.open(doc.file!.url, "_blank")} title="View"><Eye className="h-4 w-4" /></Button>
-              <Button variant="outline" size="icon" className="h-9 w-9 border-green-200 text-green-700 hover:bg-green-50" onClick={() => window.open(doc.file!.url, "_blank")} title="Download"><Download className="h-4 w-4" /></Button>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-9 w-9 border-blue-200 text-blue-700 hover:bg-primary/10 hover:text-primary transition-all duration-200" 
+                onClick={() => {
+                  if (doc.file?.url) {
+                    window.open(doc.file.url, "_blank");
+                  }
+                }} 
+                title="View"
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-9 w-9 border-green-200 text-green-700 hover:bg-primary/10 hover:text-primary transition-all duration-200" 
+                onClick={() => {
+                  if (doc.file?.url) {
+                    const link = document.createElement('a');
+                    link.href = doc.file.url;
+                    link.download = doc.file.file_name;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }
+                }} 
+                title="Download"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
               <Button variant="outline" size="icon" className="h-9 w-9 text-amber-600 border-amber-200 hover:bg-amber-50" onClick={handleClear} title="Clear Upload">
                 {isClearing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
               </Button>
@@ -209,7 +238,23 @@ export const RequestedDocumentRow = ({
           )}
 
           {(doc.template?.url || doc.templateFile?.url) && (
-            <Button variant="outline" size="icon" className="h-9 w-9 border-amber-200 text-amber-700 hover:bg-amber-50" onClick={() => window.open(doc.template?.url || doc.templateFile?.url, "_blank")} title="Download Template">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="h-9 w-9 border-amber-200 text-amber-700 hover:border-primary/20 hover:bg-primary/5 hover:text-primary transition-all duration-200" 
+              onClick={() => {
+                const url = doc.template?.url || doc.templateFile?.url;
+                if (url) {
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = doc.templateFile?.file_name || "template";
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }
+              }} 
+              title="Download Template"
+            >
               <Download className="h-4 w-4" />
             </Button>
           )}
@@ -220,7 +265,7 @@ export const RequestedDocumentRow = ({
                 <Button 
                   variant="outline" 
                   size="icon" 
-                  className="h-9 w-9 border-blue-200 text-blue-700 hover:bg-blue-50" 
+                  className="h-9 w-9 border-blue-200 text-blue-700 hover:bg-primary/5 hover:text-primary transition-all duration-200" 
                   onClick={() => { 
                     setAddingToContainerId(requestId); 
                     setFormData((prev: any) => ({ ...prev, parentId: doc.id })); 

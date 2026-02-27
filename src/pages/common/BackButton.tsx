@@ -19,8 +19,8 @@ const BackButton: React.FC<BackButtonProps> = ({
     <button
       onClick={() => navigate(-1)}
       className={`
-        flex items-center space-x-1 text-gray-400 hover:text-gray-700 
-        transition-colors duration-200 group w-fit ${className}
+        flex items-center space-x-1 
+        transition-colors duration-200 group w-fit bg-primary text-white ${className}
       `}
     >
       <ChevronLeft 

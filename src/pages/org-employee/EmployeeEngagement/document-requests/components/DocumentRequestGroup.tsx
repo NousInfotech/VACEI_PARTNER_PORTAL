@@ -106,7 +106,7 @@ export const DocumentRequestGroup = ({ req, children }: DocumentRequestGroupProp
                 <Button 
                   variant="outline" 
                   size="icon" 
-                  className="h-10 w-10 text-blue-500 border-blue-200 hover:bg-blue-50" 
+                  className="h-10 w-10 text-blue-500 border-blue-200 hover:bg-primary/5 hover:text-primary transition-all duration-200" 
                   onClick={() => {
                     setTodoInitialData(linkedTodo);
                     setTodoSourceId(req.id);
@@ -121,7 +121,7 @@ export const DocumentRequestGroup = ({ req, children }: DocumentRequestGroupProp
                 <Button 
                   variant="outline" 
                   size="icon" 
-                  className="h-10 w-10 text-amber-500 border-amber-200 hover:bg-amber-50" 
+                  className="h-10 w-10 text-amber-500 border-amber-200 hover:bg-primary/5 hover:text-primary transition-all duration-200" 
                   onClick={() => {
                     setTodoInitialData({
                       title: `Follow up: ${req.title}`,
@@ -150,7 +150,7 @@ export const DocumentRequestGroup = ({ req, children }: DocumentRequestGroupProp
             <Button 
               variant="outline" 
               onClick={() => { setAddingToContainerId(req.id); setIsAddModalOpen(true); }} 
-              className="h-10 border-blue-200 text-blue-700 hover:bg-blue-50"
+              className="h-10 border-blue-200 text-blue-700 hover:bg-primary/5 hover:text-primary transition-all duration-200"
             >
               <Plus className="h-4 w-4 mr-2" /> Add Document
             </Button>
@@ -198,8 +198,12 @@ export const DocumentRequestGroup = ({ req, children }: DocumentRequestGroupProp
                   <Button 
                     variant="outline" 
                     size="icon" 
-                    className="h-8 w-8 border-blue-200 text-blue-700 hover:bg-blue-50" 
-                    onClick={() => window.open(file.url, "_blank")} 
+                    className="h-8 w-8 border-blue-200 text-blue-700 hover:bg-primary/10 hover:text-primary transition-all duration-200" 
+                    onClick={() => {
+                      if (file.url) {
+                        window.open(file.url, "_blank");
+                      }
+                    }} 
                     title="View"
                   >
                     <Eye className="h-3.5 w-3.5" />
@@ -207,8 +211,17 @@ export const DocumentRequestGroup = ({ req, children }: DocumentRequestGroupProp
                   <Button 
                     variant="outline" 
                     size="icon" 
-                    className="h-8 w-8 border-green-200 text-green-700 hover:bg-green-50" 
-                    onClick={() => window.open(file.url, "_blank")} 
+                    className="h-8 w-8 border-green-200 text-green-700 hover:bg-primary/10 hover:text-primary transition-all duration-200" 
+                    onClick={() => {
+                      if (file.url) {
+                        const link = document.createElement('a');
+                        link.href = file.url;
+                        link.download = file.file_name;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }
+                    }} 
                     title="Download"
                   >
                     <Download className="h-3.5 w-3.5" />

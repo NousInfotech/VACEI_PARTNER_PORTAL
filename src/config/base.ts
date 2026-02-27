@@ -45,9 +45,8 @@ export const apiDelete = async <T>(url: string, data?: unknown): Promise<T> => {
  */
 export const apiPostFormData = async <T>(url: string, data: FormData): Promise<T> => {
   const response = await axiosInstance.post<T>(url, data, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
+    // Ensure we don't send JSON here; Multer expects multipart/form-data
+    headers: { 'Content-Type': 'multipart/form-data' },
   });
   return response.data;
 };
