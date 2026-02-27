@@ -218,11 +218,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const body: Record<string, unknown> = { email, method: options.method };
             if (options.otp != null) body.otp = options.otp;
             if (options.webauthnResponse != null) body.webauthnResponse = options.webauthnResponse;
+
             const response = await apiPost<LoginResponse>(endPoints.AUTH.MFA_VERIFY, body);
             const payload = response?.data;
             if (payload?.user && payload?.token) {
                 const userData = payload.user;
-                const memberData = payload.organizationMember;
+                const memberData = payload.organizationMember ?? null;
                 const token = payload.token;
 
                 setUser(userData);
@@ -230,6 +231,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 if (memberData?.allowedServices && memberData.allowedServices.length > 0) {
                     setSelectedService(memberData.allowedServices[0]);
+                } else if (memberData?.allowedCustomServiceCycles && memberData.allowedCustomServiceCycles.length > 0) {
+                    setSelectedService(memberData.allowedCustomServiceCycles[0].id);
                 }
 
                 localStorage.setItem("user", JSON.stringify(userData));
