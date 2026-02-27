@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPatch, apiDelete } from '../config/base';
+import { apiGet, apiPatch, apiDelete, apiPostFormData } from '../config/base';
 import { endPoints } from '../config/endPoint';
 
 export const FilingStatus = {
@@ -33,11 +33,12 @@ export const filingService = {
     getById: (engagementId: string, filingId: string) =>
         apiGet<{ data: FilingItem }>(`${endPoints.ENGAGEMENTS.FILINGS(engagementId)}/${filingId}`).then((res) => res.data),
 
-    upload: (engagementId: string, name: string, file: File) => {
+    upload: async (engagementId: string, name: string, file: File) => {
         const formData = new FormData();
         formData.append('name', name);
         formData.append('file', file);
-        return apiPost<{ data: FilingItem }>(endPoints.ENGAGEMENTS.FILINGS(engagementId), formData).then((res) => res.data);
+        const res = await apiPostFormData<{ data: FilingItem }>(endPoints.ENGAGEMENTS.FILINGS(engagementId), formData);
+        return res.data;
     },
 
     updateStatus: (engagementId: string, filingId: string, status: FilingStatus, reason?: string) =>

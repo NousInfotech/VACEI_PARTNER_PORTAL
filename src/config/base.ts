@@ -44,10 +44,6 @@ export const apiDelete = async <T>(url: string, data?: unknown): Promise<T> => {
  * Generic POST method for FormData (e.g. file uploads)
  */
 export const apiPostFormData = async <T>(url: string, data: FormData): Promise<T> => {
-  const response = await axiosInstance.post<T>(url, data, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+  const response = await axiosInstance.post<T>(url, data);
   return response.data;
 };

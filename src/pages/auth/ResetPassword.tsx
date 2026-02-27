@@ -37,7 +37,7 @@ export default function ResetPassword() {
       await apiPost(endPoints.AUTH.RESET_PASSWORD, {
         email,
         otp,
-        password,
+        newPassword: password,
       } as Record<string, unknown>);
 
       setAlertMessage({ message: "Password reset successful! Redirecting to login...", variant: "success" });
