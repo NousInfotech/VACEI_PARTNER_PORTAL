@@ -6,7 +6,6 @@ import { useAuth } from "../context/auth-context-core";
 import { Select } from "../ui/Select";
 import { Dropdown } from "../ui/Dropdown";
 import { AVAILABLE_SERVICES } from "../lib/types";
-import { useSSE } from "../hooks/useSSE";
 import BackButton from "../pages/common/BackButton";
 import { useNotifications } from "../context/NotificationContext";
 
