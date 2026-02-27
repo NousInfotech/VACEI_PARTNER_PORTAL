@@ -18,15 +18,29 @@ import {
 import { Button } from '../../ui/Button';
 import { ShadowCard } from '../../ui/ShadowCard';
 import { toast } from 'sonner';
-import { apiPost } from '../../config/base';
+import { apiPost, apiPut } from '../../config/base';
 import { endPoints } from '../../config/endPoint';
 import { useAuth } from '../../context/auth-context-core';
 import { fetchPreferencesAPI, updatePreferencesAPI, type NotificationPreference } from '../../api/notificationService';
 
 const Settings: React.FC = () => {
-    const { user } = useAuth();
+    const { user, checkAuth } = useAuth();
     const [activeTab, setActiveTab] = React.useState('profile');
     const [isSaving, setIsSaving] = React.useState(false);
+
+    const [profileData, setProfileData] = React.useState({
+        firstName: user?.firstName || '',
+        lastName: user?.lastName || '',
+    });
+
+    React.useEffect(() => {
+        if (user) {
+            setProfileData({
+                firstName: user.firstName || '',
+                lastName: user.lastName || '',
+            });
+        }
+    }, [user]);
 
     const [notifications, setNotifications] = React.useState<NotificationPreference>({
         emailEnabled: true,
@@ -94,6 +108,24 @@ const Settings: React.FC = () => {
             } finally {
                 setIsSaving(false);
             }
+        } else if (activeTab === 'profile') {
+            if (!profileData.firstName || !profileData.lastName) {
+                toast.error('First name and last name are required');
+                return;
+            }
+            setIsSaving(true);
+            try {
+                // We use put here for updating the profile
+                await apiPut(endPoints.AUTH.ME.replace('GET', 'PUT') || '/auth/me', profileData);
+                toast.success('Profile updated successfully', {
+                    icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                });
+                if (checkAuth) await checkAuth();
+            } catch (error: any) {
+                toast.error(error?.response?.data?.message || error?.message || 'Failed to update profile');
+            } finally {
+                setIsSaving(false);
+            }
         } else {
             setIsSaving(true);
             setTimeout(() => {
@@ -136,11 +168,11 @@ const Settings: React.FC = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">First Name</label>
-                                    <input type="text" defaultValue={user?.firstName || ""} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium text-sm" />
+                                    <input type="text" value={profileData.firstName} onChange={e => setProfileData(p => ({ ...p, firstName: e.target.value }))} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium text-sm" />
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Last Name</label>
-                                    <input type="text" defaultValue={user?.lastName || ""} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium text-sm" />
+                                    <input type="text" value={profileData.lastName} onChange={e => setProfileData(p => ({ ...p, lastName: e.target.value }))} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium text-sm" />
                                 </div>
                                 <div className="md:col-span-2 space-y-1.5">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Email Address</label>
