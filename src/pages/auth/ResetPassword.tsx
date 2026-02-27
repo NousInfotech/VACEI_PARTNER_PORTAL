@@ -137,7 +137,7 @@ export default function ResetPassword() {
 
             <Button
               type="submit"
-              className="w-full h-12 rounded-xl font-bold text-lg shadow-lg shadow-primary/20"
+              className="w-full h-12 rounded-xl font-bold text-lg shadow-lg shadow-primary/20 text-white"
               disabled={loading}
             >
               {loading ? "Resetting..." : "Reset Password"}

@@ -94,7 +94,7 @@ export default function ForgetPassword() {
 
                 <Button
                   type="submit"
-                  className="w-full h-12 mt-2 font-semibold"
+                  className="w-full h-12 mt-2 font-semibold text-white"
                   disabled={loading}
                 >
                   {loading ? "Sending..." : "Send Reset Link"}
