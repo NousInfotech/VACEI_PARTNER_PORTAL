@@ -219,10 +219,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (options.otp != null) body.otp = options.otp;
             if (options.webauthnResponse != null) body.webauthnResponse = options.webauthnResponse;
             const response = await apiPost<LoginResponse>(endPoints.AUTH.MFA_VERIFY, body);
-            if (response.data) {
-                const userData = response.data.user;
-                const memberData = response.data.organizationMember;
-                const token = response.data.token;
+            const payload = response?.data;
+            if (payload?.user && payload?.token) {
+                const userData = payload.user;
+                const memberData = payload.organizationMember;
+                const token = payload.token;
 
                 setUser(userData);
                 setOrganizationMember(memberData ?? null);
@@ -233,13 +234,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 localStorage.setItem("user", JSON.stringify(userData));
                 if (memberData) localStorage.setItem("organizationMember", JSON.stringify(memberData));
-                if (token) localStorage.setItem("token", token);
-                if (response.data.refreshToken) localStorage.setItem("refreshToken", response.data.refreshToken);
+                localStorage.setItem("token", token);
+                if (payload.refreshToken) localStorage.setItem("refreshToken", payload.refreshToken);
                 localStorage.setItem("userRole", userData.role);
 
                 return { success: true, message: "Verification successful!" };
             }
-            return { success: false, message: response.message || "Verification failed" };
+            return { success: false, message: response?.message || "Verification failed" };
         } catch (error: any) {
             console.error("MFA verification failed:", error);
             const backendMessage =
