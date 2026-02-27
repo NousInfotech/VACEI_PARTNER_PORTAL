@@ -32,7 +32,8 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
         isLoading,
         error,
         sendMessage,
-        markAsRead
+        markAsRead,
+        currentUserId: chatCurrentUserId,
     } = useChat(engagementId, { roomId: chatRoomId });
 
     // UI State matching Messages.tsx logic
@@ -243,7 +244,7 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
                         selectedMessageIds={selectedMessageIds}
                         onSelectMessage={(id) => setSelectedMessageIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])}
                         onEnterSelectMode={() => setIsSelectMode(true)}
-                        currentUserId={activeChat.messages[0]?.senderId === 'me' ? 'me' : (useAuth().organizationMember?.userId || '')} // Pass currentUserId, fallback to auth
+                        currentUserId={chatCurrentUserId || organizationMember?.userId || ''}
                         todoMap={todoMap}
                     />
                 </div>
