@@ -17,9 +17,9 @@ const MAIN_TABS: { id: MainTab; label: string; icon: React.ElementType }[] = [
   { id: 'CHECKLIST', label: 'Checklist', icon: CheckSquare },
 ];
 
-const DOC_SUB_TABS: { id: DocSubTab; label: string }[] = [
-  { id: 'ENGAGEMENT', label: 'Engagement' },
-];
+// const DOC_SUB_TABS: { id: DocSubTab; label: string }[] = [
+//   { id: 'ENGAGEMENT', label: 'Engagement' },
+// ];
 
 const getTemplateType = (tab: MainTab): TemplateType => {
   if (tab === 'DOC_REQUEST') return 'DOCUMENT_REQUEST';
@@ -35,17 +35,17 @@ const TemplateManagement: React.FC = () => {
   const docSubTabParam = (searchParams.get('sub') as DocSubTab) || 'ENGAGEMENT';
 
   const [mainTab, setMainTab] = useState<MainTab>(mainTabParam);
-  const [docSubTab, setDocSubTab] = useState<DocSubTab>(docSubTabParam);
+  const [docSubTab] = useState<DocSubTab>(docSubTabParam);
 
   const changeMainTab = (tab: MainTab) => {
     setMainTab(tab);
     setSearchParams({ tab, sub: docSubTab });
   };
 
-  const changeDocSubTab = (sub: DocSubTab) => {
-    setDocSubTab(sub);
-    setSearchParams({ tab: mainTab, sub });
-  };
+  // const changeDocSubTab = (sub: DocSubTab) => {
+  //   setDocSubTab(sub);
+  //   setSearchParams({ tab: mainTab, sub });
+  // };
 
   const handleCreate = () => {
     const type: TemplateType = getTemplateType(mainTab);
