@@ -43,7 +43,7 @@ export default function Sections({ engagementId }: SectionsProps) {
             case 'balance-sheet':
                 return <BalanceSheet engagementId={engagementId} />;
             case 'exports':
-                return <Exports />;
+                return <Exports engagementId={engagementId} />;
 
             // Planning Procedures
             case 'planning-procedures':

@@ -62,7 +62,8 @@ export async function fetchNotificationsAPI(filters?: {
 export async function fetchUnreadCountAPI(): Promise<number> {
   const res = await axiosInstance.get('notifications/unread-count');
   const data = res.data?.data ?? res.data;
-  return data?.count ?? 0;
+  const count = typeof data?.count === 'number' ? data.count : (data?.data?.count ?? 0);
+  return count;
 }
 
 export async function markNotificationAsReadAPI(notificationId: string): Promise<void> {

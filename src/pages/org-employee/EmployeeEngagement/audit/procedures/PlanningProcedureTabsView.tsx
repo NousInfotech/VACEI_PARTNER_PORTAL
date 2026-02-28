@@ -42,6 +42,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiGet, apiPost, apiPut, apiDelete, apiPostFormData } from "@/config/base";
 import { endPoints } from "@/config/endPoint";
 import { getDecodedUserId } from "@/utils/authUtils";
+import { useMemberNamesMap } from "../hooks/useMemberNamesMap";
 
 // Convert procedures/fields structure to questions-like structure (includes context for Q/A)
 function proceduresToQuestions(procedures: any[]): any[] {
@@ -222,37 +223,11 @@ export const PlanningProcedureTabsView: React.FC<PlanningProcedureTabsViewProps>
   const [isDeletingReview, setIsDeletingReview] = useState<string | null>(null);
   const [reviews, setReviews] = useState<any[]>([]);
   const [isLoadingReviews, setIsLoadingReviews] = useState(false);
-  const [userNamesMap, setUserNamesMap] = useState<Record<string, string>>({});
 
   const [_reviewedItems, _setReviewedItems] = useState<Set<string>>(new Set());
   const [_itemReviewComments, _setItemReviewComments] = useState<Record<string, string>>({});
 
-  // VACEI: no profiles API; use userId as display name when name not available
-  const fetchUserName = async (userId: string): Promise<string> => {
-    if (!userId || userNamesMap[userId]) return userNamesMap[userId] || userId;
-    setUserNamesMap((prev) => ({ ...prev, [userId]: userId }));
-    return userId;
-  };
-
-  const fetchUserNames = async (reviewsList: any[]) => {
-    const userIds = new Set<string>();
-    reviewsList.forEach((review) => {
-      if (review.reviewedBy) userIds.add(review.reviewedBy);
-      if (review.assignedReviewer) userIds.add(review.assignedReviewer);
-      if (review.approvedBy) userIds.add(review.approvedBy);
-      if (review.signedOffBy) userIds.add(review.signedOffBy);
-      if (review.lockedBy) userIds.add(review.lockedBy);
-      if (review.reopenedBy) userIds.add(review.reopenedBy);
-    });
-    const namesMap: Record<string, string> = {};
-    await Promise.all(
-      Array.from(userIds).map(async (userId) => {
-        const name = await fetchUserName(userId);
-        namesMap[userId] = name;
-      })
-    );
-    setUserNamesMap((prev) => ({ ...prev, ...namesMap }));
-  };
+  const memberNamesMap = useMemberNamesMap(!!engagementId);
 
   const fetchReviews = async () => {
     if (!engagementId) return;
@@ -265,7 +240,6 @@ export const PlanningProcedureTabsView: React.FC<PlanningProcedureTabsViewProps>
       const list = Array.isArray(raw?.workflows) ? raw.workflows : [];
       const filteredReviews = list.filter((w: any) => w.itemType === "planning-procedure");
       setReviews(filteredReviews);
-      await fetchUserNames(filteredReviews);
     } catch (error: any) {
       console.error("Error fetching reviews:", error);
       toast({
@@ -1369,7 +1343,7 @@ export const PlanningProcedureTabsView: React.FC<PlanningProcedureTabsViewProps>
                                         rid = review.signedOffBy || review.approvedBy || review.reviewedBy || review.assignedReviewer;
                                       else if (review.status === "re-opened") rid = review.reopenedBy || review.reviewedBy || review.assignedReviewer;
                                       else rid = review.reviewedBy || review.assignedReviewer;
-                                      return rid ? userNamesMap[rid] || rid : "Not assigned";
+                                      return rid ? memberNamesMap[rid] || rid : "Not assigned";
                                     })()}
                                   </span>
                                 </div>
@@ -1382,7 +1356,7 @@ export const PlanningProcedureTabsView: React.FC<PlanningProcedureTabsViewProps>
                                 {review.status === "approved" && review.approvedBy && (
                                   <div>
                                     <span className="font-medium">Approved By:</span>{" "}
-                                    <span className="text-muted-foreground">{userNamesMap[review.approvedBy] || review.approvedBy}</span>
+                                    <span className="text-muted-foreground">{memberNamesMap[review.approvedBy] || review.approvedBy}</span>
                                   </div>
                                 )}
                                 {review.status === "approved" && review.approvedAt && (
@@ -1394,7 +1368,7 @@ export const PlanningProcedureTabsView: React.FC<PlanningProcedureTabsViewProps>
                                 {review.status === "signed-off" && review.signedOffBy && (
                                   <div>
                                     <span className="font-medium">Signed Off By:</span>{" "}
-                                    <span className="text-muted-foreground">{userNamesMap[review.signedOffBy] || review.signedOffBy}</span>
+                                    <span className="text-muted-foreground">{memberNamesMap[review.signedOffBy] || review.signedOffBy}</span>
                                   </div>
                                 )}
                                 {review.status === "signed-off" && review.signedOffAt && (
@@ -1407,14 +1381,14 @@ export const PlanningProcedureTabsView: React.FC<PlanningProcedureTabsViewProps>
                                   <div>
                                     <span className="font-medium">Locked:</span>{" "}
                                     <span className="text-muted-foreground">
-                                      {review.lockedBy ? `Yes (by ${userNamesMap[review.lockedBy] || review.lockedBy})` : "Yes"}
+                                      {review.lockedBy ? `Yes (by ${memberNamesMap[review.lockedBy] || review.lockedBy})` : "Yes"}
                                     </span>
                                   </div>
                                 )}
                                 {review.status === "re-opened" && review.reopenedBy && (
                                   <div>
                                     <span className="font-medium">Reopened By:</span>{" "}
-                                    <span className="text-muted-foreground">{userNamesMap[review.reopenedBy] || review.reopenedBy}</span>
+                                    <span className="text-muted-foreground">{memberNamesMap[review.reopenedBy] || review.reopenedBy}</span>
                                   </div>
                                 )}
                                 {review.status === "re-opened" && review.reopenedAt && (

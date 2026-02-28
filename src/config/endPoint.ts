@@ -18,6 +18,7 @@ export const endPoints = {
   ORGANIZATION: {
     CREATE_MEMBER: '/organization-members',
     GET_MEMBERS: '/organization-members',
+    GET_MEMBER_BY_ID: (id: string) => `/organization-members/${id}`,
     ASSIGN_SERVICES: '/organization-members',
     ASSIGN_CUSTOM_SERVICES: '/organization-members',
   },
@@ -51,6 +52,13 @@ export const endPoints = {
     WORKBOOK_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library/workbooks`,
     FILINGS: (engagementId: string) => `/engagements/${engagementId}/filings`,
     FILING_STATUS: (engagementId: string, filingId: string) => `/engagements/${engagementId}/filings/${filingId}/status`,
+    /** Export endpoints (REFERENCE-PORTAL compatible). GET with responseType blob for file download. */
+    EXPORT: (engagementId: string, type: 'evidence' | 'all-evidence' | 'all-workbooks' | 'combined' | 'etb' | 'adjustments' | 'reclassifications', format?: 'xlsx' | 'pdf') => {
+      const base = `/engagements/${engagementId}/export/${type}`;
+      if (type === 'combined' && format === 'pdf') return `${base}?format=pdf`;
+      if ((type === 'etb' || type === 'adjustments' || type === 'reclassifications') && format) return `${base}?format=${format}`;
+      return base;
+    },
   },
   ENGAGEMENT_UPDATES: '/engagement-updates',
   SERVICE_REQUEST: {
@@ -106,6 +114,7 @@ export const endPoints = {
     CREATE_AUDIT_ENTRY: (auditCycleId: string, trialBalanceId: string) => `/audit-cycles/${auditCycleId}/trial-balances/${trialBalanceId}/audit-entries`,
     GET_AUDIT_ENTRIES: (auditCycleId: string, trialBalanceId: string) => `/audit-cycles/${auditCycleId}/trial-balances/${trialBalanceId}/audit-entries`,
     GET_AUDIT_ENTRY: (auditCycleId: string, trialBalanceId: string, entryId: string) => `/audit-cycles/${auditCycleId}/trial-balances/${trialBalanceId}/audit-entries/${entryId}`,
+    GET_AUDIT_ENTRY_HISTORY: (auditCycleId: string, trialBalanceId: string, entryId: string) => `/audit-cycles/${auditCycleId}/trial-balances/${trialBalanceId}/audit-entries/${entryId}/history`,
     UPDATE_AUDIT_ENTRY: (auditCycleId: string, trialBalanceId: string, entryId: string) => `/audit-cycles/${auditCycleId}/trial-balances/${trialBalanceId}/audit-entries/${entryId}`,
     DELETE_AUDIT_ENTRY: (auditCycleId: string, trialBalanceId: string, entryId: string) => `/audit-cycles/${auditCycleId}/trial-balances/${trialBalanceId}/audit-entries/${entryId}`,
     GET_INCOME_STATEMENT: (engagementId: string) => `/services/audit/engagements/${engagementId}/financial-reports/income-statement`,
@@ -309,6 +318,8 @@ export const endPoints = {
     SAVE: '/procedures',
     /** Save fieldwork document (questions, recommendations) to Procedure.documentPayload. Body: { auditCycleId, questions, recommendations, ... } */
     FIELDWORK_SAVE: '/procedures/fieldwork/save',
+    /** Create a procedure review (POST). Body: { organizationalMemberId, reviewStatus, comment } */
+    CREATE_REVIEW: (procedureId: string) => `/procedures/${procedureId}/reviews`,
   },
   REVIEW: {
     WORKFLOWS_BY_ENGAGEMENT: (engagementId: string) => `/review/workflows/engagement/${engagementId}`,

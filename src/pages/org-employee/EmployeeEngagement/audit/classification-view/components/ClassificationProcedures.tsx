@@ -5,6 +5,8 @@ interface ClassificationProceduresProps {
     engagementId?: string;
     /** Engagement object for procedures (optional; fetched by ProceduresTab if not provided) */
     engagement?: any;
+    /** DB classification id for per-classification fieldwork procedure persistence */
+    classificationId?: string;
 }
 
 /**
@@ -19,6 +21,7 @@ export default function ClassificationProcedures({
     title,
     engagementId,
     engagement,
+    classificationId,
 }: ClassificationProceduresProps) {
     if (!engagementId) {
         return (
@@ -34,6 +37,7 @@ export default function ClassificationProcedures({
                 engagementId={engagementId}
                 engagement={engagement}
                 classification={title}
+                classificationId={classificationId}
             />
         </div>
     );

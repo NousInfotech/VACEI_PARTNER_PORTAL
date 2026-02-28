@@ -41,10 +41,11 @@ export const useClassification = (
         // If needed, we can implement pagination later
         const response = await apiGet<{ data: ClassificationResponse[] }>(
           endPoints.AUDIT.GET_CLASSIFICATIONS,
-          { limit: 100 } // Reduced limit to avoid 500 errors
+          { trialBalanceId, limit: 100 }
         );
 
-        const classifications = response.data || response || [];
+        const data = (response as any)?.data ?? response;
+        const classifications = Array.isArray(data) ? data : (data?.data ? data.data : []);
         const found = Array.isArray(classifications) 
           ? classifications.find(
               (c: ClassificationResponse) =>

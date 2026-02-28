@@ -9,6 +9,24 @@ export const apiGet = async <T>(url: string, params?: Record<string, unknown>): 
 };
 
 /**
+ * GET as blob (for file downloads). Returns blob and optional filename from Content-Disposition.
+ */
+export const apiGetBlob = async (
+  url: string,
+  params?: Record<string, unknown>
+): Promise<{ blob: Blob; filename?: string }> => {
+  const response = await axiosInstance.get(url, { params, responseType: 'blob' });
+  const blob = response.data as Blob;
+  const contentDisposition = response.headers?.['content-disposition'];
+  let filename: string | undefined;
+  if (typeof contentDisposition === 'string') {
+    const match = contentDisposition.match(/filename="?([^";\n]+)"?/i);
+    if (match) filename = match[1].trim();
+  }
+  return { blob, filename };
+};
+
+/**
  * Generic POST method
  */
 export const apiPost = async <T>(url: string, data?: unknown): Promise<T> => {
