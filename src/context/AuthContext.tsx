@@ -171,7 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 const token = response.data.token;
                 
                 setUser(userData);
-                setOrganizationMember(memberData);
+                setOrganizationMember(memberData ?? null);
                 
                 if (memberData?.allowedServices && memberData.allowedServices.length > 0) {
                     setSelectedService(memberData.allowedServices[0]);

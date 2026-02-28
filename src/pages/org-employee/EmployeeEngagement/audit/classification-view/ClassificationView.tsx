@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import ClassificationHeader from "./components/ClassificationHeader";
 import ClassificationSummary from "./components/ClassificationSummary";
 import ClassificationTable, { type TableRow } from "./components/ClassificationTable";
@@ -8,7 +8,7 @@ import ClassificationWorkbook from "./components/ClassificationWorkbook";
 import { useETBData } from "../hooks/useETBData";
 import { useClassification } from "../hooks/useClassification";
 import { extractClassificationGroups, getRowsForClassification } from "../utils/classificationUtils";
-import { Loader2, Eye, Save, MessageSquare } from "lucide-react";
+import { Loader2, Eye, Save, MessageSquare, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiGet, apiPost } from "@/config/base";
 import { endPoints } from "@/config/endPoint";
@@ -152,11 +152,18 @@ export default function ClassificationView({ classificationId, engagementId, tit
         if (!dbClassificationId) return;
         setReviewLoading(true);
         try {
-            const res = await apiGet<{ data?: { id: string; organizationalMemberId: string; comment: string; status: string }[] }>(
+            const res = await apiGet<any>(
                 endPoints.AUDIT.GET_CLASSIFICATION_REVIEWS(dbClassificationId),
                 { limit: 100, order: "desc" }
             );
-            const raw = Array.isArray((res as any)?.data) ? (res as any).data : [];
+            const payload = (res as any)?.data ?? (Array.isArray(res) ? res : undefined);
+            const raw = Array.isArray(payload)
+                ? payload
+                : Array.isArray((payload as any)?.data)
+                    ? (payload as any).data
+                    : Array.isArray((payload as any)?.items)
+                        ? (payload as any).items
+                        : [];
             const reviews: ReviewRecord[] = raw.map((r: any) => ({
                 id: r.id,
                 userId: r.organizationalMemberId ?? "",
@@ -182,6 +189,14 @@ export default function ClassificationView({ classificationId, engagementId, tit
     useEffect(() => {
         if (dbClassificationId) loadReviewWorkflow();
     }, [dbClassificationId, loadReviewWorkflow]);
+
+    // Refetch only when dialog transitions from closed to open (avoids overwriting optimistic updates)
+    const prevReviewHistoryOpen = useRef(false);
+    useEffect(() => {
+        const justOpened = reviewHistoryOpen && !prevReviewHistoryOpen.current;
+        prevReviewHistoryOpen.current = reviewHistoryOpen;
+        if (justOpened && dbClassificationId) loadReviewWorkflow();
+    }, [reviewHistoryOpen, dbClassificationId, loadReviewWorkflow]);
 
     /** Submit review comment (Review button flow – matches REFERENCE submitReviewComment). */
     const submitReviewComment = useCallback(async () => {
@@ -446,11 +461,19 @@ export default function ClassificationView({ classificationId, engagementId, tit
                 {/* Review History dialog – matches REFERENCE-PORTAL */}
                 <Dialog open={reviewHistoryOpen} onOpenChange={setReviewHistoryOpen}>
                     <DialogContent className="min-w-[70vw] max-w-[90vw] h-[70vh] flex flex-col p-0">
-                        <DialogHeader className="shrink-0 px-6 py-4 border-b">
+                        <DialogHeader className="shrink-0 px-6 py-4 border-b relative">
                             <DialogTitle>Review History</DialogTitle>
                             <DialogDescription>
                                 Audit trail for: <span className="font-semibold">{title}</span>
                             </DialogDescription>
+                            <button
+                                type="button"
+                                onClick={() => setReviewHistoryOpen(false)}
+                                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                aria-label="Close"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
                         </DialogHeader>
                         <div className="flex-1 overflow-y-auto px-6 py-4">
                             {!reviewWorkflow?.reviews?.length ? (

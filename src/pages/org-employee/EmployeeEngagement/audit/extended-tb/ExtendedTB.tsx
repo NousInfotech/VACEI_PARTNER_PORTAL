@@ -354,7 +354,14 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
         setReviewLoading(true);
         try {
             const res = await apiGet<any>(endPoints.AUDIT.GET_CLASSIFICATION_REVIEWS(etbClassificationId), { limit: 100, order: "desc" });
-            const raw = Array.isArray((res as any)?.data) ? (res as any).data : [];
+            const payload = (res as any)?.data ?? (Array.isArray(res) ? res : undefined);
+            const raw = Array.isArray(payload)
+                ? payload
+                : Array.isArray((payload as any)?.data)
+                    ? (payload as any).data
+                    : Array.isArray((payload as any)?.items)
+                        ? (payload as any).items
+                        : [];
             const reviews = raw.map((r: any) => ({
                 id: r.id,
                 userId: r.organizationalMemberId ?? "",
@@ -377,6 +384,14 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
     useEffect(() => {
         if (etbClassificationId) loadReviewWorkflow();
     }, [etbClassificationId, loadReviewWorkflow]);
+
+    // Refetch only when dialog transitions from closed to open (avoids overwriting optimistic updates)
+    const prevReviewHistoryOpen = useRef(false);
+    useEffect(() => {
+        const justOpened = reviewHistoryOpen && !prevReviewHistoryOpen.current;
+        prevReviewHistoryOpen.current = reviewHistoryOpen;
+        if (justOpened && etbClassificationId) loadReviewWorkflow();
+    }, [reviewHistoryOpen, etbClassificationId, loadReviewWorkflow]);
 
     const submitReviewComment = useCallback(async () => {
         if (!reviewComment.trim() || !etbClassificationId || !organizationMember?.id) {
@@ -1222,11 +1237,19 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
             {/* Review History – matches REFERENCE-PORTAL */}
             <Dialog open={reviewHistoryOpen} onOpenChange={setReviewHistoryOpen}>
                 <DialogContent className="min-w-[70vw] max-w-[90vw] h-[70vh] flex flex-col p-0">
-                    <DialogHeader className="shrink-0 px-6 py-4 border-b">
+                    <DialogHeader className="shrink-0 px-6 py-4 border-b relative">
                         <DialogTitle>Review History</DialogTitle>
                         <DialogDescription>
                             Audit trail for: <span className="font-semibold">Extended Trial Balance</span>
                         </DialogDescription>
+                        <button
+                            type="button"
+                            onClick={() => setReviewHistoryOpen(false)}
+                            className="absolute top-4 right-4 p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                            aria-label="Close"
+                        >
+                            <X size={20} />
+                        </button>
                     </DialogHeader>
                     <div className="flex-1 overflow-y-auto px-6 py-4">
                         {!reviewWorkflow?.reviews?.length ? (
