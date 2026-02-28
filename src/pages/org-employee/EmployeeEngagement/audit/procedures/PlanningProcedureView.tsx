@@ -49,6 +49,7 @@ import {
   answerToEditString,
 } from "./procedureViewHelpers";
 import { getDecodedUserId } from "@/utils/authUtils";
+import { useMemberNamesMap } from "../hooks/useMemberNamesMap";
 import { apiGet, apiPost, apiPut, apiDelete, apiPostFormData } from "@/config/base";
 import { endPoints } from "@/config/endPoint";
 
@@ -149,7 +150,7 @@ export const PlanningProcedureView: React.FC<PlanningProcedureViewProps> = ({
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [reviews, setReviews] = useState<any[]>([]);
   const [_isLoadingReviews, setIsLoadingReviews] = useState(false);
-  const [userNamesMap, _setUserNamesMap] = useState<Record<string, string>>({});
+  const memberNamesMap = useMemberNamesMap(!!engagementId);
   const [editingReview, setEditingReview] = useState<any>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editReviewStatus, setEditReviewStatus] = useState<string>("");
@@ -1697,7 +1698,7 @@ export const PlanningProcedureView: React.FC<PlanningProcedureViewProps> = ({
                                               </span>{" "}
                                               <span className="text-muted-foreground">
                                                 {review.reviewerName ||
-                                                  userNamesMap[
+                                                  memberNamesMap[
                                                     review.reviewedBy ||
                                                       review.assignedReviewer
                                                   ] ||

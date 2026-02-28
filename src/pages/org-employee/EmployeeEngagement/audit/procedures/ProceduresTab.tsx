@@ -34,6 +34,8 @@ interface ProceduresTabProps {
   engagement?: any;
   /** When inside Sections → Classification view, pass the classification label for header and filtering */
   classification?: string | null;
+  /** DB classification id for per-classification fieldwork procedure persistence (each sidebar item gets its own stored procedure id) */
+  classificationId?: string | null;
   /** Optional callback when user clicks close (e.g. in classification context) */
   onClose?: () => void;
 }
@@ -42,6 +44,7 @@ export const ProceduresTab: React.FC<ProceduresTabProps> = ({
   engagementId,
   engagement: engagementProp,
   classification: classificationProp = null,
+  classificationId: classificationIdProp = null,
   onClose,
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -104,6 +107,10 @@ export const ProceduresTab: React.FC<ProceduresTabProps> = ({
     }
   }, [classificationProp, selectedProcedureType, searchParams, updateProcedureParams]);
 
+  /** SessionStorage key for last-saved fieldwork procedure id (so we prefer it after refresh). When classificationId is set, each classification has its own key. */
+  const getFieldworkProcedureStorageKey = (eid: string, acid: string, cid?: string | null) =>
+    cid ? `vacei_fieldwork_procedure_${eid}_${acid}_${cid}` : `vacei_fieldwork_procedure_${eid}_${acid}`;
+
   /** Normalize procedures list from API (supports { data: [] }, { data: { data: [] } }, or array). */
   const getProceduresList = (res: any): any[] => {
     if (!res) return [];
@@ -113,10 +120,25 @@ export const ProceduresTab: React.FC<ProceduresTabProps> = ({
     return [];
   };
 
-  /** Pick best fieldwork procedure from list: prefer one with saved documentPayload (questions + recommendations); merge documentPayload into result. */
+  /** Pick best fieldwork procedure from list: prefer by id when provided (e.g. just-saved), else one with saved documentPayload; when in classification context and no stored id, prefer procedure whose questions match that classification. */
   const normalizeFieldworkFromList = useCallback(
-    (fwList: any[], preferredAuditCycleId: string | undefined): any | null => {
+    (
+      fwList: any[],
+      preferredAuditCycleId: string | undefined,
+      preferredProcedureId?: string | null,
+      classificationTitle?: string | null
+    ): any | null => {
       if (!fwList.length) return null;
+      const norm = (c: string) => (c || "").trim().replace(/\s*>\s*/g, " > ").trim();
+      const questionMatchesClassification = (q: any, filter: string) => {
+        const item = norm((q?.classification ?? "") as string);
+        const f = norm(filter);
+        if (!item || !f) return false;
+        if (item === f) return true;
+        if (item.startsWith(f + " > ")) return true;
+        if (f.startsWith(item + " > ")) return true;
+        return false;
+      };
       const hasQuestions = (p: any) => {
         const payload = p?.documentPayload;
         if (payload && typeof payload === "object" && Array.isArray(payload.questions) && payload.questions.length > 0)
@@ -134,10 +156,26 @@ export const ProceduresTab: React.FC<ProceduresTabProps> = ({
           return { ...p, ...payload, auditCycleId: p.auditCycleId ?? payload.auditCycleId ?? preferredAuditCycleId };
         return { ...p, auditCycleId: p.auditCycleId ?? preferredAuditCycleId };
       };
+      // After save, prefer the procedure we just saved so we don't pick another row from the list (API returns many FIELDWORK rows)
+      if (preferredProcedureId) {
+        const byId = fwList.find((p) => p?.id === preferredProcedureId || (p?.documentPayload as any)?.id === preferredProcedureId);
+        if (byId) {
+          return mergePayload(byId);
+        }
+      }
+      // When in classification context and no stored id, prefer procedures that have questions for this classification
+      let list = fwList;
+      if (classificationTitle && classificationTitle.trim()) {
+        const forClassification = fwList.filter((p: any) => {
+          const questions = p?.documentPayload?.questions ?? p?.questions ?? [];
+          return Array.isArray(questions) && questions.some((q: any) => questionMatchesClassification(q, classificationTitle));
+        });
+        if (forClassification.length > 0) list = forClassification;
+      }
       // Prefer procedure that has both questions and recommendations so View tab shows recommendations when API has them
-      const withQuestionsAndRecs = fwList.find((p) => hasQuestions(p) && hasRecommendations(p));
-      const withQuestions = withQuestionsAndRecs ?? fwList.find(hasQuestions);
-      const raw = withQuestions ?? fwList[0];
+      const withQuestionsAndRecs = list.find((p) => hasQuestions(p) && hasRecommendations(p));
+      const withQuestions = withQuestionsAndRecs ?? list.find(hasQuestions);
+      const raw = withQuestions ?? list[0];
       const fw = mergePayload(raw);
       return fw;
     },
@@ -163,7 +201,13 @@ export const ProceduresTab: React.FC<ProceduresTabProps> = ({
           apiGet<{ data?: any }>(endPoints.COMPLETION_PROCEDURES.GET_BY_ENGAGEMENT(engagementId)).catch(() => ({ data: null })),
         ]);
         const fwList = getProceduresList(fieldworkRes);
-        const fw = auditCycleId ? normalizeFieldworkFromList(fwList, auditCycleId) : null;
+        const preferredProcedureId =
+          auditCycleId && engagementId
+            ? sessionStorage.getItem(getFieldworkProcedureStorageKey(engagementId, auditCycleId, classificationIdProp))
+            : null;
+        const fw = auditCycleId
+          ? normalizeFieldworkFromList(fwList, auditCycleId, preferredProcedureId, classificationProp)
+          : null;
         const pl = planningRes?.data ?? null;
         const co = completionRes?.data ?? null;
         setFieldworkProcedure(fw);
@@ -176,35 +220,56 @@ export const ProceduresTab: React.FC<ProceduresTabProps> = ({
       }
     };
     loadProcedures();
-  }, [engagementId, auditCycleId, normalizeFieldworkFromList]);
+  }, [engagementId, auditCycleId, classificationIdProp, classificationProp, normalizeFieldworkFromList]);
 
-  /** Fetch fieldwork procedure data only (returns merged procedure or null; used for refetch + merge). Must be defined before loadFieldworkProcedure and the effect that use it. */
-  const loadFieldworkProcedureData = useCallback(async (): Promise<any | null> => {
-    if (!engagementId || !auditCycleId) return null;
-    const fieldworkRes = await apiGet<any>(endPoints.PROCEDURES.GET_ALL, {
-      auditCycleId,
-      type: "FIELDWORK",
-      limit: 100,
-      _t: Date.now(),
-    }).catch(() => ({ data: [] }));
-    const fwList = getProceduresList(fieldworkRes);
-    return normalizeFieldworkFromList(fwList, auditCycleId);
-  }, [engagementId, auditCycleId, normalizeFieldworkFromList]);
+  /** Fetch fieldwork procedure data only (returns merged procedure or null; used for refetch + merge). When preferredProcedureId is set (e.g. after save), prefer that procedure in the list. When in classification context, classificationTitle is used to prefer procedures matching that classification. */
+  const loadFieldworkProcedureData = useCallback(
+    async (preferredProcedureId?: string | null, classificationTitle?: string | null): Promise<any | null> => {
+      if (!engagementId || !auditCycleId) return null;
+      const fieldworkRes = await apiGet<any>(endPoints.PROCEDURES.GET_ALL, {
+        auditCycleId,
+        type: "FIELDWORK",
+        limit: 100,
+        _t: Date.now(),
+      }).catch(() => ({ data: [] }));
+      const fwList = getProceduresList(fieldworkRes);
+      return normalizeFieldworkFromList(fwList, auditCycleId, preferredProcedureId, classificationTitle);
+    },
+    [engagementId, auditCycleId, normalizeFieldworkFromList]
+  );
 
-  /** Refetch fieldwork procedure only (for onProcedureUpdate after save - matches REFERENCE loadProcedure("fieldwork")) */
+  /** Refetch fieldwork procedure only (for onProcedureUpdate after save - matches REFERENCE loadProcedure("fieldwork")).
+   * Merges with previous state so that a just-saved payload is not overwritten by an empty or delayed API response. */
   const loadFieldworkProcedure = useCallback(async () => {
     if (!engagementId || !auditCycleId) return;
     try {
       const fetched = await loadFieldworkProcedureData();
-      setFieldworkProcedure(
-        fetched ? { ...fetched, auditCycleId: fetched.auditCycleId ?? auditCycleId ?? undefined } : null
-      );
+      setFieldworkProcedure((prev: any) => {
+        const next = fetched
+          ? { ...fetched, auditCycleId: fetched.auditCycleId ?? auditCycleId ?? undefined }
+          : null;
+        if (!next) return prev ?? null;
+        const hasQuestions =
+          next.questions && Array.isArray(next.questions) && next.questions.length > 0;
+        const hasRecommendations =
+          next.recommendations &&
+          Array.isArray(next.recommendations) &&
+          next.recommendations.length > 0;
+        return {
+          ...next,
+          questions: hasQuestions ? next.questions : (prev?.questions ?? next?.questions ?? []),
+          recommendations: hasRecommendations
+            ? next.recommendations
+            : (prev?.recommendations ?? next?.recommendations ?? []),
+        };
+      });
     } catch (e) {
       console.error("Error loading fieldwork procedure:", e);
     }
   }, [engagementId, auditCycleId, loadFieldworkProcedureData]);
 
-  // When auditCycleId becomes available after mount (e.g. after login), load fieldwork so View Procedures tab has data (matches planning/completion persistence)
+  // When auditCycleId becomes available after mount (e.g. after login), load fieldwork so View Procedures tab has data (matches planning/completion persistence).
+  // Uses functional update so a late-arriving fetch never overwrites just-saved data (e.g. after Save Procedures).
   useEffect(() => {
     if (!auditCycleId || !engagementId) return;
     const hasFieldwork =
@@ -214,16 +279,24 @@ export const ProceduresTab: React.FC<ProceduresTabProps> = ({
           fieldworkProcedure.documentPayload.questions.length > 0));
     if (hasFieldwork) return;
     let cancelled = false;
-    loadFieldworkProcedureData().then((fetched) => {
+    const preferredId =
+      engagementId && auditCycleId
+        ? sessionStorage.getItem(getFieldworkProcedureStorageKey(engagementId, auditCycleId, classificationIdProp))
+        : null;
+    loadFieldworkProcedureData(preferredId || undefined, classificationProp ?? undefined).then((fetched) => {
       if (cancelled) return;
-      setFieldworkProcedure(
-        fetched ? { ...fetched, auditCycleId: fetched.auditCycleId ?? auditCycleId ?? undefined } : null
-      );
+      setFieldworkProcedure((prev: any) => {
+        if (prev && Array.isArray(prev.recommendations) && prev.recommendations.length > 0) return prev;
+        if (prev && Array.isArray(prev.questions) && prev.questions.length > 0) return prev;
+        return fetched
+          ? { ...fetched, auditCycleId: fetched.auditCycleId ?? auditCycleId ?? undefined }
+          : null;
+      });
     });
     return () => {
       cancelled = true;
     };
-  }, [auditCycleId, engagementId, fieldworkProcedure, loadFieldworkProcedureData]);
+  }, [auditCycleId, engagementId, classificationIdProp, classificationProp, fieldworkProcedure, loadFieldworkProcedureData]);
 
   /** Refetch completion procedure only (matches REFERENCE GET /api/completion-procedures/:engagementId) */
   const loadCompletionProcedure = useCallback(async () => {
@@ -269,6 +342,7 @@ export const ProceduresTab: React.FC<ProceduresTabProps> = ({
           console.error("Error loading planning procedure:", e);
         }
       } else if (type === "fieldwork") {
+        const savedProcedureId = procedureData?.id ?? procedureData?._id;
         const savedFieldwork =
           procedureData &&
           Array.isArray(procedureData.questions) &&
@@ -277,6 +351,14 @@ export const ProceduresTab: React.FC<ProceduresTabProps> = ({
             : null;
         savedFieldworkRef.current = savedFieldwork ?? null;
         setFieldworkProcedure(savedFieldwork ?? null);
+        if (savedProcedureId && auditCycleId) {
+          try {
+            sessionStorage.setItem(
+              getFieldworkProcedureStorageKey(engagementId, auditCycleId, classificationIdProp),
+              savedProcedureId
+            );
+          } catch (_) {}
+        }
         justCompletedFieldworkSaveRef.current = true;
         // Switch to View tab immediately so user sees View Procedures with questions/answers/procedures.
         updateProcedureParams(
@@ -288,7 +370,8 @@ export const ProceduresTab: React.FC<ProceduresTabProps> = ({
           },
           false
         );
-        const fetched = await loadFieldworkProcedureData();
+        // Refetch preferring the procedure we just saved (API returns many FIELDWORK rows; pick same id)
+        const fetched = await loadFieldworkProcedureData(savedProcedureId);
         setFieldworkProcedure((prev: any) => {
           const next = fetched
             ? { ...fetched, auditCycleId: fetched.auditCycleId ?? auditCycleId ?? undefined }
@@ -299,11 +382,16 @@ export const ProceduresTab: React.FC<ProceduresTabProps> = ({
             next.questions && Array.isArray(next.questions) && next.questions.length > 0;
           const hasRecommendations =
             next.recommendations && Array.isArray(next.recommendations) && next.recommendations.length > 0;
-          return {
-            ...next,
-            questions: hasQuestions ? next.questions : (prev?.questions ?? []),
-            recommendations: hasRecommendations ? next.recommendations : (prev?.recommendations ?? []),
-          };
+          // Prefer the just-saved procedureData so we never overwrite with stale prev (which can be pre-save state)
+          const questions =
+            (procedureData?.questions && Array.isArray(procedureData.questions) && procedureData.questions.length > 0)
+              ? procedureData.questions
+              : (hasQuestions ? next.questions : (prev?.questions ?? []));
+          const recommendations =
+            (procedureData?.recommendations && Array.isArray(procedureData.recommendations) && procedureData.recommendations.length > 0)
+              ? procedureData.recommendations
+              : (hasRecommendations ? next.recommendations : (prev?.recommendations ?? []));
+          return { ...next, questions, recommendations };
         });
         // When transitioning to Generate/View tabs (Proceed to Procedures), keep URL so we stay on Generate tab with step=tabs — avoid clearing step which causes step1→step2→step1 loop.
         if (procedureData?.status === "in_progress") {
@@ -339,6 +427,7 @@ export const ProceduresTab: React.FC<ProceduresTabProps> = ({
     [
       engagementId,
       auditCycleId,
+      classificationIdProp,
       loadFieldworkProcedureData,
       loadCompletionProcedure,
       updateProcedureParams,
@@ -844,9 +933,9 @@ export const ProceduresTab: React.FC<ProceduresTabProps> = ({
                   onRegenerate={handleRegenerate}
                   currentClassification={classificationProp}
                   auditCycleId={auditCycleId ?? undefined}
-                  onProcedureUpdate={async (updatedProcedure: any) => {
+                  onProcedureUpdate={(updatedProcedure: any) => {
                     setFieldworkProcedure(updatedProcedure);
-                    await loadFieldworkProcedure();
+                    // Refetch only in onComplete (handleProcedureComplete) to avoid race where merge uses stale prev
                   }}
                 />
               ) : fieldworkSections.length > 0 ? (
@@ -863,9 +952,9 @@ export const ProceduresTab: React.FC<ProceduresTabProps> = ({
                       currentClassification={classification}
                       showStepInstruction={false}
                       auditCycleId={auditCycleId ?? undefined}
-                      onProcedureUpdate={async (updatedProcedure: any) => {
+                      onProcedureUpdate={(updatedProcedure: any) => {
                         setFieldworkProcedure(updatedProcedure);
-                        await loadFieldworkProcedure();
+                        // Refetch only in onComplete (handleProcedureComplete) to avoid race where merge uses stale prev
                       }}
                     />
                   ))}
@@ -876,9 +965,9 @@ export const ProceduresTab: React.FC<ProceduresTabProps> = ({
                   engagement={eng}
                   onRegenerate={handleRegenerate}
                   auditCycleId={auditCycleId ?? undefined}
-                  onProcedureUpdate={async (updatedProcedure: any) => {
+                  onProcedureUpdate={(updatedProcedure: any) => {
                     setFieldworkProcedure(updatedProcedure);
-                    await loadFieldworkProcedure();
+                    // Refetch only in onComplete (handleProcedureComplete) to avoid race where merge uses stale prev
                   }}
                 />
               )

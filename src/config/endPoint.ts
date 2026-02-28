@@ -18,6 +18,7 @@ export const endPoints = {
   ORGANIZATION: {
     CREATE_MEMBER: '/organization-members',
     GET_MEMBERS: '/organization-members',
+    GET_MEMBER_BY_ID: (id: string) => `/organization-members/${id}`,
     ASSIGN_SERVICES: '/organization-members',
     ASSIGN_CUSTOM_SERVICES: '/organization-members',
   },
@@ -307,6 +308,8 @@ export const endPoints = {
     SAVE: '/procedures',
     /** Save fieldwork document (questions, recommendations) to Procedure.documentPayload. Body: { auditCycleId, questions, recommendations, ... } */
     FIELDWORK_SAVE: '/procedures/fieldwork/save',
+    /** Create a procedure review (POST). Body: { organizationalMemberId, reviewStatus, comment } */
+    CREATE_REVIEW: (procedureId: string) => `/procedures/${procedureId}/reviews`,
   },
   REVIEW: {
     WORKFLOWS_BY_ENGAGEMENT: (engagementId: string) => `/review/workflows/engagement/${engagementId}`,

@@ -37,6 +37,8 @@ import { useToast } from "@/hooks/use-toast";
 import { apiGet, apiPost } from "@/config/base";
 import { endPoints } from "@/config/endPoint";
 import { getDecodedUserId } from "@/utils/authUtils";
+import { useAuth } from "@/context/auth-context-core";
+import { useMemberNamesMap } from "../hooks/useMemberNamesMap";
 import { formatClassificationForDisplay } from "./steps/procedureClassificationMapping";
 import {
   FieldAnswerDisplay,
@@ -106,6 +108,7 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
   onGeneratingChange,
 }) => {
   const { toast } = useToast();
+  const { organizationMember } = useAuth();
   const engagementId = engagement?.id ?? engagement?._id;
   const currentUserId = getDecodedUserId() ?? "";
 
@@ -160,7 +163,7 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
 
   const [reviews, setReviews] = useState<any[]>([]);
   const [isLoadingReviews, setIsLoadingReviews] = useState(false);
-  const [_userNamesMap, _setUserNamesMap] = useState<Record<string, string>>({});
+  const memberNamesMap = useMemberNamesMap(!!engagementId);
   const [editingReview, setEditingReview] = useState<any>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editReviewStatus, setEditReviewStatus] = useState("");
@@ -177,7 +180,7 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
       ).catch(() => ({ workflows: [] }));
       const raw = (data as any)?.data ?? data;
       const list = Array.isArray(raw?.workflows) ? raw.workflows : [];
-      const filtered = list.filter((w: any) => w.itemType === "procedure");
+      const filtered = list.filter((w: any) => w.itemType === "fieldwork-procedure");
       setReviews(filtered);
     } catch {
       setReviews([]);
@@ -233,12 +236,23 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
   const questionsForDisplay = useMemo(() => {
     if (currentClassification && currentClassification.trim() !== "") {
       return questions.filter((q: any) => {
-        if (!q.classification) return true;
+        if (!q.classification) return false;
         return matchesClassification(q.classification, currentClassification);
       });
     }
     return questions;
   }, [questions, currentClassification]);
+
+  const recommendationsForDisplay = useMemo(() => {
+    if (currentClassification && currentClassification.trim() !== "") {
+      return recommendations.filter((r: any) => {
+        const c = (r?.classification ?? "").trim();
+        if (!c) return false;
+        return matchesClassification(c, currentClassification);
+      });
+    }
+    return recommendations;
+  }, [recommendations, currentClassification]);
 
   const filteredQuestions = useMemo(() => {
     if (questionFilter === "unanswered") {
@@ -379,7 +393,14 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
             }))
           : []);
       const normalized = normalize(generatedQuestions);
-      setQuestions(normalized);
+      const withClassification =
+        currentClassification && String(currentClassification).trim() !== ""
+          ? normalized.map((q: any) => ({
+              ...q,
+              classification: (q.classification && String(q.classification).trim()) || currentClassification,
+            }))
+          : normalized;
+      setQuestions(withClassification);
       if (Array.isArray(dataObj?.recommendations ?? raw?.recommendations))
         setRecommendations(dataObj?.recommendations ?? raw?.recommendations);
       const procedure = dataObj?.procedure ?? raw?.procedure;
@@ -616,8 +637,8 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
           .replace(/\s+/g, " ")
           .trim();
       const recommendationsText =
-        recommendations.length > 0
-          ? recommendations
+        recommendationsForDisplay.length > 0
+          ? recommendationsForDisplay
               .map((item: any) => `${item.checked ? "[x]" : "[ ]"} ${item.text || ""}`)
               .join("\n")
           : "No recommendations provided.";
@@ -701,7 +722,21 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
         const recs = Array.isArray(dataObj?.recommendations ?? raw?.recommendations)
           ? (dataObj?.recommendations ?? raw?.recommendations)
           : [];
-        setRecommendations(recs);
+        const tagged =
+          currentClassification && String(currentClassification).trim() !== ""
+            ? recs.map((r: any) => ({
+                ...r,
+                classification:
+                  (r.classification && String(r.classification).trim()) || currentClassification,
+              }))
+            : recs;
+        setRecommendations((prev) => {
+          if (!currentClassification || String(currentClassification).trim() === "") return tagged;
+          const others = prev.filter(
+            (r: any) => !matchesClassification((r?.classification ?? "").trim(), currentClassification)
+          );
+          return [...others, ...tagged];
+        });
         fallbackProcedures = Boolean(dataObj?.fallback ?? raw?.fallback);
       }
       toast({
@@ -820,7 +855,16 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
   };
 
   const handleAddRecommendation = () => {
-    const newRec = { id: `rec-${Date.now()}`, text: "New recommendation", checked: false };
+    const classification =
+      (currentClassification && currentClassification.trim()) ||
+      stepData?.selectedClassifications?.[0] ||
+      "General";
+    const newRec = {
+      id: `rec-${Date.now()}`,
+      text: "New recommendation",
+      checked: false,
+      classification,
+    };
     setRecommendations([...recommendations, newRec]);
     setEditingRecommendationId(newRec.id);
     setEditRecommendationText(newRec.text);
@@ -836,6 +880,23 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
   };
 
   const handleSaveReview = async () => {
+    const auditCycleIdForSave = stepData?.auditCycleId ?? auditCycleIdProp;
+    if (!auditCycleIdForSave) {
+      toast({
+        title: "Cannot save review",
+        description: "Audit cycle is not loaded. Please wait or refresh and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!organizationMember?.id) {
+      toast({
+        title: "Cannot save review",
+        description: "Your organization membership could not be determined.",
+        variant: "destructive",
+      });
+      return;
+    }
     setIsSavingReview(true);
     try {
       const payload = {
@@ -848,7 +909,35 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
         procedureType: "procedures",
         mode,
       };
-      await apiPost(endPoints.PROCEDURES.SAVE, payload);
+      const body = { ...payload, auditCycleId: auditCycleIdForSave };
+      const res = await apiPost<any>(endPoints.PROCEDURES.FIELDWORK_SAVE, body);
+      const data = (res as any)?.data ?? res;
+      const procedureId = data?.id ?? (res as any)?._id ?? stepData?.id ?? stepData?._id;
+      if (!procedureId) {
+        toast({
+          title: "Save failed",
+          description: "Could not determine procedure id after save.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const reviewStatusMap: Record<string, string> = {
+        "in-progress": "IN_PROGRESS",
+        "ready-for-review": "READY_FOR_REVIEW",
+        "under-review": "UNDER_REVIEW",
+        approved: "APPROVED",
+        rejected: "REJECTED",
+        "signed-off": "SIGNED_OFF",
+        "re-opened": "RE_OPENED",
+        pending: "PENDING",
+      };
+      const dbReviewStatus =
+        reviewStatusMap[String(reviewStatus).toLowerCase().replace(/_/g, "-")] ?? "IN_PROGRESS";
+      await apiPost(endPoints.PROCEDURES.CREATE_REVIEW(procedureId), {
+        organizationalMemberId: organizationMember.id,
+        reviewStatus: dbReviewStatus,
+        comment: (reviewComments && reviewComments.trim()) || "Review submitted",
+      });
       onProcedureUpdate?.(payload);
       await fetchReviews();
       toast({ title: "Review Saved", description: "Your review has been saved successfully." });
@@ -1545,6 +1634,78 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
                                       {review.reviewComments && (
                                         <div className="text-sm text-muted-foreground mb-2">{review.reviewComments}</div>
                                       )}
+                                      <div className="grid grid-cols-2 gap-4 text-sm mt-3">
+                                        <div>
+                                          <span className="font-medium">Reviewer:</span>{" "}
+                                          <span className="text-muted-foreground">
+                                            {(() => {
+                                              let rid = null;
+                                              if (review.status === "approved") rid = review.approvedBy || review.reviewedBy || review.assignedReviewer;
+                                              else if (review.status === "signed-off")
+                                                rid = review.signedOffBy || review.approvedBy || review.reviewedBy || review.assignedReviewer;
+                                              else if (review.status === "re-opened") rid = review.reopenedBy || review.reviewedBy || review.assignedReviewer;
+                                              else rid = review.reviewedBy || review.assignedReviewer;
+                                              return rid ? memberNamesMap[rid] || rid : "Not assigned";
+                                            })()}
+                                          </span>
+                                        </div>
+                                        {review.reviewedAt && (review.status === "ready-for-review" || review.status === "under-review") && (
+                                          <div>
+                                            <span className="font-medium">Reviewed At:</span>{" "}
+                                            <span className="text-muted-foreground">{new Date(review.reviewedAt).toLocaleDateString()}</span>
+                                          </div>
+                                        )}
+                                        {review.status === "approved" && review.approvedBy && (
+                                          <div>
+                                            <span className="font-medium">Approved By:</span>{" "}
+                                            <span className="text-muted-foreground">{memberNamesMap[review.approvedBy] || review.approvedBy}</span>
+                                          </div>
+                                        )}
+                                        {review.status === "approved" && review.approvedAt && (
+                                          <div>
+                                            <span className="font-medium">Approved At:</span>{" "}
+                                            <span className="text-muted-foreground">{new Date(review.approvedAt).toLocaleDateString()}</span>
+                                          </div>
+                                        )}
+                                        {review.status === "signed-off" && review.signedOffBy && (
+                                          <div>
+                                            <span className="font-medium">Signed Off By:</span>{" "}
+                                            <span className="text-muted-foreground">{memberNamesMap[review.signedOffBy] || review.signedOffBy}</span>
+                                          </div>
+                                        )}
+                                        {review.status === "signed-off" && review.signedOffAt && (
+                                          <div>
+                                            <span className="font-medium">Signed Off At:</span>{" "}
+                                            <span className="text-muted-foreground">{new Date(review.signedOffAt).toLocaleDateString()}</span>
+                                          </div>
+                                        )}
+                                        {review.isLocked && (
+                                          <div>
+                                            <span className="font-medium">Locked:</span>{" "}
+                                            <span className="text-muted-foreground">
+                                              {review.lockedBy ? `Yes (by ${memberNamesMap[review.lockedBy] || review.lockedBy})` : "Yes"}
+                                            </span>
+                                          </div>
+                                        )}
+                                        {review.status === "re-opened" && review.reopenedBy && (
+                                          <div>
+                                            <span className="font-medium">Reopened By:</span>{" "}
+                                            <span className="text-muted-foreground">{memberNamesMap[review.reopenedBy] || review.reopenedBy}</span>
+                                          </div>
+                                        )}
+                                        {review.status === "re-opened" && review.reopenedAt && (
+                                          <div>
+                                            <span className="font-medium">Reopened At:</span>{" "}
+                                            <span className="text-muted-foreground">{new Date(review.reopenedAt).toLocaleDateString()}</span>
+                                          </div>
+                                        )}
+                                        {review.reviewVersion && (
+                                          <div>
+                                            <span className="font-medium">Version:</span>{" "}
+                                            <span className="text-muted-foreground">{review.reviewVersion}</span>
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
                                     {isOwner && (
                                       <div className="flex gap-2">
@@ -1596,7 +1757,7 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
                   </Button>
                   {inClassificationContext ? (
                     filteredQuestions.length > 0 && questionsWithAnswers.length > 0 ? (
-                      recommendations.length > 0 ? (
+                      recommendationsForDisplay.length > 0 ? (
                         <Button
                           variant="outline"
                           size="sm"
@@ -1625,13 +1786,13 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
                           Generate Procedures
                         </Button>
                       )
-                    ) : (
-                      <div className="text-muted-foreground text-sm">
-                        {filteredQuestions.length === 0 ? "Generate questions first." : "Generate answers first."}
-                      </div>
-                    )
+                  ) : (
+                    <div className="text-muted-foreground text-sm">
+                      {filteredQuestions.length === 0 ? "Generate questions first." : "Generate answers first."}
+                    </div>
+                  )
                   ) : questionsWithAnswers.length > 0 ? (
-                    recommendations.length > 0 ? (
+                    recommendationsForDisplay.length > 0 ? (
                       <Button
                         variant="outline"
                         size="sm"
@@ -1688,16 +1849,16 @@ export const ProcedureTabsView: React.FC<ProcedureTabsViewProps> = ({
               </div>
               <ScrollArea className={inClassificationContext ? "h-[500px]" : "flex-1"}>
                 <div className="space-y-4">
-                  {recommendations.length === 0 ? (
+                  {recommendationsForDisplay.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       {inClassificationContext
-                        ? 'No recommendations generated yet. Click "Add Recommendation" to create one.'
+                        ? 'No recommendations generated yet. Click "Add Procedures" to create one.'
                         : questionsWithAnswers.length > 0
                           ? "No recommendations generated yet. Click 'Generate Procedures' to create recommendations."
                           : "Generate questions and answers first, then generate procedures."}
                     </div>
                   ) : (
-                    recommendations.map((rec: any, idx: number) => {
+                    recommendationsForDisplay.map((rec: any, idx: number) => {
                       const recId = rec.id || rec.__uid || `rec-${idx}`;
                       const recText =
                         typeof rec === "string" ? rec : rec.text || rec.content || "—";
