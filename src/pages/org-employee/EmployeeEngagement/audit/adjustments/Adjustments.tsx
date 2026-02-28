@@ -4,6 +4,7 @@ import { Button } from "../../../../../ui/Button";
 import AdjustmentCard from "./AdjustmentCard";
 import AdjustmentInlineForm from "./AdjustmentInlineForm";
 import EvidenceFilesDialog from "./EvidenceFilesDialog";
+import { AuditEntryHistoryDialog, type HistoryEntry } from "./AuditEntryHistoryDialog";
 import type { AdjustmentData, AdjustmentEntry } from "./AdjustmentDialog";
 import { useETBData } from "../hooks/useETBData";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -19,6 +20,9 @@ export default function Adjustments({ engagementId }: AdjustmentsProps) {
     const [isFormExpanded, setIsFormExpanded] = useState(false);
     const [editingAdjustment, setEditingAdjustment] = useState<AdjustmentData | undefined>(undefined);
     const [evidenceDialogEntry, setEvidenceDialogEntry] = useState<{ id: string; code: string } | null>(null);
+    const [historyEntry, setHistoryEntry] = useState<{ id: string; code: string } | null>(null);
+    const [historyList, setHistoryList] = useState<HistoryEntry[]>([]);
+    const [historyLoading, setHistoryLoading] = useState(false);
     const queryClient = useQueryClient();
 
     // Fetch ETB data
@@ -152,13 +156,34 @@ export default function Adjustments({ engagementId }: AdjustmentsProps) {
                 ? data.description.trim()
                 : `Adjustment ${data.adjustmentNo}`;
 
-            // Note: Lines are not included in update payload as backend updateAuditEntrySchema doesn't support updating lines
-            // Lines can only be created when creating a new audit entry, not updated
+            if (data.status === 'POSTED') {
+                const totalDebits = data.entries.filter(e => e.type === 'Debit').reduce((sum, e) => sum + (e.amount || 0), 0);
+                const totalCredits = data.entries.filter(e => e.type === 'Credit').reduce((sum, e) => sum + (e.amount || 0), 0);
+                if (Math.abs(totalDebits - totalCredits) > 0.01) {
+                    throw new Error("Debits and credits must balance before posting");
+                }
+            }
+
+            const lines = data.entries.map((entry, index) => {
+                if (!entry.accountId) throw new Error(`Entry ${index + 1}: Account ID is required`);
+                const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                const accountIdStr = String(entry.accountId);
+                if (!uuidRegex.test(accountIdStr)) throw new Error(`Entry ${index + 1}: Invalid account ID format`);
+                const reason = entry.details?.trim() ? entry.details.trim() : `Adjustment entry for ${entry.accountName}`;
+                if (!entry.amount || entry.amount <= 0) throw new Error(`Entry ${index + 1}: Amount must be greater than 0`);
+                return {
+                    trialBalanceAccountId: accountIdStr,
+                    type: entry.type === 'Debit' ? 'DEBIT' : 'CREDIT',
+                    value: entry.amount,
+                    reason,
+                };
+            });
 
             const payload = {
                 code: data.adjustmentNo.trim(),
-                description: description,
+                description,
                 status: data.status,
+                lines,
             };
 
             return apiPut<any>(
@@ -275,9 +300,23 @@ export default function Adjustments({ engagementId }: AdjustmentsProps) {
         }
     };
 
-    const handleHistory = (entryId: string) => {
-        // TODO: Open history modal/dialog
-        console.log("History for entry:", entryId);
+    const handleHistory = async (entryId: string) => {
+        const entry = auditEntries.find((e: any) => e.id === entryId);
+        if (!entry || !auditCycleId || !trialBalanceId) return;
+        setHistoryEntry({ id: entry.id, code: entry.code });
+        setHistoryLoading(true);
+        try {
+            const res = await apiGet<{ data?: { history?: HistoryEntry[] } }>(
+                endPoints.AUDIT.GET_AUDIT_ENTRY_HISTORY(auditCycleId, trialBalanceId, entryId)
+            );
+            const history = (res?.data?.history ?? []) as HistoryEntry[];
+            setHistoryList(Array.isArray(history) ? history : []);
+        } catch (e) {
+            console.error("Failed to load adjustment history:", e);
+            setHistoryList([]);
+        } finally {
+            setHistoryLoading(false);
+        }
     };
 
     const handleCancel = () => {
@@ -365,6 +404,7 @@ export default function Adjustments({ engagementId }: AdjustmentsProps) {
                     auditCycleId={auditCycleId}
                     isExpanded={isFormExpanded}
                     onToggleExpand={handleToggleForm}
+                    isSaving={createAdjustmentMutation.isPending || updateAdjustmentMutation.isPending}
                 />
             )}
 
@@ -420,6 +460,15 @@ export default function Adjustments({ engagementId }: AdjustmentsProps) {
                 onEvidenceChange={() => {
                     queryClient.invalidateQueries({ queryKey: ['audit-entries', trialBalanceId] });
                 }}
+            />
+            <AuditEntryHistoryDialog
+                open={!!historyEntry}
+                onOpenChange={(open) => !open && setHistoryEntry(null)}
+                title="Adjustment History"
+                entryCode={historyEntry?.code ?? ''}
+                history={historyList}
+                loading={historyLoading}
+                onBack={() => setHistoryEntry(null)}
             />
         </div>
     );

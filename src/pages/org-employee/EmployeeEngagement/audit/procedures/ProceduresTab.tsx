@@ -238,36 +238,6 @@ export const ProceduresTab: React.FC<ProceduresTabProps> = ({
     [engagementId, auditCycleId, normalizeFieldworkFromList]
   );
 
-  /** Refetch fieldwork procedure only (for onProcedureUpdate after save - matches REFERENCE loadProcedure("fieldwork")).
-   * Merges with previous state so that a just-saved payload is not overwritten by an empty or delayed API response. */
-  const loadFieldworkProcedure = useCallback(async () => {
-    if (!engagementId || !auditCycleId) return;
-    try {
-      const fetched = await loadFieldworkProcedureData();
-      setFieldworkProcedure((prev: any) => {
-        const next = fetched
-          ? { ...fetched, auditCycleId: fetched.auditCycleId ?? auditCycleId ?? undefined }
-          : null;
-        if (!next) return prev ?? null;
-        const hasQuestions =
-          next.questions && Array.isArray(next.questions) && next.questions.length > 0;
-        const hasRecommendations =
-          next.recommendations &&
-          Array.isArray(next.recommendations) &&
-          next.recommendations.length > 0;
-        return {
-          ...next,
-          questions: hasQuestions ? next.questions : (prev?.questions ?? next?.questions ?? []),
-          recommendations: hasRecommendations
-            ? next.recommendations
-            : (prev?.recommendations ?? next?.recommendations ?? []),
-        };
-      });
-    } catch (e) {
-      console.error("Error loading fieldwork procedure:", e);
-    }
-  }, [engagementId, auditCycleId, loadFieldworkProcedureData]);
-
   // When auditCycleId becomes available after mount (e.g. after login), load fieldwork so View Procedures tab has data (matches planning/completion persistence).
   // Uses functional update so a late-arriving fetch never overwrites just-saved data (e.g. after Save Procedures).
   useEffect(() => {

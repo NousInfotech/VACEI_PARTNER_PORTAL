@@ -18,6 +18,8 @@ interface AdjustmentInlineFormProps {
     auditCycleId?: string;
     isExpanded: boolean;
     onToggleExpand: () => void;
+    /** When true, disables save/cancel and shows loading state on buttons */
+    isSaving?: boolean;
 }
 
 export default function AdjustmentInlineForm({
@@ -30,6 +32,7 @@ export default function AdjustmentInlineForm({
     auditCycleId,
     isExpanded,
     onToggleExpand,
+    isSaving = false,
 }: AdjustmentInlineFormProps) {
     const [adjustmentNo, setAdjustmentNo] = useState(initialData?.adjustmentNo || "");
     const [description, setDescription] = useState(initialData?.description || "");
@@ -180,7 +183,17 @@ export default function AdjustmentInlineForm({
 
     return (
         <>
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm" data-adjustment-form>
+            <div className="relative bg-white rounded-xl border border-gray-200 shadow-sm" data-adjustment-form>
+                {isSaving && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/80 backdrop-blur-[2px]" aria-hidden="true">
+                        <div className="flex flex-col items-center gap-3">
+                            <span className="w-10 h-10 border-4 border-gray-200 border-t-gray-700 rounded-full animate-spin" />
+                            <span className="text-sm font-medium text-gray-700">
+                                {isEditMode ? "Updating..." : "Saving..."}
+                            </span>
+                        </div>
+                    </div>
+                )}
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
                     <div>
@@ -233,6 +246,7 @@ export default function AdjustmentInlineForm({
                                 variant="outline"
                                 size="sm"
                                 className="gap-2"
+                                disabled={isSaving}
                             >
                                 <Plus size={16} />
                                 Add Entry
@@ -338,24 +352,48 @@ export default function AdjustmentInlineForm({
 
                 {/* Footer */}
                 <div className="p-6 border-t border-gray-200 flex justify-end gap-3 bg-gray-50 rounded-b-xl">
-                    <Button variant="outline" onClick={onCancel} className="bg-white border-gray-300">
+                    <Button
+                        variant="outline"
+                        onClick={onCancel}
+                        className="bg-white border-gray-300"
+                        disabled={isSaving}
+                    >
                         Cancel
                     </Button>
                     <Button
                         variant="outline"
                         onClick={() => handleSave('DRAFT')}
                         className="bg-white border-gray-300 gap-2"
+                        disabled={isSaving}
                     >
-                        <Save size={16} />
-                        Save as Draft
+                        {isSaving ? (
+                            <>
+                                <span className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                                Saving...
+                            </>
+                        ) : (
+                            <>
+                                <Save size={16} />
+                                Save as Draft
+                            </>
+                        )}
                     </Button>
                     <Button
                         onClick={() => handleSave('POSTED')}
-                        disabled={!totals.isBalanced}
-                        className="bg-gray-900 hover:bg-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed gap-2"
+                        disabled={!totals.isBalanced || isSaving}
+                        className="bg-gray-900 hover:bg-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed gap-2 min-w-[140px]"
                     >
-                        <Check size={16} />
-                        {postButtonText}
+                        {isSaving ? (
+                            <>
+                                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                {isEditMode ? "Updating..." : "Posting..."}
+                            </>
+                        ) : (
+                            <>
+                                <Check size={16} />
+                                {postButtonText}
+                            </>
+                        )}
                     </Button>
                 </div>
             </div>
