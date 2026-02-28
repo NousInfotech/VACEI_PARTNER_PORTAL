@@ -59,11 +59,11 @@ export const menuData: MenuItem[] = [
     {
         slug: "templates",
         icon: GitPullRequestIcon,
-        label: "Document Request Templates",
+        label: "Templates",
         href: "/dashboard/templates",
         section: "primary",
         description: "Manage templates",
-        roles: ["ORG_EMPLOYEE"]
+        roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
     },
     // {
     //     slug: "organization",

@@ -86,7 +86,9 @@ export const endPoints = {
     FOLDER_CREATE: '/library/folders',
     FILE_UPLOAD: '/library/files/upload',
     FILE_DELETE: (fileId: string) => `/library/files/${fileId}`,
+    FILE_BY_ID: (id: string) => `/library/files/${id}`,
     FOLDER_DELETE: (folderId: string) => `/library/folders/${folderId}`,
+    FOLDER_DOWNLOAD: (id: string) => `/library/folders/${id}/download`,
   },
   COMPANY: {
     BASE: '/companies',
@@ -334,5 +336,15 @@ export const endPoints = {
       `/completion-procedures/${engagementId}/generate/section-answers`,
     GENERATE_RECOMMENDATIONS: (engagementId: string) =>
       `/completion-procedures/${engagementId}/generate/recommendations`,
+  },
+  TEMPLATE: {
+    BASE: '/templates',
+    GET_ALL: '/templates',
+    GET_BY_ID: (id: string) => `/templates/${id}`,
+    CREATE: '/templates',
+    UPDATE: (id: string) => `/templates/${id}`,
+    DELETE: (id: string) => `/templates/${id}`,
+    HARD_DELETE: (id: string) => `/templates/${id}/hard`,
+    UPLOAD_FOLDER: '/templates/upload-folder',
   },
 };
