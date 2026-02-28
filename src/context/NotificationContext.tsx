@@ -24,7 +24,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const fetchUnreadCount = useCallback(async () => {
     try {
       const response = await notificationService.fetchUnreadCount();
-      setUnreadCount(response.count);
+      const count = typeof response.count === 'number' ? response.count : 0;
+      setUnreadCount(count);
     } catch (err) {
       console.error('Error fetching unread count:', err);
     }
