@@ -267,6 +267,7 @@ export const ProceduresTab: React.FC<ProceduresTabProps> = ({
       console.error("Error loading fieldwork procedure:", e);
     }
   }, [engagementId, auditCycleId, loadFieldworkProcedureData]);
+  void loadFieldworkProcedure; // Available for refetch (e.g. onProcedureUpdate); referenced to satisfy noUnusedLocals
 
   // When auditCycleId becomes available after mount (e.g. after login), load fieldwork so View Procedures tab has data (matches planning/completion persistence).
   // Uses functional update so a late-arriving fetch never overwrites just-saved data (e.g. after Save Procedures).
