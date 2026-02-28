@@ -46,14 +46,6 @@ export default function ComplianceView({ engagementId }: { engagementId?: string
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<ComplianceItem | null>(null);
     const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
-    const [formData, setFormData] = useState({
-        title: '',
-        description: '',
-        startDate: '',
-        deadline: '',
-        service: selectedService || 'AUDITING',
-        type: 'CUSTOM' as ComplianceType
-    });
 
     // Get engagement to extract companyId
     const { data: engagementData } = useQuery({
@@ -66,16 +58,27 @@ export default function ComplianceView({ engagementId }: { engagementId?: string
         },
     });
 
+    const [formData, setFormData] = useState({
+        title: '',
+        description: '',
+        startDate: '',
+        deadline: '',
+        service: selectedService || engagementData?.serviceType || 'AUDITING',
+        type: 'CUSTOM' as ComplianceType
+    });
+
     const companyId = engagementData?.companyId || engagementData?.company?.id;
 
-    // Use Compliance Calendar API filtered by companyId instead of non-existent /engagements/{id}/compliances
+    const serviceCategory = engagementData?.serviceType;
+
+    // Use Compliance Calendar API filtered by companyId and serviceCategory
     const { data: compliances = [], isLoading } = useQuery({
-        queryKey: ['engagement-compliances', engagementId, companyId],
-        enabled: !!engagementId && !!companyId,
+        queryKey: ['engagement-compliances', engagementId, companyId, serviceCategory],
+        enabled: !!engagementId && !!companyId && !!serviceCategory,
         queryFn: async () => {
-            if (!companyId) return [];
+            if (!companyId || !serviceCategory) return [];
             const res = await apiGet<{ success: boolean; data?: ComplianceCalendarItem[] }>(
-                `${endPoints.COMPLIANCE_CALENDAR.BASE}?type=COMPANY&companyId=${companyId}`
+                `${endPoints.COMPLIANCE_CALENDAR.BASE}?companyId=${companyId}&serviceCategory=${serviceCategory}`
             );
             // Map ComplianceCalendarItem to ComplianceItem format expected by UI
             return (res?.data || []).map((item: any) => {
@@ -166,7 +169,7 @@ export default function ComplianceView({ engagementId }: { engagementId?: string
             description: '',
             startDate: '',
             deadline: '',
-            service: selectedService || 'AUDITING',
+            service: selectedService || engagementData?.serviceType || 'AUDITING',
             type: 'CUSTOM'
         });
     };
@@ -303,9 +306,9 @@ export default function ComplianceView({ engagementId }: { engagementId?: string
                         <div className="grid grid-cols-1 gap-4">
                             <div className="space-y-2">
                                 <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Service Category</label>
-                                {selectedService ? (
+                                {(selectedService || engagementData?.serviceType) ? (
                                     <div className="w-full h-10 px-3 flex items-center rounded-md border border-gray-100 bg-gray-50 text-sm font-medium text-gray-700">
-                                        {selectedService}
+                                        {selectedService || engagementData?.serviceType}
                                     </div>
                                 ) : (
                                     <select 

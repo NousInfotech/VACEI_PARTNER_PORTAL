@@ -167,7 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     };
                 }
 
-                const memberData = response.data.organizationMember;
+                const memberData = response.data.organizationMember ?? null;
                 const token = response.data.token;
                 
                 setUser(userData);
@@ -218,31 +218,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const body: Record<string, unknown> = { email, method: options.method };
             if (options.otp != null) body.otp = options.otp;
             if (options.webauthnResponse != null) body.webauthnResponse = options.webauthnResponse;
+
             const response = await apiPost<LoginResponse>(endPoints.AUTH.MFA_VERIFY, body);
-            if (response.data) {
-                const userData = response.data.user;
-                const memberData = response.data.organizationMember;
-                const token = response.data.token;
+            const payload = response?.data;
+            if (payload?.user && payload?.token) {
+                const userData = payload.user;
+                const memberData = payload.organizationMember ?? null;
+                const token = payload.token;
 
                 setUser(userData);
                 setOrganizationMember(memberData ?? null);
 
                 if (memberData?.allowedServices && memberData.allowedServices.length > 0) {
                     setSelectedService(memberData.allowedServices[0]);
+                } else if (memberData?.allowedCustomServiceCycles && memberData.allowedCustomServiceCycles.length > 0) {
+                    setSelectedService(memberData.allowedCustomServiceCycles[0].id);
                 }
 
                 localStorage.setItem("user", JSON.stringify(userData));
                 if (memberData) localStorage.setItem("organizationMember", JSON.stringify(memberData));
-                if (token) localStorage.setItem("token", token);
-                if (response.data.refreshToken) localStorage.setItem("refreshToken", response.data.refreshToken);
+                localStorage.setItem("token", token);
+                if (payload.refreshToken) localStorage.setItem("refreshToken", payload.refreshToken);
                 localStorage.setItem("userRole", userData.role);
 
                 return { success: true, message: "Verification successful!" };
             }
-            return { success: false, message: response.message || "Verification failed" };
-        } catch (error) {
+            return { success: false, message: response?.message || "Verification failed" };
+        } catch (error: any) {
             console.error("MFA verification failed:", error);
-            return { success: false, message: (error as Error).message || "Verification failed" };
+            const backendMessage =
+                error?.response?.data?.message ||
+                error?.response?.data?.error ||
+                (error as Error).message ||
+                "Verification failed";
+            return { success: false, message: backendMessage };
         }
     };
 
