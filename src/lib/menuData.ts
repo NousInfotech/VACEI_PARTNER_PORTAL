@@ -6,7 +6,8 @@ import {
     InstallingUpdates02Icon,
     Building01Icon,
     BubbleChatIcon,
-    NoteEditIcon
+    NoteEditIcon,
+    Notification01Icon
 } from '@hugeicons/core-free-icons';
 import type { MenuItem } from './types';
 
@@ -81,6 +82,15 @@ export const menuData: MenuItem[] = [
         href: "/dashboard/messages",
         section: "primary",
         description: "Chat with your team",
+        roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
+    },
+    {
+        slug: "notifications",
+        icon: Notification01Icon,
+        label: "Alerts & Notifications",
+        href: "/notifications",
+        section: "primary",
+        description: "Important updates & reminders",
         roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
     },
     // {
