@@ -24,15 +24,11 @@ interface ChatWindowProps {
   scrollToMessageId?: string;
   onScrollComplete?: () => void;
   onReplyMessage: (message: Message) => void;
-  onEditMessage: (message: Message) => void;
   onDeleteMessage: (messageId: string) => void;
-  onReactToMessage: (messageId: string, emoji: string) => void;
   onForwardMessage: (message: Message) => void;
   onCreateTodoMessage?: (message: Message) => void;
   replyingTo: Message | null;
-  editingMessage: Message | null;
   onCancelReply: () => void;
-  onCancelEdit: () => void;
   isSelectMode: boolean;
   selectedMessageIds: string[];
   onSelectMessage: (messageId: string) => void;
@@ -53,20 +49,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   scrollToMessageId,
   onScrollComplete,
   onReplyMessage,
-  onEditMessage,
   onDeleteMessage,
-  onReactToMessage,
   onForwardMessage,
   onCreateTodoMessage,
   replyingTo,
-  editingMessage,
   onCancelReply,
-  onCancelEdit,
   isSelectMode,
   selectedMessageIds,
   onSelectMessage,
   onEnterSelectMode,
-  currentUserId, // Destructure currentUserId
+  currentUserId,
   todoMap
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -162,9 +154,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 showSenderName={showSenderName}
                 onMediaClick={onMediaClick}
                 onReply={() => onReplyMessage(msg)}
-                onEdit={() => onEditMessage(msg)}
                 onDelete={() => onDeleteMessage(msg.id)}
-                onReact={(emoji) => onReactToMessage(msg.id, emoji)}
                 onForward={() => onForwardMessage(msg)}
                 onCreateTodo={() => onCreateTodoMessage?.(msg)}
                 isSelectMode={isSelectMode}
@@ -188,9 +178,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       <MessageInput
         onSendMessage={onSendMessage}
         replyingTo={replyingTo}
-        editingMessage={editingMessage}
         onCancelReply={onCancelReply}
-        onCancelEdit={onCancelEdit}
       />
     </div>
   );

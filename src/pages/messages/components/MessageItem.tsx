@@ -4,8 +4,6 @@ import type { Message, User } from '../types';
 import { cn } from '../../../lib/utils';
 import { MessageOptions } from './MessageOptions';
 import type { MessageAction } from './MessageOptions';
-import { ReactionDetailsModal } from './ReactionDetailsModal';
-import { users as mockUsers } from '../mockData';
 
 interface MessageItemProps {
   message: Message;
@@ -14,9 +12,7 @@ interface MessageItemProps {
   showSenderName?: boolean;
   onMediaClick?: (message: Message) => void;
   onReply?: () => void;
-  onEdit?: () => void;
   onDelete?: () => void;
-  onReact?: (emoji: string) => void;
   onForward?: () => void;
   onCreateTodo?: () => void;
   isSelectMode?: boolean;
@@ -36,9 +32,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   showSenderName,
   onMediaClick,
   onReply,
-  onEdit,
   onDelete,
-  onReact,
   onForward,
   isSelectMode,
   isSelected,
@@ -50,12 +44,9 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   onImageLoad,
   linkedTodo
 }) => {
-  const [showReactionDetails, setShowReactionDetails] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const reactionContainerRef = useRef<HTMLDivElement>(null);
 
   const [triggerCoords, setTriggerCoords] = useState<DOMRect | null>(null);
-  const [reactionCoords, setReactionCoords] = useState<DOMRect | null>(null);
 
   React.useEffect(() => {
     if (showOptions && triggerRef.current) {
@@ -65,21 +56,11 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     }
   }, [showOptions]);
 
-  React.useEffect(() => {
-    if (showReactionDetails && reactionContainerRef.current) {
-      setReactionCoords(reactionContainerRef.current.getBoundingClientRect());
-    } else if (!showReactionDetails) {
-      setReactionCoords(null);
-    }
-  }, [showReactionDetails]);
-
-  const handleAction = (action: MessageAction, data?: string) => {
+  const handleAction = (action: MessageAction) => {
     if (action === 'reply') onReply?.();
-    else if (action === 'edit') onEdit?.();
     else if (action === 'delete') onDelete?.();
     else if (action === 'forward') onForward?.();
     else if (action === 'createTodo') onCreateTodo?.();
-    else if (action === 'react' && data) onReact?.(data as string);
     else if (action === 'copy') {
       if (message.text) navigator.clipboard.writeText(message.text);
     }
@@ -124,7 +105,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
               ? "bg-primary text-white rounded-lg rounded-tr-none"
               : "bg-white text-gray-800 rounded-lg rounded-tl-none border border-[#e2e8f0]/30",
             message.type === 'gif' ? "p-1" : "",
-            message.isDeleted && "bg-gray-50/50 border-gray-100 text-gray-400",
             message.status === 'sending' && "opacity-70" // Visual cue for optimistic send
           )}
         >
@@ -150,22 +130,20 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           )}
 
           {/* Dropdown Trigger */}
-          {!message.isDeleted && (
-            <button
-              ref={triggerRef}
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleOptions?.(!showOptions);
-              }}
-              className={cn(
-                "absolute top-1 right-1 p-1 rounded-full bg-inherit bg-opacity-80 opacity-0 group-hover/bubble:opacity-100 transition-all z-10 hover:bg-black/5 hover:scale-110",
-                showOptions && "opacity-100",
-                isMe ? "text-white/80" : "text-gray-400"
-              )}
-            >
-              <ChevronDown className="w-3.5 h-3.5" />
-            </button>
-          )}
+          <button
+            ref={triggerRef}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleOptions?.(!showOptions);
+            }}
+            className={cn(
+              "absolute top-1 right-1 p-1 rounded-full bg-inherit bg-opacity-80 opacity-0 group-hover/bubble:opacity-100 transition-all z-10 hover:bg-black/5 hover:scale-110",
+              showOptions && "opacity-100",
+              isMe ? "text-white/80" : "text-gray-400"
+            )}
+          >
+            <ChevronDown className="w-3.5 h-3.5" />
+          </button>
 
           <MessageOptions
             isOpen={showOptions}
@@ -222,23 +200,16 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                 </p>
               </div>
             </div>
-          ) : message.type === 'gif' ? (
-            <div className="overflow-hidden rounded-lg">
-              <img src={message.gifUrl} alt="GIF" className="max-w-full h-auto min-w-[200px]" />
-            </div>
           ) : message.isDeleted ? (
-            <div className="flex items-center gap-2 py-1 select-none italic opacity-60">
+            <div className="flex items-center gap-2 py-1 pr-14 select-none italic opacity-60">
               <span className="text-gray-400">🚫</span>
               <p className="text-[13.5px]">
-                {isMe ? "You deleted this message" : "This message was deleted"}
+                {isMe ? "(your message was deleted)" : "(message was deleted)"}
               </p>
             </div>
           ) : (
             <p className="text-[14.5px] pr-8 pb-4 leading-normal wrap-break-word whitespace-pre-wrap">
               {message.text}
-              {message.isEdited && (
-                <span className="ml-1 text-[10px] opacity-60 italic">(edited)</span>
-              )}
             </p>
           )}
 
@@ -269,48 +240,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           </div>
         </div>
 
-        {/* Reactions Display */}
-        {!message.isDeleted && message.reactions && Object.keys(message.reactions).length > 0 && (
-          <div
-            ref={reactionContainerRef}
-            className={cn(
-              "flex flex-wrap gap-1 -mt-2.5 relative z-20",
-              isMe ? "justify-end mr-4" : "justify-start ml-4"
-            )}>
-            {Object.entries(message.reactions).map(([emoji, userIds]) => (
-              userIds.length > 0 && (
-                <button
-                  key={emoji}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowReactionDetails(!showReactionDetails);
-                  }}
-                  className={cn(
-                    "flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[14px] leading-none transition-all duration-200 hover:scale-110 shadow-sm border",
-                    userIds.includes('me') ? "bg-primary/10 border-primary/20" : "bg-white border-gray-100"
-                  )}
-                >
-                  <span>{emoji}</span>
-                  {userIds.length > 1 && <span className="font-bold text-gray-500 text-[10px]">{userIds.length}</span>}
-                </button>
-              )
-            ))}
 
-            {showReactionDetails && message.reactions && (
-              <ReactionDetailsModal
-                reactions={message.reactions}
-                users={mockUsers}
-                isMe={isMe}
-                onClose={() => setShowReactionDetails(false)}
-                onRemoveReaction={(emoji) => {
-                  onReact?.(emoji);
-                  setShowReactionDetails(false);
-                }}
-                triggerRect={reactionCoords}
-              />
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

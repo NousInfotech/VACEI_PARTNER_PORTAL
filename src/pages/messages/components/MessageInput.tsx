@@ -17,28 +17,17 @@ interface MessageInputProps {
     type: 'text' | 'gif' | 'image' | 'document'
   }) => void;
   replyingTo: Message | null;
-  editingMessage: Message | null;
   onCancelReply: () => void;
-  onCancelEdit: () => void;
 }
 
 export const MessageInput: React.FC<MessageInputProps> = ({
   onSendMessage,
   replyingTo,
-  editingMessage,
   onCancelReply,
-  onCancelEdit
 }) => {
   const [message, setMessage] = useState('');
 
-  // Sync message state with editingMessage
-  React.useEffect(() => {
-    if (editingMessage) {
-      setMessage(editingMessage.text || '');
-    } else {
-      setMessage('');
-    }
-  }, [editingMessage]);
+  // const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
 
   // const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
   // const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -47,12 +36,12 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   const docInputRef = React.useRef<HTMLInputElement>(null);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
-  // Focus textarea when replying or editing
+  // Focus textarea when replying
   React.useEffect(() => {
-    if (replyingTo || editingMessage) {
+    if (replyingTo) {
       textareaRef.current?.focus();
     }
-  }, [replyingTo, editingMessage]);
+  }, [replyingTo]);
 
   /*
   const onSelectEmoji = (emoji: string) => {
@@ -104,22 +93,22 @@ export const MessageInput: React.FC<MessageInputProps> = ({
 
   return (
     <div className="bg-[#f0f2f5] border-t border-gray-200">
-      {/* Reply/Edit Preview */}
-      {(replyingTo || editingMessage) && (
+      {/* Reply Preview */}
+      {replyingTo && (
         <div className="px-4 py-2 bg-white/50 backdrop-blur-sm border-b border-gray-200 flex items-center gap-3 animate-in slide-in-from-bottom-2 duration-200">
           <div className="w-1 bg-primary rounded-full self-stretch" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <span className="text-[12px] font-bold text-primary">
-                {editingMessage ? 'Edit Message' : `Replying to ${replyingTo?.senderId === 'me' ? 'you' : 'Sender'}`}
+                {`Replying to ${replyingTo?.senderId === 'me' ? 'you' : 'Sender'}`}
               </span>
             </div>
             <p className="text-[13px] text-gray-500 truncate italic">
-              {editingMessage?.text || replyingTo?.text || replyingTo?.fileName || 'Media'}
+              {replyingTo?.text || replyingTo?.fileName || 'Media'}
             </p>
           </div>
           <button
-            onClick={editingMessage ? onCancelEdit : onCancelReply}
+            onClick={onCancelReply}
             className="p-1 hover:bg-gray-200 rounded-lg transition-colors"
           >
             <X className="w-4 h-4 text-gray-400" />

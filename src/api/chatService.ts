@@ -169,5 +169,17 @@ export const chatService = {
             console.error('Error fetching messages:', error);
             throw error;
         }
+    },
+
+    /**
+     * Delete a message (soft delete).
+     */
+    deleteMessage: async (messageId: string) => {
+        try {
+            return await apiDelete(endPoints.CHAT.MESSAGES_DELETE(messageId));
+        } catch (error) {
+            console.error('Error deleting message:', error);
+            throw error;
+        }
     }
 };

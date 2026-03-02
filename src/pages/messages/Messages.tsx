@@ -8,7 +8,6 @@ import { MessageSearchPane } from './components/MessageSearchPane';
 import { MediaPreviewModal } from './components/MediaPreviewModal';
 import { GroupInfoPane } from './components/GroupInfoPane';
 import { AddMemberModal } from './components/AddMemberModal';
-import { EmojiPicker } from './components/EmojiPicker';
 import { ConfirmModal } from './components/ConfirmModal';
 import type { Chat, Message } from './types';
 import { Inbox, X, Copy, Forward, Trash2, Check, Users } from 'lucide-react';
@@ -113,6 +112,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
                 if (t && !t.endsWith('Z') && !t.includes('+') && !t.match(/-\d{2}:\d{2}$/)) t += 'Z';
                 return t || new Date().toISOString();
               })(),
+              isDeleted: !!lastMsg.deletedAt,
               status: 'sent',
             }
           } : {})
@@ -203,10 +203,9 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
   const [previewMessage, setPreviewMessage] = useState<Message | null>(null);
   const [scrollTargetId, setScrollTargetId] = useState<string | undefined>(undefined);
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
-  const [editingMessage, setEditingMessage] = useState<Message | null>(null);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([]);
-  const [emojiPickerMessageId, setEmojiPickerMessageId] = useState<string | null>(null);
+
   const [confirmState, setConfirmState] = useState<{
     isOpen: boolean;
     type: 'message' | 'bulk-message' | 'clear-chat' | 'remove-member';
@@ -277,93 +276,40 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
       try {
         await chatService.clearRoom(activeChatId!);
         clearMessages();
+        setChats(prev => prev.map(chat =>
+          chat.id === activeChatId ? { ...chat, lastMessage: undefined } : chat
+        ));
       } catch (e) {
         console.error('Failed to clear chat:', e);
       }
-      setChats(prev => prev.map(chat =>
-        chat.id === activeChatId ? { ...chat, messages: [] } : chat
-      ));
       setConfirmState({ isOpen: false, type: 'message' });
       return;
     }
 
+
     const isBulk = type === 'bulk-message';
 
-    setChats(prev => prev.map(chat => {
-      if (chat.id === activeChatId) {
-        if (isBulk) {
-          return {
-            ...chat,
-            messages: chat.messages
-              .filter(m => !selectedMessageIds.includes(m.id) || !m.isDeleted)
-              .map(m =>
-                selectedMessageIds.includes(m.id) ? { ...m, isDeleted: true, text: undefined, type: 'text', reactions: {} } : m
-              )
-          };
+    try {
+      if (isBulk) {
+        // Bulk delete currently not implemented in backend as a single call, 
+        // could loop or we just focus on individual for now per user request.
+        // User said "when i click the delete show the popup conformation after delete them"
+        for (const id of selectedMessageIds) {
+          await deleteChatMessage(id);
         }
-
-        if (messageId) {
-          const isAlreadyDeleted = chat.messages.find(m => m.id === messageId)?.isDeleted;
-
-          if (isAlreadyDeleted) {
-            return {
-              ...chat,
-              messages: chat.messages.filter(m => m.id !== messageId)
-            };
-          }
-
-          return {
-            ...chat,
-            messages: chat.messages.map(m =>
-              m.id === messageId ? { ...m, isDeleted: true, text: undefined, type: 'text', reactions: {} } : m
-            )
-          };
-        }
+        setIsSelectMode(false);
+        setSelectedMessageIds([]);
+      } else if (messageId) {
+        await deleteChatMessage(messageId);
       }
-      return chat;
-    }));
-
-    if (isBulk) {
-      setIsSelectMode(false);
-      setSelectedMessageIds([]);
+    } catch (e) {
+      console.error('Failed to delete message(s):', e);
     }
+
     setConfirmState({ isOpen: false, type: 'message' });
   };
 
-  const handleReactToMessage = (chatId: string, messageId: string, emoji: string) => {
-    setChats(prev => prev.map(chat => {
-      if (chat.id === chatId) {
-        return {
-          ...chat,
-          messages: chat.messages.map(m => {
-            if (m.id === messageId) {
-              if (emoji === '+') {
-                setEmojiPickerMessageId(messageId);
-              } else {
-                const reactions = { ...(m.reactions || {}) };
-                const alreadyHasThisReaction = (reactions[emoji] || []).includes('me');
 
-                Object.keys(reactions).forEach(key => {
-                  reactions[key] = reactions[key].filter(id => id !== 'me');
-                  if (reactions[key].length === 0) delete reactions[key];
-                });
-
-                if (!alreadyHasThisReaction) {
-                  const userReactions = reactions[emoji] || [];
-                  reactions[emoji] = [...userReactions, 'me'];
-                }
-
-                return { ...m, reactions };
-              }
-              return m;
-            }
-            return m;
-          })
-        };
-      }
-      return chat;
-    }));
-  };
 
   const handleForwardMessages = () => {
     if (forwardingMessages.length === 0 || selectedForwardChatIds.length === 0) return;
@@ -403,6 +349,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
   const {
     messages: activeChatMessages,
     sendMessage: sendChatMessage,
+    deleteMessage: deleteChatMessage,
     currentUserId,
     clearMessages,
   } = useChat(undefined, { roomId: activeChatId ?? undefined });
@@ -489,14 +436,6 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
     type: 'text' | 'gif' | 'image' | 'document'
   }) => {
     if (!activeChatId) return;
-
-    // Edit mode: update local message state only (no re-send needed)
-    if (editingMessage) {
-      // Since messages come from useChat now, we can't mutate them directly.
-      // Just clear edit state – a proper edit API call can be added later.
-      setEditingMessage(null);
-      return;
-    }
 
     try {
       const payload = replyToMessage?.id
@@ -596,14 +535,10 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
                 scrollToMessageId={scrollTargetId}
                 onScrollComplete={() => setScrollTargetId(undefined)}
                 onReplyMessage={setReplyToMessage}
-                onEditMessage={setEditingMessage}
                 onDeleteMessage={(msgId: string) => handleDeleteMessage(activeChat.id, msgId)}
-                onReactToMessage={(msgId: string, emoji: string) => handleReactToMessage(activeChat.id, msgId, emoji)}
                 onForwardMessage={(msg: Message) => setForwardingMessages([msg])}
                 replyingTo={replyToMessage}
-                editingMessage={editingMessage}
                 onCancelReply={() => setReplyToMessage(null)}
-                onCancelEdit={() => setEditingMessage(null)}
                 isSelectMode={isSelectMode}
                 selectedMessageIds={selectedMessageIds}
                 onSelectMessage={handleToggleSelectMessage}
@@ -842,27 +777,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
         onConfirm={confirmDelete}
         onCancel={() => setConfirmState({ isOpen: false, type: 'message' })}
       />
-      {emojiPickerMessageId && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/20 backdrop-blur-[2px]">
-          <div className="bg-white rounded-2xl shadow-2xl relative animate-in zoom-in-95 duration-200">
-            <button
-              onClick={() => setEmojiPickerMessageId(null)}
-              className="absolute -top-10 right-0 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors"
-            >
-              <X className="w-5 h-5 text-gray-500" />
-            </button>
-            <div className="p-2">
-              <EmojiPicker
-                onSelect={(emoji) => {
-                  handleReactToMessage(activeChatId!, emojiPickerMessageId, emoji);
-                  setEmojiPickerMessageId(null);
-                }}
-                onClose={() => setEmojiPickerMessageId(null)}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 };

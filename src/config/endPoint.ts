@@ -87,6 +87,7 @@ export const endPoints = {
     UNREAD_COUNT: (roomId: string) => `/chat/rooms/${roomId}/unread-count`,
     UNREAD_SUMMARY: '/chat/unread-summary',
     UPLOAD: '/chat/upload',
+    MESSAGES_DELETE: (messageId: string) => `/chat/messages/${messageId}`,
   },
   LIBRARY: {
     FOLDERS_ROOTS: '/library/folders/roots',
