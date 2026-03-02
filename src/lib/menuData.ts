@@ -93,15 +93,15 @@ export const menuData: MenuItem[] = [
         description: "Important updates & reminders",
         roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
     },
-    // {
-    //     slug: "support",
-    //     icon: BubbleChatIcon,
-    //     label: "Support",
-    //     href: "/dashboard/support",
-    //     section: "settings",
-    //     description: "Get help from Vacei",
-    //     roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
-    // },
+    {
+        slug: "support",
+        icon: BubbleChatIcon,
+        label: "Support",
+        href: "/dashboard/support",
+        section: "settings",
+        description: "Get help from Vacei",
+        roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
+    },
     {
         slug: "procedure-prompts",
         icon: NoteEditIcon,

@@ -28,6 +28,14 @@ export const endPoints = {
   NOTICE: {
     GET_TODAY: '/notices/today',
   },
+  SUPPORT: {
+    CREATE: '/support/support-requests',
+    GET_ALL: '/support/support-requests',
+    GET_BY_ID: (id: string) => `/support/support-requests/${id}`,
+    PATCH: (id: string) => `/support/support-requests/${id}`,
+    TICKETS: '/support/tickets',
+    TICKET_BY_ID: (id: string) => `/support/tickets/${id}`,
+  },
   NOTIFICATION: {
     BASE: '/notifications',
     UNREAD_COUNT: '/notifications/unread-count',
