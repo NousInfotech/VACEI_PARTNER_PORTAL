@@ -3,13 +3,14 @@ import ClassificationHeader from "./components/ClassificationHeader";
 import ClassificationSummary from "./components/ClassificationSummary";
 import ClassificationTable, { type TableRow } from "./components/ClassificationTable";
 import ClassificationEvidence from "./components/ClassificationEvidence";
+import LeadSheetEvidenceDialog from "./components/LeadSheetEvidenceDialog";
 import ClassificationProcedures from "./components/ClassificationProcedures";
 import ClassificationWorkbook from "./components/ClassificationWorkbook";
 import { useETBData } from "../hooks/useETBData";
 import { useClassification } from "../hooks/useClassification";
 import { extractClassificationGroups, getRowsForClassification } from "../utils/classificationUtils";
 import { Loader2, Eye, Save, MessageSquare, X } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost } from "@/config/base";
 import { endPoints } from "@/config/endPoint";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
@@ -59,6 +60,7 @@ export default function ClassificationView({ classificationId, engagementId, tit
     // Tab values match REFERENCE-PORTAL ClassificationSection (lead-sheet, evidence, procedures, work-book)
     const [activeTab, setActiveTab] = useState<string>('lead-sheet');
     const { toast } = useToast();
+    const queryClient = useQueryClient();
     const { organizationMember, user } = useAuth();
 
     // Review / Sign-off / Review History state (matches REFERENCE-PORTAL ClassificationSection)
@@ -103,7 +105,34 @@ export default function ClassificationView({ classificationId, engagementId, tit
         return getRowsForClassification(etbData.etbRows, classificationGroup);
     }, [etbData?.etbRows, classificationGroup]);
 
-    // Convert to TableRow format
+    // Fetch evidence for this classification to get per-row counts (for lead sheet)
+    const { data: classificationEvidenceData } = useQuery({
+        queryKey: ['evidence', dbClassificationId, 'lead-sheet-counts'],
+        queryFn: async (): Promise<Array<{ trialBalanceAccountId?: string | null }>> => {
+            if (!dbClassificationId) return [];
+            const res = await apiGet<{ data: Array<{ trialBalanceAccountId?: string | null }> }>(
+                endPoints.AUDIT.GET_EVIDENCES,
+                { classificationId: dbClassificationId, limit: 500 }
+            );
+            const list = (res as any)?.data ?? (Array.isArray(res) ? res : []);
+            return Array.isArray(list) ? list : [];
+        },
+        enabled: !!dbClassificationId && activeTab === 'lead-sheet',
+    });
+
+    const evidenceCountByAccountId = useMemo(() => {
+        const list: Array<{ trialBalanceAccountId?: string | null }> = classificationEvidenceData ?? [];
+        const count: Record<string, number> = {};
+        for (const ev of list) {
+            const id = ev.trialBalanceAccountId ?? null;
+            if (id) {
+                count[id] = (count[id] ?? 0) + 1;
+            }
+        }
+        return count;
+    }, [classificationEvidenceData]);
+
+    // Convert to TableRow format (include accountId for row-level evidence)
     const tableRows: TableRow[] = useMemo(() => {
         return classificationRows.map(row => ({
             code: row.code,
@@ -113,9 +142,12 @@ export default function ClassificationView({ classificationId, engagementId, tit
             adjustments: row.adjustments,
             finalBalance: row.finalBalance,
             priorYear: row.priorYear,
-            linkedFiles: row.linkedFiles?.length || 0
+            accountId: row.accountId,
+            linkedFiles: row.accountId
+                ? (evidenceCountByAccountId[row.accountId] ?? 0)
+                : (row.linkedFiles?.length ?? 0),
         }));
-    }, [classificationRows]);
+    }, [classificationRows, evidenceCountByAccountId]);
 
     // Calculate summary from classification group totals
     const summary = useMemo(() => {
@@ -275,6 +307,9 @@ export default function ClassificationView({ classificationId, engagementId, tit
     const isReviewDisabled = isSignedOff || !currentUser.id || reviewLoading;
     const isSignOffDisabled = isSignedOff || !currentUser.id || reviewLoading;
 
+    // Lead sheet row evidence dialog (which row is selected for attaching evidence)
+    const [leadSheetEvidenceRow, setLeadSheetEvidenceRow] = useState<TableRow | null>(null);
+
     // NOW conditional returns are safe
     if (isLoading) {
         return (
@@ -343,7 +378,23 @@ export default function ClassificationView({ classificationId, engagementId, tit
                             <ClassificationTable
                                 title={`${title} - Cost`}
                                 rows={tableRows}
+                                engagementId={engagementId}
+                                onManageEvidence={(row) => setLeadSheetEvidenceRow(row)}
                             />
+                            {leadSheetEvidenceRow?.accountId && (
+                                <LeadSheetEvidenceDialog
+                                    open={!!leadSheetEvidenceRow}
+                                    onOpenChange={(open) => !open && setLeadSheetEvidenceRow(null)}
+                                    trialBalanceAccountId={leadSheetEvidenceRow.accountId}
+                                    accountCode={leadSheetEvidenceRow.code}
+                                    accountName={leadSheetEvidenceRow.accountName}
+                                    engagementId={engagementId}
+                                    classificationId={dbClassificationId ?? undefined}
+                                    onEvidenceChange={() => {
+                                        queryClient.invalidateQueries({ queryKey: ['evidence', dbClassificationId, 'lead-sheet-counts'] });
+                                    }}
+                                />
+                            )}
                         </TabsContent>
 
                         <TabsContent value="evidence" className="flex-1 flex flex-col mt-4">

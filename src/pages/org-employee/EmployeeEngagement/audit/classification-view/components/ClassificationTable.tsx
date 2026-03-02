@@ -1,4 +1,4 @@
-import { Eye, Pencil } from "lucide-react";
+import { Paperclip, Pencil } from "lucide-react";
 import { Button } from "../../../../../../ui/Button";
 
 export interface TableRow {
@@ -10,6 +10,8 @@ export interface TableRow {
     finalBalance: number;
     priorYear: number;
     linkedFiles: number;
+    /** Backend trial balance account ID – required to attach evidence to this row */
+    accountId?: string;
 }
 
 const formatNumber = (num: number) => new Intl.NumberFormat('en-US').format(num);
@@ -17,9 +19,11 @@ const formatNumber = (num: number) => new Intl.NumberFormat('en-US').format(num)
 interface ClassificationTableProps {
     title?: string;
     rows: TableRow[];
+    engagementId?: string;
+    onManageEvidence?: (row: TableRow) => void;
 }
 
-export default function ClassificationTable({ title = "Intangible assets - Cost", rows }: ClassificationTableProps) {
+export default function ClassificationTable({ title = "Intangible assets - Cost", rows, engagementId, onManageEvidence }: ClassificationTableProps) {
     // Calculate totals
     const totals = rows.reduce((acc, row) => ({
         currentYear: acc.currentYear + row.currentYear,
@@ -56,12 +60,12 @@ export default function ClassificationTable({ title = "Intangible assets - Cost"
                     <div className="px-4 py-3 text-right">Adjustments</div>
                     <div className="px-4 py-3 text-right">Final Balance</div>
                     <div className="px-4 py-3 text-right">Prior Year</div>
-                    <div className="px-4 py-3 text-center">Linked Files</div>
+                    <div className="px-4 py-3 text-center">Evidence</div>
                 </div>
 
                 {/* Table Rows */}
                 {rows.map((row) => (
-                    <div key={row.code} className="grid grid-cols-[60px_1fr_120px_140px_120px_120px_120px_120px] bg-card text-sm text-muted-foreground border-b border-gray-200 hover:bg-muted/30">
+                    <div key={row.code + (row.accountId ?? '')} className="grid grid-cols-[60px_1fr_120px_140px_120px_120px_120px_120px] bg-card text-sm text-muted-foreground border-b border-gray-200 hover:bg-muted/30">
                         <div className="px-4 py-4">{row.code}</div>
                         <div className="px-4 py-4">{row.accountName}</div>
                         <div className="px-4 py-4 text-right font-medium text-foreground">{formatNumber(row.currentYear)}</div>
@@ -70,10 +74,18 @@ export default function ClassificationTable({ title = "Intangible assets - Cost"
                         <div className="px-4 py-4 text-right font-bold text-foreground">{formatNumber(row.finalBalance)}</div>
                         <div className="px-4 py-4 text-right">{formatNumber(row.priorYear)}</div>
                         <div className="px-4 py-4 flex justify-center">
-                            <button className="flex items-center gap-1.5 px-2 py-1 rounded border border-gray-200 text-xs font-medium text-foreground hover:bg-muted transition-colors">
-                                <Eye size={12} />
-                                {row.linkedFiles} file
-                            </button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-8 gap-1.5 text-xs"
+                                onClick={() => row.accountId && onManageEvidence?.(row)}
+                                disabled={!row.accountId || !engagementId || !onManageEvidence}
+                                title={row.accountId ? `Attach or view evidence for ${row.code}` : 'Evidence requires trial balance account'}
+                            >
+                                <Paperclip size={12} />
+                                {row.linkedFiles} file{row.linkedFiles !== 1 ? 's' : ''}
+                            </Button>
                         </div>
                     </div>
                 ))}

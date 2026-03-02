@@ -1,4 +1,5 @@
-import { FileText, Image, Eye, Trash2, Link, UploadCloud, History, FileSpreadsheet, Loader2, RefreshCw } from "lucide-react";
+// import { FileText, Image, Eye, Trash2, Link, UploadCloud, History, FileSpreadsheet, Loader2, RefreshCw } from "lucide-react";
+import { FileText, Image, Eye, Trash2, UploadCloud,  Loader2, RefreshCw } from "lucide-react";
 import { useRef, useState } from "react";
 import { Button } from "../../../../../../ui/Button";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,12 +17,12 @@ interface EvidenceFile {
     url?: string;
 }
 
-interface WorkbookFile {
-    id: string;
-    name: string;
-    version: string;
-    authorId: string;
-}
+// interface WorkbookFile {
+//     id: string;
+//     name: string;
+//     version: string;
+//     authorId: string;
+// }
 
 interface ClassificationEvidenceProps {
     classificationId?: string | null;
@@ -65,7 +66,7 @@ interface LibraryFolderResponse {
 export default function ClassificationEvidence({ classificationId, engagementId, isLoadingClassification = false }: ClassificationEvidenceProps) {
     const queryClient = useQueryClient();
     const evidenceInputRef = useRef<HTMLInputElement>(null);
-    const workbookInputRef = useRef<HTMLInputElement>(null);
+    // const workbookInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
     const [alert, setAlert] = useState<{ type: 'success' | 'danger'; message: string } | null>(null);
 
@@ -242,10 +243,10 @@ export default function ClassificationEvidence({ classificationId, engagementId,
         }
     };
 
-    const workbooks: WorkbookFile[] = [
-        { id: '1', name: 'Unique Ltd.xlsx', version: 'v1', authorId: '00ec57eb-ceb7-485d-8449-e0b9574e01e7' },
-        { id: '2', name: 'Book2.xlsx', version: 'v1', authorId: '00ec57eb-ceb7-485d-8449-e0b9574e01e7' },
-    ];
+    // const workbooks: WorkbookFile[] = [
+    //     { id: '1', name: 'Unique Ltd.xlsx', version: 'v1', authorId: '00ec57eb-ceb7-485d-8449-e0b9574e01e7' },
+    //     { id: '2', name: 'Book2.xlsx', version: 'v1', authorId: '00ec57eb-ceb7-485d-8449-e0b9574e01e7' },
+    // ];
 
     return (
         <div className="space-y-8">
@@ -403,9 +404,9 @@ export default function ClassificationEvidence({ classificationId, engagementId,
             </div>
 
             {/* WORKBOOKS SECTION */}
-            <div className="space-y-4">
+            {/* <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                    <h2 className="text-lg font-bold text-gray-900">Linked Workbooks</h2>
+                    <h2 className="text-lg font-bold text-gray-900">Linked Workbookssss</h2>
                     <Button variant="outline" className="gap-2 text-xs">
                         <History size={14} />
                         View All Workbook History
@@ -467,7 +468,7 @@ export default function ClassificationEvidence({ classificationId, engagementId,
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> */}
         </div>
     );
 }
