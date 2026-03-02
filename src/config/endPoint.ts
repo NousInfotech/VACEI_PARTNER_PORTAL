@@ -35,6 +35,7 @@ export const endPoints = {
     PATCH: (id: string) => `/support/support-requests/${id}`,
     TICKETS: '/support/tickets',
     TICKET_BY_ID: (id: string) => `/support/tickets/${id}`,
+    TICKET_UPDATES: (ticketId: string) => `/support/tickets/${ticketId}/updates`,
   },
   NOTIFICATION: {
     BASE: '/notifications',

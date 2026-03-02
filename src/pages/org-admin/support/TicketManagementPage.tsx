@@ -16,10 +16,21 @@ interface SupportRequestItem {
   createdAt: string;
 }
 
+interface TicketItem {
+  id: string;
+  status: string;
+  createdAt: string;
+  supportRequest?: { subject: string } | null;
+}
+
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     PENDING: "bg-amber-100 text-amber-800",
     ACCEPTED: "bg-emerald-100 text-emerald-800",
+    ACTIVE: "bg-blue-100 text-blue-800",
+    IN_PROGRESS: "bg-blue-100 text-blue-800",
+    RESOLVED: "bg-emerald-100 text-emerald-800",
+    CLOSED: "bg-gray-100 text-gray-700",
   };
   return (
     <span
@@ -33,7 +44,9 @@ function StatusBadge({ status }: { status: string }) {
 export default function TicketManagementPage() {
   const navigate = useNavigate();
   const [requests, setRequests] = useState<SupportRequestItem[]>([]);
+  const [tickets, setTickets] = useState<TicketItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [ticketsLoading, setTicketsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,6 +56,14 @@ export default function TicketManagementPage() {
       .then((res) => setRequests(Array.isArray(res?.data) ? res.data : []))
       .catch(() => setError("Failed to load support requests"))
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    setTicketsLoading(true);
+    apiGet<ApiResponse<TicketItem[]>>(endPoints.SUPPORT.TICKETS, { limit: 50 })
+      .then((res) => setTickets(Array.isArray(res?.data) ? res.data : []))
+      .catch(() => setTickets([]))
+      .finally(() => setTicketsLoading(false));
   }, []);
 
   return (
@@ -100,6 +121,48 @@ export default function TicketManagementPage() {
                     </td>
                     <td className="py-4 text-sm text-gray-500">
                       {new Date(r.createdAt).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </ShadowCard>
+
+      <ShadowCard className="p-6 border border-gray-100 shadow-sm rounded-3xl bg-white">
+        <h3 className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-4">My tickets (view updates)</h3>
+        {ticketsLoading ? (
+          <div className="py-8 text-center text-gray-500">Loading...</div>
+        ) : tickets.length === 0 ? (
+          <p className="text-gray-500 py-4">No tickets yet. When a support request is accepted, a ticket will appear here.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="pb-3 text-xs font-bold uppercase tracking-widest text-gray-500">Subject</th>
+                  <th className="pb-3 text-xs font-bold uppercase tracking-widest text-gray-500">Status</th>
+                  <th className="pb-3 text-xs font-bold uppercase tracking-widest text-gray-500">Created</th>
+                  <th className="pb-3 text-xs font-bold uppercase tracking-widest text-gray-500 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tickets.map((t) => (
+                  <tr key={t.id} className="border-b border-gray-100 hover:bg-gray-50/50">
+                    <td className="py-4 font-medium text-gray-900">{t.supportRequest?.subject ?? "—"}</td>
+                    <td className="py-4">
+                      <StatusBadge status={t.status} />
+                    </td>
+                    <td className="py-4 text-sm text-gray-500">{new Date(t.createdAt).toLocaleDateString()}</td>
+                    <td className="py-4 text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/dashboard/support/tickets/${t.id}`)}
+                      >
+                        View updates
+                      </Button>
                     </td>
                   </tr>
                 ))}
