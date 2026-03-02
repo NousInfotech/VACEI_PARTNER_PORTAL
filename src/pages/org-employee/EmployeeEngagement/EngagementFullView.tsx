@@ -176,7 +176,8 @@ export default function EngagementFullView() {
       'MBR': 'mbr',
       'TAX': 'tax',
       'CFO': 'cfo',
-      'CSP': 'csp'
+      'CSP': 'csp',
+      'LIQUIDATION': 'liquidation'
     };
 
     const activeServiceTab = serviceMap[selectedService];

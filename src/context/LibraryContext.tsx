@@ -77,6 +77,7 @@ interface LibraryContextType {
   breadcrumbs: LibraryItem[];
   currentItems: LibraryItem[];
   rootFolders: LibraryItem[];
+  sidebarFolders: LibraryItem[];
   
   // Actions
   setViewMode: (mode: ViewMode) => void;
@@ -118,6 +119,7 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode; engagementId
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [filterType, setFilterType] = useState('all');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [stableSidebarFolders, setStableSidebarFolders] = useState<LibraryItem[]>([]);
 
   // Fetch Root Folders or Engagement Library Folder
   const { data: libraryRootData } = useQuery({
@@ -274,21 +276,46 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode; engagementId
       return sortConfig.order === 'asc' ? comparison : -comparison;
     });
 
-    return allItems as LibraryItem[];
+    return allItems.map((item: LibraryItem) => ({
+      ...item,
+      parentId: item.type === 'folder' ? (item as any).parentId : (item as any).folderId
+    })) as LibraryItem[];
   }, [currentFolderId, rootFolders, rootFiles, contentData, searchQuery, sortConfig, filterType]);
 
-  // Breadcrumbs logic - this would ideally come from the API or be managed via state
-  // For now, we'll maintain a simple stack or rely on the current folder's parent
   const [breadcrumbStack, setBreadcrumbStack] = useState<LibraryItem[]>([]);
+
+  useEffect(() => {
+    const folders = currentItems.filter(i => i.type === 'folder');
+    // Capture folders at root or first level to keep sidebar stable
+    if (folders.length > 0 && breadcrumbStack.length <= 1) {
+      setStableSidebarFolders(folders);
+    }
+  }, [currentItems, breadcrumbStack.length]);
+
+  const sidebarFolders = useMemo(() => {
+    if (stableSidebarFolders.length > 0) return stableSidebarFolders;
+    return rootFolders;
+  }, [stableSidebarFolders, rootFolders]);
 
   const handleFolderClick = (id: string | null) => {
     if (id === null) {
       setCurrentFolderId(null);
       setBreadcrumbStack([]);
     } else {
-      const folder = currentItems.find(i => i.id === id && i.type === 'folder');
-      if (folder) {
-        setBreadcrumbStack(prev => [...prev, folder]);
+      const isRoot = rootFolders.some(rf => rf.id === id);
+      const folder = currentItems.find(i => i.id === id && i.type === 'folder') || 
+                     rootFolders.find(rf => rf.id === id);
+      
+      if (isRoot && folder) {
+        setBreadcrumbStack([folder]);
+      } else if (folder) {
+        // If we found the folder in current items, check if it's already in breadcrumbs
+        const existingIdx = breadcrumbStack.findIndex(b => b.id === id);
+        if (existingIdx !== -1) {
+          setBreadcrumbStack(breadcrumbStack.slice(0, existingIdx + 1));
+        } else {
+          setBreadcrumbStack(prev => [...prev, folder]);
+        }
       }
       setCurrentFolderId(id);
     }
@@ -395,6 +422,7 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode; engagementId
     breadcrumbs: breadcrumbStack,
     currentItems,
     rootFolders,
+    sidebarFolders,
     handleFolderClick,
     handleBack,
     handleDoubleClick,

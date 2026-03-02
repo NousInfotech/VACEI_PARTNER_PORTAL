@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react';
-import { Search, List, LayoutGrid, Download, ArrowLeft, Filter, ChevronDown, Menu, FolderPlus, Upload } from 'lucide-react';
+import { Search, List, LayoutGrid, Download, ArrowLeft, Filter, ChevronDown, Menu } from 'lucide-react';
 import { Button } from '../../../../../ui/Button';
 import { Input } from '../../../../../ui/input';
 import { cn } from '../../../../../lib/utils';
@@ -22,8 +22,6 @@ export const Toolbar: React.FC = () => {
     handleDownload,
     isMobileSidebarOpen,
     setIsMobileSidebarOpen,
-    handleCreateFolder,
-    handleUpload
   } = useLibrary();
 
   const [isFilterOpen, setIsFilterOpen] = React.useState(false);
@@ -155,34 +153,6 @@ export const Toolbar: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-1.5 md:gap-2">
-          <input 
-            type="file" 
-            id="library-upload" 
-            className="hidden" 
-            multiple 
-            onChange={(e) => e.target.files && handleUpload(e.target.files)}
-          />
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => {
-              const name = prompt('Enter folder name:');
-              if (name) handleCreateFolder(name);
-            }}
-            className="h-9 border-gray-200 rounded-lg gap-2 px-3 hidden sm:flex items-center"
-          >
-            <FolderPlus className="w-3.5 h-3.5" />
-            <span className="text-xs">New Folder</span>
-          </Button>
-          <Button 
-            variant="default" 
-            size="sm"
-            onClick={() => document.getElementById('library-upload')?.click()}
-            className="h-9 bg-primary hover:bg-primary/90 text-white font-medium border-0 rounded-lg gap-2 px-3 md:px-5 flex items-center shadow-none"
-          >
-            <Upload className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline text-xs">Upload</span>
-          </Button>
           <Button 
             variant="ghost" 
             size="sm"
