@@ -14,6 +14,7 @@ import Notifications from './pages/common/Notifications'
 import SupportFormPage from './pages/org-admin/support/SupportFormPage'
 import TicketManagementPage from './pages/org-admin/support/TicketManagementPage'
 import TicketDetailPage from './pages/org-admin/support/TicketDetailPage'
+import RequestDetailPage from './pages/org-admin/support/RequestDetailPage'
 import Settings from './pages/common/Settings'
 import { Toaster } from 'sonner'
 
@@ -47,6 +48,7 @@ const App = () => {
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/dashboard/support" element={<SupportFormPage />} />
             <Route path="/dashboard/support/tickets" element={<TicketManagementPage />} />
+            <Route path="/dashboard/support/tickets/request/:requestId" element={<RequestDetailPage />} />
             <Route path="/dashboard/support/tickets/:ticketId" element={<TicketDetailPage />} />
             <Route path="/dashboard/settings" element={<Settings />} />
             <Route path="/dashboard/procedure-prompts" element={<Dashboard activeSection="Procedure Prompt" />} />

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ListChecks, ArrowLeft } from "lucide-react";
+import { ListChecks, Send } from "lucide-react";
 import { Button } from "../../../ui/Button";
 import { PageHeader } from "../../common/PageHeader";
 import { ShadowCard } from "../../../ui/ShadowCard";
@@ -14,19 +14,27 @@ interface SupportRequestItem {
   description: string | null;
   status: string;
   createdAt: string;
+  tickets?: { id: string; status: string }[];
 }
 
-interface TicketItem {
-  id: string;
-  status: string;
-  createdAt: string;
-  supportRequest?: { subject: string } | null;
-}
-
-function StatusBadge({ status }: { status: string }) {
+function RequestStatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     PENDING: "bg-amber-100 text-amber-800",
     ACCEPTED: "bg-emerald-100 text-emerald-800",
+    REJECTED: "bg-red-100 text-red-800",
+  };
+  return (
+    <span
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${styles[status] ?? "bg-gray-100 text-gray-700"}`}
+    >
+      {status}
+    </span>
+  );
+}
+
+function TicketStatusBadge({ status }: { status: string }) {
+  const styles: Record<string, string> = {
+    PENDING: "bg-amber-100 text-amber-800",
     ACTIVE: "bg-blue-100 text-blue-800",
     IN_PROGRESS: "bg-blue-100 text-blue-800",
     RESOLVED: "bg-emerald-100 text-emerald-800",
@@ -44,9 +52,7 @@ function StatusBadge({ status }: { status: string }) {
 export default function TicketManagementPage() {
   const navigate = useNavigate();
   const [requests, setRequests] = useState<SupportRequestItem[]>([]);
-  const [tickets, setTickets] = useState<TicketItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [ticketsLoading, setTicketsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,24 +64,21 @@ export default function TicketManagementPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    setTicketsLoading(true);
-    apiGet<ApiResponse<TicketItem[]>>(endPoints.SUPPORT.TICKETS, { limit: 50 })
-      .then((res) => setTickets(Array.isArray(res?.data) ? res.data : []))
-      .catch(() => setTickets([]))
-      .finally(() => setTicketsLoading(false));
-  }, []);
+  const ticketStatus = (r: SupportRequestItem) => {
+    const t = r.tickets?.[0];
+    return t ? t.status : "—";
+  };
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Support Requests"
+        title="Support"
         description="View and track your organization's support requests."
         icon={ListChecks}
         actions={
           <Button variant="header" onClick={() => navigate("/dashboard/support")}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            New request
+            <Send className="h-4 w-4 mr-2" />
+            New support request
           </Button>
         }
       />
@@ -101,67 +104,37 @@ export default function TicketManagementPage() {
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="pb-3 text-xs font-bold uppercase tracking-widest text-gray-500">
-                    Subject
-                  </th>
-                  <th className="pb-3 text-xs font-bold uppercase tracking-widest text-gray-500">
-                    Status
-                  </th>
-                  <th className="pb-3 text-xs font-bold uppercase tracking-widest text-gray-500">
-                    Submitted
-                  </th>
+                  <th className="pb-3 text-xs font-bold uppercase tracking-widest text-gray-500">Subject</th>
+                  <th className="pb-3 text-xs font-bold uppercase tracking-widest text-gray-500">Description</th>
+                  <th className="pb-3 text-xs font-bold uppercase tracking-widest text-gray-500">Request status</th>
+                  <th className="pb-3 text-xs font-bold uppercase tracking-widest text-gray-500">Ticket status</th>
+                  <th className="pb-3 text-xs font-bold uppercase tracking-widest text-gray-500">Submitted</th>
+                  <th className="pb-3 text-xs font-bold uppercase tracking-widest text-gray-500 text-right">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {requests.map((r) => (
                   <tr key={r.id} className="border-b border-gray-100 hover:bg-gray-50/50">
                     <td className="py-4 font-medium text-gray-900">{r.subject}</td>
+                    <td className="py-4 text-sm text-gray-600 max-w-xs">
+                      <span className="line-clamp-2">{r.description || "—"}</span>
+                    </td>
                     <td className="py-4">
-                      <StatusBadge status={r.status} />
+                      <RequestStatusBadge status={r.status} />
+                    </td>
+                    <td className="py-4">
+                      <TicketStatusBadge status={ticketStatus(r)} />
                     </td>
                     <td className="py-4 text-sm text-gray-500">
                       {new Date(r.createdAt).toLocaleDateString()}
                     </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </ShadowCard>
-
-      <ShadowCard className="p-6 border border-gray-100 shadow-sm rounded-3xl bg-white">
-        <h3 className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-4">My tickets (view updates)</h3>
-        {ticketsLoading ? (
-          <div className="py-8 text-center text-gray-500">Loading...</div>
-        ) : tickets.length === 0 ? (
-          <p className="text-gray-500 py-4">No tickets yet. When a support request is accepted, a ticket will appear here.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="pb-3 text-xs font-bold uppercase tracking-widest text-gray-500">Subject</th>
-                  <th className="pb-3 text-xs font-bold uppercase tracking-widest text-gray-500">Status</th>
-                  <th className="pb-3 text-xs font-bold uppercase tracking-widest text-gray-500">Created</th>
-                  <th className="pb-3 text-xs font-bold uppercase tracking-widest text-gray-500 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tickets.map((t) => (
-                  <tr key={t.id} className="border-b border-gray-100 hover:bg-gray-50/50">
-                    <td className="py-4 font-medium text-gray-900">{t.supportRequest?.subject ?? "—"}</td>
-                    <td className="py-4">
-                      <StatusBadge status={t.status} />
-                    </td>
-                    <td className="py-4 text-sm text-gray-500">{new Date(t.createdAt).toLocaleDateString()}</td>
                     <td className="py-4 text-right">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => navigate(`/dashboard/support/tickets/${t.id}`)}
+                        onClick={() => navigate(`/dashboard/support/tickets/request/${r.id}`)}
                       >
-                        View updates
+                        View
                       </Button>
                     </td>
                   </tr>

@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { HelpCircle, ArrowLeft, Send } from "lucide-react";
+import { HelpCircle, ArrowLeft, Send, Upload, X } from "lucide-react";
 import { Button } from "../../../ui/Button";
 import { PageHeader } from "../../common/PageHeader";
 import { ShadowCard } from "../../../ui/ShadowCard";
@@ -30,6 +30,18 @@ export default function SupportFormPage() {
   const [subject, setSubject] = useState("");
   const [customSubject, setCustomSubject] = useState("");
   const [description, setDescription] = useState("");
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files).filter((f) => f.type.startsWith("image/") || f.type === "application/pdf");
+      setAttachments((prev) => [...prev, ...newFiles]);
+    }
+  };
+  const removeAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,15 +61,17 @@ export default function SupportFormPage() {
       formData.append("subject", subj.trim());
       formData.append("description", description.trim());
       formData.append("organizationId", orgId);
-      const res = await apiPostFormData<{ success: boolean; data: unknown }>(
+      attachments.forEach((f) => formData.append("files", f));
+      const res = await apiPostFormData<{ data?: unknown }>(
         endPoints.SUPPORT.CREATE,
         formData
       );
-      if (res?.success) {
+      if (res?.data !== undefined) {
         setAlert({ message: "Support request submitted successfully", variant: "success" });
         setSubject("");
         setCustomSubject("");
         setDescription("");
+        setAttachments([]);
         setTimeout(() => navigate("/dashboard/support/tickets"), 1500);
       }
     } catch (err: any) {
@@ -120,6 +134,38 @@ export default function SupportFormPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-gray-700">Proofs / attachments (optional)</label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,.pdf"
+              multiple
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="border-gray-300 text-gray-700"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Add files
+            </Button>
+            {attachments.length > 0 && (
+              <ul className="mt-2 space-y-1">
+                {attachments.map((f, i) => (
+                  <li key={i} className="flex items-center justify-between text-sm text-gray-600">
+                    <span>{f.name}</span>
+                    <button type="button" onClick={() => removeAttachment(i)} className="text-red-600 hover:underline">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           <div className="flex gap-3">
             <Button type="submit" disabled={loading} className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-xl">
