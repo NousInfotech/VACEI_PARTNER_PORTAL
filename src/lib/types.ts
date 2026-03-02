@@ -123,8 +123,10 @@ export const AVAILABLE_SERVICES = [
   { id: "TECHNOLOGY", label: "Technology" },
   { id: "GRANTS_AND_INCENTIVES", label: "Grants & Incentives" },
   { id: "INCORPORATION", label: "Incorporation" },
+  { id: "LIQUIDATION", label: "Liquidation" },
   { id: "MBR", label: "MBR" },
-  { id: "TAX", label: "Tax" }
+  { id: "TAX", label: "Tax" },
+  { id: "CUSTOM", label: "Custom Service" }
 ];
 
 export interface ApiResponse<T> {

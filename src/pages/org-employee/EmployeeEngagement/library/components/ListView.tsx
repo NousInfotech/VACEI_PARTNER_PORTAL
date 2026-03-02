@@ -63,7 +63,7 @@ export const ListView: React.FC = () => {
                     onClick={(e) => { e.stopPropagation(); handleDownload(item); }}
                     className="h-10 w-10 p-0 rounded-lg hover:bg-white shadow-sm border border-transparent hover:border-gray-200"
                   >
-                    <Download className="w-10 h-10 text-gray-600" />
+                    <Download className="w-4 h-4 text-gray-600" />
                   </Button>
                   {item.type === 'file' && (item.fileType === 'PDF' || ['PNG', 'JPG', 'JPEG'].includes(item.fileType || '')) && (
                     <Button 
@@ -72,7 +72,7 @@ export const ListView: React.FC = () => {
                       onClick={(e) => { e.stopPropagation(); handleDoubleClick(item); }}
                       className="h-10 w-10 p-0 rounded-lg hover:bg-white shadow-sm border border-transparent hover:border-gray-200"
                     >
-                      <Eye className="w-10 h-10 text-gray-600" />
+                      <Eye className="w-4 h-4 text-gray-600" />
                     </Button>
                   )}
                   <Button 
@@ -84,7 +84,7 @@ export const ListView: React.FC = () => {
                     }}
                     className="h-10 w-10 p-0 rounded-lg hover:bg-white shadow-sm border border-transparent hover:border-gray-200"
                   >
-                    <Trash2 className="w-10 h-10 text-gray-600" />
+                    <Trash2 className="w-4 h-4 text-gray-600" />
                   </Button>
                 </div>
 

@@ -20,10 +20,10 @@ export const Toolbar: React.FC = () => {
     filterType,
     setFilterType,
     handleDownload,
+    handleUpload,
+    handleCreateFolder,
     isMobileSidebarOpen,
     setIsMobileSidebarOpen,
-    handleCreateFolder,
-    handleUpload
   } = useLibrary();
 
   const [isFilterOpen, setIsFilterOpen] = React.useState(false);
