@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react';
-import { Search, List, LayoutGrid, Download, ArrowLeft, Filter, ChevronDown, Menu } from 'lucide-react';
+import { Search, List, LayoutGrid, Download, ArrowLeft, Filter, ChevronDown, Menu, FolderPlus, Upload, X } from 'lucide-react';
 import { Button } from '../../../../../ui/Button';
 import { Input } from '../../../../../ui/input';
 import { cn } from '../../../../../lib/utils';
@@ -20,11 +20,15 @@ export const Toolbar: React.FC = () => {
     filterType,
     setFilterType,
     handleDownload,
+    handleUpload,
+    handleCreateFolder,
     isMobileSidebarOpen,
     setIsMobileSidebarOpen,
   } = useLibrary();
 
   const [isFilterOpen, setIsFilterOpen] = React.useState(false);
+  const [isCreatingFolder, setIsCreatingFolder] = React.useState(false);
+  const [newFolderName, setNewFolderName] = React.useState("");
 
   const filterOptions = [
     { id: 'all', label: 'All Files' },
@@ -153,6 +157,76 @@ export const Toolbar: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-1.5 md:gap-2">
+          <input 
+            type="file" 
+            id="library-upload" 
+            className="hidden" 
+            multiple 
+            onChange={(e) => e.target.files && handleUpload(e.target.files)}
+          />
+          {isCreatingFolder ? (
+            <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg px-2 h-9">
+              <FolderPlus className="w-3.5 h-3.5 text-gray-500" />
+              <input
+                autoFocus
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && newFolderName.trim()) {
+                    handleCreateFolder(newFolderName.trim());
+                    setNewFolderName("");
+                    setIsCreatingFolder(false);
+                  } else if (e.key === "Escape") {
+                    setIsCreatingFolder(false);
+                    setNewFolderName("");
+                  }
+                }}
+                placeholder="Folder name"
+                className="bg-transparent border-0 text-xs outline-none placeholder:text-gray-400"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (!newFolderName.trim()) return;
+                  handleCreateFolder(newFolderName.trim());
+                  setNewFolderName("");
+                  setIsCreatingFolder(false);
+                }}
+                className="px-2 py-1 rounded bg-primary text-white text-[11px] font-semibold hover:bg-primary/90"
+              >
+                Create
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCreatingFolder(false);
+                  setNewFolderName("");
+                }}
+                className="p-1 rounded hover:bg-gray-100 text-gray-400"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setIsCreatingFolder(true)}
+              className="h-9 border-gray-200 rounded-lg gap-2 px-3 hidden sm:flex items-center"
+            >
+              <FolderPlus className="w-3.5 h-3.5" />
+              <span className="text-xs">New Folder</span>
+            </Button>
+          )}
+          <Button 
+            variant="default" 
+            size="sm"
+            onClick={() => document.getElementById('library-upload')?.click()}
+            className="h-9 bg-primary hover:bg-primary/90 text-white font-medium border-0 rounded-lg gap-2 px-3 md:px-5 flex items-center shadow-none"
+          >
+            <Upload className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline text-xs">New File</span>
+          </Button>
           <Button 
             variant="ghost" 
             size="sm"

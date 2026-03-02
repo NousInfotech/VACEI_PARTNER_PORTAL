@@ -12,7 +12,6 @@ import {
     Smartphone, 
     Shield, 
     Save,
-    Camera,
     CheckCircle2
 } from 'lucide-react';
 import { Button } from '../../ui/Button';
@@ -338,17 +337,15 @@ const Settings: React.FC = () => {
     const renderContent = () => {
         switch (activeTab) {
             case 'profile':
+                const initials = `${(user?.firstName || '').charAt(0)}${(user?.lastName || '').charAt(0)}`.trim() || (user?.email || 'U')[0];
                 return (
                     <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
                         <section className="space-y-6">
                             <div className="flex items-center gap-6">
-                                <div className="relative group">
-                                    <div className="w-24 h-24 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-dashed border-primary/20 hover:border-primary/40 transition-all overflow-hidden">
-                                        <User className="w-10 h-10 text-primary" />
-                                    </div>
-                                    <button className="absolute -bottom-2 -right-2 p-2 bg-primary text-white rounded-xl shadow-lg shadow-primary/20 hover:scale-110 transition-transform">
-                                        <Camera size={14} />
-                                    </button>
+                                <div className="w-24 h-24 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20">
+                                    <span className="text-2xl font-bold text-primary">
+                                        {initials.toUpperCase()}
+                                    </span>
                                 </div>
                                 <div>
                                     <h4 className="text-lg font-bold text-gray-900">{user?.firstName} {user?.lastName}</h4>

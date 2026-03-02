@@ -60,7 +60,12 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
     // construct active chat object
     const activeChat: Chat | null = room ? {
         ...room,
-        messages: messages,
+        // Always show messages ordered by time (oldest → newest)
+        messages: [...messages].sort((a, b) => {
+            const aTime = a.createdAt ?? (a.timestamp ? new Date(a.timestamp).getTime() : 0);
+            const bTime = b.createdAt ?? (b.timestamp ? new Date(b.timestamp).getTime() : 0);
+            return aTime - bTime;
+        }),
         name: room.name || 'Engagement Chat',
         type: room.type || 'GROUP',
         participants: (room.participants || (room as any).members || []).map((m: any) => ({

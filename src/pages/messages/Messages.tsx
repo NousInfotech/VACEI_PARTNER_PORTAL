@@ -417,9 +417,16 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
   }, []);
 
   const activeChatBase = chats.find(c => c.id === activeChatId);
-  // Merge real messages from useChat into the active chat object
+  // Merge real messages from useChat into the active chat object and enforce time ordering
   const activeChat = activeChatBase
-    ? { ...activeChatBase, messages: activeChatMessages }
+    ? {
+        ...activeChatBase,
+        messages: [...activeChatMessages].sort((a, b) => {
+          const aTime = a.createdAt ?? (a.timestamp ? new Date(a.timestamp).getTime() : 0);
+          const bTime = b.createdAt ?? (b.timestamp ? new Date(b.timestamp).getTime() : 0);
+          return aTime - bTime;
+        }),
+      }
     : undefined;
 
   // Merge unreadOverrides into the displayed chat list
