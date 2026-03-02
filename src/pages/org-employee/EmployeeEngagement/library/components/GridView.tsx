@@ -1,12 +1,13 @@
 "use client"
 
-import React from 'react';
-import { FolderIcon } from 'lucide-react';
+import React, { useState } from 'react';
+import { FolderIcon, Trash2 } from 'lucide-react';
 import { cn } from '../../../../../lib/utils';
 import { getFileIcon } from '../../../../../lib/libraryData';
 import { useLibrary } from '../../../../../context/LibraryContext';
 export const GridView: React.FC = () => {
-  const { currentItems, selectedItems, handleDoubleClick, handleSelection, handleContextMenu } = useLibrary();
+  const { currentItems, selectedItems, handleDoubleClick, handleSelection, handleContextMenu, handleDelete } = useLibrary();
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
@@ -40,6 +41,42 @@ export const GridView: React.FC = () => {
                 {item.fileType || 'Folder'} {item.size && `• ${item.size}`}
               </p>
             </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeleteTargetId(item.id);
+              }}
+              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity rounded-full p-1.5 bg-white shadow border border-gray-200"
+            >
+              <Trash2 className="w-4 h-4 text-gray-600" />
+            </button>
+
+            {deleteTargetId === item.id && (
+              <div
+                className="absolute inset-0 flex items-center justify-center bg-black/5 rounded-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="bg-white border border-gray-200 rounded-xl shadow-lg px-3 py-2 flex items-center gap-2 text-xs">
+                  <span className="text-gray-600 hidden sm:inline">Delete this item?</span>
+                  <button
+                    className="px-2 py-1 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700"
+                    onClick={() => {
+                      handleDelete(item);
+                      setDeleteTargetId(null);
+                    }}
+                  >
+                    Delete
+                  </button>
+                  <button
+                    className="px-2 py-1 rounded-lg bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200"
+                    onClick={() => setDeleteTargetId(null)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         );
       })}

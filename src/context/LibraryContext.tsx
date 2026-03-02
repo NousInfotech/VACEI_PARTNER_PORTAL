@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
-import { apiGet, apiPost, apiDelete } from '../config/base';
+import { apiGet, apiPost, apiDelete, apiPostFormData } from '../config/base';
 import { endPoints } from '../config/endPoint';
 
 export interface LibraryItem {
@@ -173,7 +173,8 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode; engagementId
 
   const uploadFileMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      return apiPost(endPoints.LIBRARY.FILE_UPLOAD, formData);
+      // Use multipart/form-data for uploads so Multer can read the file
+      return apiPostFormData(endPoints.LIBRARY.FILE_UPLOAD, formData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['library-content', currentFolderId] });
@@ -366,14 +367,17 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode; engagementId
   };
 
   const handleUpload = async (files: FileList) => {
-    const formData = new FormData();
+    // Backend /library/files/upload expects a single field named "file".
+    // When multiple files are selected, upload them one by one.
     for (let i = 0; i < files.length; i++) {
-        formData.append('files', files[i]);
+      const formData = new FormData();
+      formData.append('file', files[i]);
+      if (currentFolderId) formData.append('folderId', currentFolderId);
+      if (engagementId) formData.append('engagementId', engagementId);
+
+      // await sequentially so we can reuse the same mutation
+      await uploadFileMutation.mutateAsync(formData);
     }
-    if (currentFolderId) formData.append('folderId', currentFolderId);
-    if (engagementId) formData.append('engagementId', engagementId);
-    
-    await uploadFileMutation.mutateAsync(formData);
   };
 
   const handleDelete = async (item: LibraryItem) => {
