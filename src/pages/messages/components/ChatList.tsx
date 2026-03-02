@@ -1,4 +1,4 @@
-import { Search, MessageSquarePlus, Users, Pin, PinOff, VolumeX, Volume2 } from 'lucide-react';
+import { Search, Users, Pin, PinOff, VolumeX, Volume2 } from 'lucide-react';
 import type { Chat } from '../types';
 import { cn } from '../../../lib/utils';
 import { useState, useEffect, useRef } from 'react';
@@ -35,7 +35,6 @@ export const ChatList: React.FC<ChatListProps> = ({
   onSelectChat,
   searchQuery,
   onSearchChange,
-  onCreateGroup,
   onTogglePin,
   onToggleMute,
   currentUserId,
