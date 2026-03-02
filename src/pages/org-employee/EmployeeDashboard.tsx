@@ -17,6 +17,10 @@ import EmployeeCompliance from "./EmployeeCompliance";
 import Engagement from "./EmployeeEngagement/Engagement";
 import Messages from "../messages/Messages";
 import { NoticeBoard } from "../common/NoticeBoard";
+import TemplateManagement from "./template-management/TemplateManagement";
+import CreateTemplateForm from "./template-management/CreateTemplateForm";
+import EditTemplateForm from "./template-management/EditTemplateForm";
+import ViewTemplateDetail from "./template-management/ViewTemplateDetail";
 
 
 const MOCK_CLIENTS = [
@@ -195,6 +199,14 @@ export default function EmployeeDashboard({ activeSection = "Dashboard" }: Emplo
         <Messages />
       ) : activeSection === "Engagements" ? (
         <Engagement />
+      ) : activeSection === "Document Request Templates" ? (
+        <TemplateManagement />
+      ) : activeSection === "Create Template" ? (
+        <CreateTemplateForm />
+      ) : activeSection === "Edit Template" ? (
+        <EditTemplateForm />
+      ) : activeSection === "View Template" ? (
+        <ViewTemplateDetail />
       ) : (
         <ShadowCard className="p-20 flex flex-col items-center justify-center text-center">
           <div className="p-6 bg-gray-50 rounded-full mb-6 text-gray-400">

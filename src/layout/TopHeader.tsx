@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useMemo, useEffect } from "react";
 import { PanelLeft, PanelLeftClose, Bell, LogOut, Settings, MessageSquare, Calendar, AlertCircle, CheckCheck } from "lucide-react";
 import { Button } from "../ui/Button";
@@ -25,6 +25,7 @@ export default function TopHeader({
     const navigate = useNavigate();
     const { logout, organizationMember, setSelectedService, selectedServiceLabel } = useAuth();
     const { unreadCount, markAsRead, markAllAsRead, notifications: latestNotifications, fetchNotifications: fetchLatestNotifications, fetchUnreadCount } = useNotifications();
+    const { pathname } = useLocation();
 
     useEffect(() => {
         fetchUnreadCount();
@@ -122,7 +123,9 @@ export default function TopHeader({
 
                 <div className="h-6 w-px bg-gray-200" />
 
-                <BackButton className="h-10 px-3 rounded-xl" />
+                {pathname !== '/dashboard' && (
+                    <BackButton className="h-10 px-3 rounded-xl" />
+                )}
 
                 {organizationMember && role !== 'Admin' && (
                     <div className="flex items-center gap-2 ml-4">

@@ -26,6 +26,10 @@ import Messages from "../messages/Messages";
 import ProcedurePromptList from "./procedure-prompt/ProcedurePromptList";
 import CreateProcedurePrompt from "./procedure-prompt/CreateProcedurePrompt";
 import EditProcedurePrompt from "./procedure-prompt/EditProcedurePrompt";
+import TemplateManagement from "../org-employee/template-management/TemplateManagement";
+import CreateTemplateForm from "../org-employee/template-management/CreateTemplateForm";
+import EditTemplateForm from "../org-employee/template-management/EditTemplateForm";
+import ViewTemplateDetail from "../org-employee/template-management/ViewTemplateDetail";
 
 interface AdminDashboardProps {
   activeSection?: string;
@@ -136,6 +140,22 @@ export default function AdminDashboard({ activeSection }: AdminDashboardProps) {
 
   if (activeSection === "Edit Procedure Prompt") {
     return <EditProcedurePrompt />;
+  }
+
+  if (activeSection === "Document Request Templates") {
+    return <TemplateManagement />;
+  }
+
+  if (activeSection === "Create Template") {
+    return <CreateTemplateForm />;
+  }
+
+  if (activeSection === "Edit Template") {
+    return <EditTemplateForm />;
+  }
+
+  if (activeSection === "View Template") {
+    return <ViewTemplateDetail />;
   }
 
   return (

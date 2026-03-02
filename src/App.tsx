@@ -35,6 +35,9 @@ const App = () => {
             <Route path="/dashboard/engagements" element={<Dashboard activeSection="Engagements" />} />
             <Route path="/dashboard/compliance" element={<Dashboard activeSection="Compliance" />} />
             <Route path="/dashboard/templates" element={<Dashboard activeSection="Document Request Templates" />} />
+            <Route path="/dashboard/templates/create" element={<Dashboard activeSection="Create Template" />} />
+            <Route path="/dashboard/templates/:id/edit" element={<Dashboard activeSection="Edit Template" />} />
+            <Route path="/dashboard/templates/:id/view" element={<Dashboard activeSection="View Template" />} />
             <Route path="/dashboard/employees" element={<Dashboard activeSection="Employees" />} />
             <Route path="/dashboard/employees/create" element={<Dashboard activeSection="Create Employee" />} />
             <Route path="/dashboard/messages" element={<Messages />} />

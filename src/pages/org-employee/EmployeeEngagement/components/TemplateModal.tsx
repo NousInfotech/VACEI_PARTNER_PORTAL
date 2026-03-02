@@ -18,11 +18,13 @@ import {
   ListChecks,
   Flag
 } from "lucide-react";
-import templates from "@/data/engagementTemplates.json";
-import { apiPost, apiPostFormData } from "@/config/base";
+import { apiGet, apiPost, apiPostFormData } from "@/config/base";
 import { endPoints } from "@/config/endPoint";
 import { checklistService } from "../checklist/checklistService";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/context/auth-context-core";
+import { type TemplateListResponse } from "@/types/template";
 
 type TemplateType = 'DOC_REQUEST' | 'CHECKLIST' | 'MILESTONE';
 
@@ -43,21 +45,83 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
 }) => {
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [isDeploying, setIsDeploying] = useState(false);
+  const { organizationMember } = useAuth();
+  const organizationId = organizationMember?.organizationId;
 
-  const availableTemplates = templates[type] || [];
+  // Map internal types to actual backend TemplateType enum
+  const getBackendType = (t: TemplateType) => {
+    switch (t) {
+      case 'DOC_REQUEST': return 'DOCUMENT_REQUEST';
+      case 'MILESTONE': return 'MILESTONES';
+      case 'CHECKLIST': return 'CHECKLIST';
+      default: return t;
+    }
+  };
+
+  const { data: engagementRes } = useQuery({
+    queryKey: ['engagement-details', engagementId],
+    enabled: !!engagementId && isOpen,
+    queryFn: () => apiGet<any>(endPoints.ENGAGEMENTS.GET_BY_ID(engagementId))
+  });
+
+  const engagement = engagementRes?.data;
+
+  const { data: fetchRes, isLoading } = useQuery({
+    queryKey: ['org-templates', type, organizationId, engagement?.serviceType, engagement?.customServiceCycleId],
+    enabled: !!organizationId && isOpen && !!engagement,
+    queryFn: () => apiGet<TemplateListResponse>(endPoints.TEMPLATE.GET_ALL, {
+      type: getBackendType(type),
+      moduleType: 'ENGAGEMENT',
+      organizationId,
+      includeGlobal: true,
+      serviceCategory: engagement?.serviceType,
+      customServiceCycleId: engagement?.customServiceCycleId
+    })
+  });
+
+  const availableTemplates = fetchRes?.data || [];
 
   const deployMilestones = async (data: any[]) => {
     for (const item of data) {
-      await apiPost(endPoints.ENGAGEMENTS.MILESTONES(engagementId), item);
+      const payload: any = { title: item.title };
+      if (item.description) payload.description = item.description;
+      await apiPost(endPoints.ENGAGEMENTS.MILESTONES(engagementId), payload);
     }
   };
 
   const deployDocRequest = async (data: any) => {
     const fd = new FormData();
-    fd.append("title", data.title);
-    fd.append("description", data.description);
+    fd.append("title", data.title || "Document Request");
+    fd.append("description", data.description || "");
     fd.append("engagementId", engagementId);
-    fd.append("requestedDocuments", JSON.stringify(data.requestedDocuments));
+    
+    // The Template interface stores them as 'documents', but the backend expects 'requestedDocuments'
+    const docs = data.documents || data.requestedDocuments || [];
+
+    // Map the documents to the schema expected by the Engagement DocumentRequest endpoint
+    const formattedDocs = docs.map((doc: any) => {
+      const formattedDoc: any = {
+        documentName: doc.documentName,
+        type: doc.type,
+        count: doc.count,
+        isMandatory: doc.isMandatory || true,
+        description: doc.description || null,
+        templateInstructions: doc.templateInstructions || null,
+      };
+
+      // The backend Engagement endpoint expects 'children' with 'documentName' instead of 'label'
+      if (doc.count === 'MULTIPLE') {
+        const items = doc.multipleItems || doc.children || [];
+        formattedDoc.children = items.map((item: any) => ({
+          documentName: item.label || item.documentName || `Document`,
+          templateInstructions: item.instruction || null,
+        }));
+      }
+
+      return formattedDoc;
+    });
+
+    fd.append("requestedDocuments", JSON.stringify(formattedDocs));
     
     // Auto-generate dummy files for TEMPLATE tasks to satisfy backend validation
     const dummyFile = new File(
@@ -66,7 +130,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
       { type: "application/pdf" }
     );
 
-    data.requestedDocuments.forEach((rd: any) => {
+    formattedDocs.forEach((rd: any) => {
       if (rd.type === 'TEMPLATE') {
         if (rd.count === 'SINGLE') {
           fd.append("templates", dummyFile);
@@ -82,31 +146,32 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
   };
 
   const deployChecklist = async (data: any[]) => {
-    const createRecursive = async (items: any[], parentId: string | null = null) => {
-      for (const item of items) {
-        const payload = {
-          title: item.title,
-          parentId: parentId,
-        };
-        const res = await checklistService.create(engagementId, payload as any);
-        if (item.children && item.children.length > 0) {
-          await createRecursive(item.children, res.id);
-        }
-      }
-    };
-    await createRecursive(data);
+    // data is a flattened array from the template builder
+    const idMap: Record<string, string> = {}; // maps template UUIDs to backend DB IDs
+    for (const item of data) {
+      const payload = {
+        title: item.title,
+        parentId: item.parentId ? idMap[item.parentId] : null,
+      };
+      // The API returns the strictly generated ID that must be used for children
+      const res = await checklistService.create(engagementId, payload as any);
+      idMap[item.id] = res.id;
+    }
   };
 
   const handleDeploy = async () => {
     if (!selectedTemplate) return;
     setIsDeploying(true);
     try {
+      const templateContent = selectedTemplate.content as any;
       if (type === 'MILESTONE') {
-        await deployMilestones(selectedTemplate.data);
+        const steps = Array.isArray(templateContent) ? templateContent : (templateContent?.steps || [templateContent]);
+        await deployMilestones(steps);
       } else if (type === 'DOC_REQUEST') {
-        await deployDocRequest(selectedTemplate.data);
+        await deployDocRequest(templateContent);
       } else if (type === 'CHECKLIST') {
-        await deployChecklist(selectedTemplate.data);
+        const items = Array.isArray(templateContent) ? templateContent : (templateContent?.items || []);
+        await deployChecklist(items);
       }
       onSuccess();
       onClose();
@@ -145,7 +210,12 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
         </div>
 
         <div className="p-8 space-y-4 max-h-[350px] overflow-y-auto custom-scrollbar">
-          {availableTemplates.map((tpl: any, idx: number) => (
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm font-bold text-gray-400">Loading templates...</p>
+            </div>
+          ) : availableTemplates.map((tpl: any, idx: number) => (
             <button
               key={idx}
               onClick={() => setSelectedTemplate(tpl)}
@@ -167,7 +237,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                   <h4 className="font-black text-gray-900 tracking-tight">{tpl.name}</h4>
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                     {type === 'CHECKLIST' ? 'Hierarchical Setup' : 
-                     type === 'MILESTONE' ? `${tpl.data.length} Markers` : 
+                     type === 'MILESTONE' ? `${Array.isArray(tpl.content) ? tpl.content.length : 1} Markers` : 
                      'Document Request Group'}
                   </p>
                 </div>
@@ -179,7 +249,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
             </button>
           ))}
 
-          {availableTemplates.length === 0 && (
+          {!isLoading && availableTemplates.length === 0 && (
             <div className="py-12 text-center space-y-3">
               <div className="p-4 bg-gray-50 rounded-full w-fit mx-auto text-gray-300">
                 <FileJson size={32} />
