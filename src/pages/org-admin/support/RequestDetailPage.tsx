@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MessageSquare } from "lucide-react";
+import { ArrowLeft, MessageSquare, FileText, ExternalLink } from "lucide-react";
 import { Button } from "../../../ui/Button";
 import { PageHeader } from "../../common/PageHeader";
 import { ShadowCard } from "../../../ui/ShadowCard";
@@ -14,6 +14,15 @@ interface SupportRequestItem {
   description: string | null;
   status: string;
   createdAt: string;
+  attachments?: { id: string; file_name: string; url?: string }[];
+}
+
+interface TicketUpdateItem {
+  id: string;
+  title: string | null;
+  description: string | null;
+  createdAt: string;
+  createdBy?: { id: string; firstName: string; lastName: string };
 }
 
 interface TicketItem {
@@ -21,6 +30,7 @@ interface TicketItem {
   status: string;
   createdAt: string;
   supportRequest?: { subject: string } | null;
+  updates?: TicketUpdateItem[];
 }
 
 function TicketStatusBadge({ status }: { status: string }) {
@@ -37,6 +47,21 @@ function TicketStatusBadge({ status }: { status: string }) {
     >
       {status}
     </span>
+  );
+}
+
+function UpdateItem({ u }: { u: TicketUpdateItem }) {
+  return (
+    <li className="border-l-2 border-gray-200 pl-4 py-2">
+      <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
+        <span className="font-medium text-gray-700">
+          {u.createdBy ? [u.createdBy.firstName, u.createdBy.lastName].filter(Boolean).join(" ") : "Support"}
+        </span>
+        <span>{new Date(u.createdAt).toLocaleString()}</span>
+      </div>
+      {u.title && <p className="font-medium text-gray-900">{u.title}</p>}
+      {u.description && <p className="text-gray-700 whitespace-pre-wrap">{u.description}</p>}
+    </li>
   );
 }
 
@@ -109,7 +134,8 @@ export default function RequestDetailPage() {
       />
 
       <ShadowCard className="p-6 border border-gray-100 shadow-sm rounded-3xl bg-white">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <h3 className="text-sm font-bold text-gray-700 mb-4">Request details</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Subject</p>
             <p className="font-medium text-gray-900">{request.subject}</p>
@@ -127,47 +153,55 @@ export default function RequestDetailPage() {
           </div>
         </div>
         {request.description && (
-          <div className="mb-6">
+          <div className="mb-4">
             <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Description</p>
             <p className="text-gray-700 whitespace-pre-wrap">{request.description}</p>
           </div>
         )}
+        {(request.attachments?.length ?? 0) > 0 && (
+          <div className="mb-6">
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2 flex items-center gap-1">
+              <FileText className="w-3.5 h-3.5" /> Attachments
+            </p>
+            <ul className="flex flex-wrap gap-2">
+              {request.attachments!.map((a) => (
+                <li key={a.id}>
+                  <a href={a.url} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-700 hover:text-gray-900 underline flex items-center gap-1">
+                    {a.file_name}
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
-        <h3 className="text-sm font-bold text-gray-700 mb-3">Tickets</h3>
+        <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2 mt-8 pt-6 border-t border-gray-100">
+          <MessageSquare className="w-4 h-4" />
+          Tickets & updates
+        </h3>
         {tickets.length === 0 ? (
           <p className="text-gray-500 py-4">No ticket yet. When your request is accepted, a ticket will appear here.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="pb-3 text-xs font-bold uppercase tracking-widest text-gray-500">Subject</th>
-                  <th className="pb-3 text-xs font-bold uppercase tracking-widest text-gray-500">Ticket status</th>
-                  <th className="pb-3 text-xs font-bold uppercase tracking-widest text-gray-500">Created</th>
-                  <th className="pb-3 text-xs font-bold uppercase tracking-widest text-gray-500 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tickets.map((t) => (
-                  <tr key={t.id} className="border-b border-gray-100 hover:bg-gray-50/50">
-                    <td className="py-4 font-medium text-gray-900">{t.supportRequest?.subject ?? "—"}</td>
-                    <td className="py-4">
-                      <TicketStatusBadge status={t.status} />
-                    </td>
-                    <td className="py-4 text-sm text-gray-500">{new Date(t.createdAt).toLocaleDateString()}</td>
-                    <td className="py-4 text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/dashboard/support/tickets/${t.id}`)}
-                      >
-                        View updates
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="space-y-6">
+            {tickets.map((t) => (
+              <div key={t.id} className="rounded-xl border border-gray-100 bg-gray-50/30 p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="font-medium text-gray-900">{t.supportRequest?.subject ?? "Ticket"}</span>
+                  <TicketStatusBadge status={t.status} />
+                </div>
+                <p className="text-xs text-gray-500 mb-3">Created {new Date(t.createdAt).toLocaleDateString()}</p>
+                {(t.updates?.length ?? 0) === 0 ? (
+                  <p className="text-gray-500 text-sm">No updates yet.</p>
+                ) : (
+                  <ul className="space-y-1">
+                    {t.updates!.map((u) => (
+                      <UpdateItem key={u.id} u={u} />
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </ShadowCard>
