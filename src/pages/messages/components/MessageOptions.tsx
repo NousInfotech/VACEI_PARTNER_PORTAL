@@ -2,14 +2,14 @@ import React, { useEffect, useRef, useState, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   Reply, 
-  Forward, 
+  Forward,
   Trash2, 
   Copy, 
   CheckSquare, 
 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 
-export type MessageAction = 'reply' | 'forward' | 'delete' | 'copy' | 'select' | 'createTodo';
+export type MessageAction = 'reply' | 'forward' | 'delete' | 'copy' | 'select';
 
 interface MessageOptionsProps {
   isOpen: boolean;
@@ -31,7 +31,6 @@ export const MessageOptions: React.FC<MessageOptionsProps> = ({
   isMe,
   isDeleted,
   triggerRect,
-  hasTodo,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState<{ top: number; left: number; transformOrigin: string } | null>(null);
@@ -85,12 +84,6 @@ export const MessageOptions: React.FC<MessageOptionsProps> = ({
 
   const footerOptions = [
     { id: 'select' as const, label: 'Select', icon: CheckSquare },
-    { 
-      id: 'createTodo' as const, 
-      label: hasTodo ? 'Edit Checklist' : 'Create Todo', 
-      icon: CheckSquare, 
-      className: 'text-amber-500' 
-    },
     ...(isMe ? [{ id: 'delete' as const, label: 'Delete', icon: Trash2, className: 'text-[#ef5350]' }] : []),
   ];
 

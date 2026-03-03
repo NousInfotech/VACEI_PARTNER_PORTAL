@@ -171,11 +171,9 @@ export default function TodoModal({
               <Input
                 {...register("title", { required: "Title is required" })}
                 placeholder="Enter todo title..."
-                readOnly={mode !== "create" && mode !== "edit"}
                 className={cn(
                   "rounded-xl border-gray-200 focus:border-primary/30", 
-                  errors.title && "border-red-500",
-                  (mode !== "create" && mode !== "edit") && "bg-gray-50 text-gray-500 cursor-not-allowed border-dashed"
+                  errors.title && "border-red-500"
                 )}
               />
               {errors.title && <p className="text-[10px] text-red-500 font-bold">{errors.title.message}</p>}
@@ -191,11 +189,7 @@ export default function TodoModal({
                 {...register("description")}
                 placeholder="Details about this todo..."
                 rows={3}
-                readOnly={mode !== "create" && mode !== "edit"}
-                className={cn(
-                  "rounded-xl border-gray-200 focus:border-primary/30 resize-none",
-                  (mode !== "create" && mode !== "edit") && "bg-gray-50 text-gray-500 cursor-not-allowed border-dashed"
-                )}
+                className="rounded-xl border-gray-200 focus:border-primary/30 resize-none"
               />
             </div>
 

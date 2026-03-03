@@ -125,8 +125,7 @@ export const AVAILABLE_SERVICES = [
   { id: "INCORPORATION", label: "Incorporation" },
   { id: "LIQUIDATION", label: "Liquidation" },
   { id: "MBR", label: "MBR" },
-  { id: "TAX", label: "Tax" },
-  { id: "CUSTOM", label: "Custom Service" }
+  { id: "TAX", label: "Tax" }
 ];
 
 export interface ApiResponse<T> {

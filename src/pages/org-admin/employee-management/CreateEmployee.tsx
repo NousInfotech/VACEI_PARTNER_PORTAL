@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Eye, EyeOff, Check, CheckSquare, Square, ArrowLeft } from "lucide-react";
 import { Button } from "@/ui/Button";
 import { Skeleton } from "@/ui/Skeleton";
@@ -7,6 +6,7 @@ import axiosInstance from "@/config/axiosConfig";
 import { endPoints } from "@/config/endPoint";
 import { AVAILABLE_SERVICES } from "@/lib/types";
 import PageHeader from "../../common/PageHeader";
+import { useAuth } from "@/context/auth-context-core";
 
 interface CreateEmployeeProps {
     onSuccess: (data: unknown) => void;
@@ -27,21 +27,11 @@ export default function CreateEmployee({ onSuccess, onCancel }: CreateEmployeePr
         allowedServices: [] as string[]
     });
 
-    const { data: customServices = [], isLoading: isServicesLoading } = useQuery({
-        queryKey: ['activeCustomServices'],
-        queryFn: async () => {
-            const response = await axiosInstance.get(endPoints.CUSTOM_SERVICE.GET_ACTIVE);
-            if (response.data.success) {
-                return response.data.data.map((s: { id: string; title: string }) => ({
-                    id: s.id,
-                    label: s.title
-                }));
-            }
-            return [];
-        }
-    });
+    const { organizationMember } = useAuth();
+    const availableServices = organizationMember?.organization?.availableServices || [];
+    const filteredServices = AVAILABLE_SERVICES.filter(s => availableServices.includes(s.id));
 
-    const allAvailableServices = [...AVAILABLE_SERVICES, ...customServices];
+    const allAvailableServices = filteredServices;
 
     const toggleSelectAll = () => {
         if (formData.allowedServices.length === allAvailableServices.length) {
@@ -69,15 +59,9 @@ export default function CreateEmployee({ onSuccess, onCancel }: CreateEmployeePr
         e.preventDefault();
         setLoading(true);
         try {
-            const standardServiceIds = AVAILABLE_SERVICES.map(s => s.id);
-            const standardSelected = formData.allowedServices.filter(id => standardServiceIds.includes(id));
-            const customSelected = formData.allowedServices.filter(id => !standardServiceIds.includes(id));
-
             const submissionData = {
                 ...formData,
                 phone: formData.phone.trim() || null,
-                allowedServices: standardSelected,
-                allowedCustomServiceCycleIds: customSelected
             };
 
             console.log("Creating employee...", submissionData);
@@ -216,7 +200,7 @@ export default function CreateEmployee({ onSuccess, onCancel }: CreateEmployeePr
                     </Button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100 mt-2">
-                    {isServicesLoading ? (
+                    {false ? (
                         Array.from({ length: 6 }).map((_, i) => (
                             <div key={i} className="flex items-center space-x-2 py-1">
                                 <Skeleton className="w-4 h-4 rounded" />

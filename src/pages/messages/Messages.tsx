@@ -10,7 +10,7 @@ import { GroupInfoPane } from './components/GroupInfoPane';
 import { AddMemberModal } from './components/AddMemberModal';
 import { ConfirmModal } from './components/ConfirmModal';
 import type { Chat, Message } from './types';
-import { Inbox, X, Copy, Forward, Trash2, Check, Users } from 'lucide-react';
+import { Inbox, X, Copy, Forward, Check, Users } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { MessageSquare, Plus, Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/auth-context-core';
@@ -212,9 +212,9 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
     messageId?: string;
     userId?: string;
   }>({ isOpen: false, type: 'message' });
-  const [forwardingMessages, setForwardingMessages] = useState<Message[]>([]);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [selectedForwardChatIds, setSelectedForwardChatIds] = useState<string[]>([]);
+  const [forwardingMessages, setForwardingMessages] = useState<Message[]>([]);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -463,17 +463,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
     setSelectedMessageIds([]);
   };
 
-  const handleBulkDelete = () => {
-    setConfirmState({ isOpen: true, type: 'bulk-message' });
-  };
 
-  const handleBulkForward = () => {
-    if (!activeChat) return;
-    const selectedMessages = activeChat.messages.filter(m => selectedMessageIds.includes(m.id));
-    if (selectedMessages.length > 0) {
-      setForwardingMessages(selectedMessages);
-    }
-  };
 
   return (
     <div
@@ -558,14 +548,6 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
                   <button onClick={handleBulkCopy} className="p-2 hover:bg-gray-200 rounded-full transition-colors flex flex-col items-center gap-1 group">
                     <Copy className="w-5 h-5 text-gray-600 group-hover:text-primary" />
                     <span className="text-[10px] text-gray-500 font-medium">Copy</span>
-                  </button>
-                  <button onClick={handleBulkForward} className="p-2 hover:bg-gray-200 rounded-full transition-colors flex flex-col items-center gap-1 group">
-                    <Forward className="w-5 h-5 text-gray-600 group-hover:text-primary" />
-                    <span className="text-[10px] text-gray-500 font-medium">Share</span>
-                  </button>
-                  <button onClick={handleBulkDelete} className="p-2 hover:bg-gray-200 rounded-full transition-colors flex flex-col items-center gap-1 group">
-                    <Trash2 className="w-5 h-5 text-red-500" />
-                    <span className="text-[10px] text-red-500 font-medium">Delete</span>
                   </button>
                 </div>
               </div>
