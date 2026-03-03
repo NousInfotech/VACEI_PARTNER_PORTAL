@@ -20,6 +20,11 @@ interface Employee {
 
 
 
+interface CustomServiceCycle {
+    id: string;
+    title: string;
+}
+
 interface EmployeeResponseItem {
     id: string;
     user: {
@@ -29,6 +34,7 @@ interface EmployeeResponseItem {
     };
     role: string;
     allowedServices: string[];
+    allowedCustomServiceCycles: CustomServiceCycle[];
 }
 
 export default function EmployeeManagement() {
@@ -61,17 +67,21 @@ export default function EmployeeManagement() {
             if (response.data.success) {
                 const mappedEmployees: Employee[] = response.data.data.map((item: EmployeeResponseItem) => {
                     const standardServices = item.allowedServices || [];
+                    const customServices = item.allowedCustomServiceCycles || [];
+
                     const standardLabels = standardServices.map((id: string) =>
                         AVAILABLE_SERVICES.find(s => s.id === id)?.label || id
                     );
+                    const customLabels = customServices.map((s: CustomServiceCycle) => s.title || s.id);
+
                     return {
                         id: item.id,
                         firstName: item.user.firstName,
                         lastName: item.user.lastName,
                         email: item.user.email,
                         role: item.role,
-                        services: standardServices,
-                        serviceNames: standardLabels
+                        services: [...standardServices, ...customServices.map((s: CustomServiceCycle) => s.id)],
+                        serviceNames: [...standardLabels, ...customLabels]
                     };
                 });
                 const employeesOnly = mappedEmployees.filter(emp => emp.role === 'EMPLOYEE');

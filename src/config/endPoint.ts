@@ -117,6 +117,8 @@ export const endPoints = {
     CREATE_CYCLE: '/audit-cycles',
     GET_CYCLE: (id: string) => `/audit-cycles/${id}`,
     GET_CYCLES: '/audit-cycles',
+    UPDATE_STATUS: (id: string) => `/audit-cycles/${id}/status`,
+    UPDATE: (id: string) => `/audit-cycles/${id}`,
     UPLOAD_TRIAL_BALANCE: (auditCycleId: string) => `/uploadapi/v1/services/audit/${auditCycleId}/trial-balance`,
     GET_TRIAL_BALANCES: (auditCycleId: string) => `/audit-cycles/${auditCycleId}/trial-balances`,
     GET_TRIAL_BALANCE_WITH_ACCOUNTS: (auditCycleId: string, trialBalanceId: string) => `/audit-cycles/${auditCycleId}/trial-balances/${trialBalanceId}/with-accounts`,
