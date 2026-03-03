@@ -41,7 +41,6 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
     const [previewMessage, setPreviewMessage] = useState<Message | null>(null);
     const [scrollTargetId, setScrollTargetId] = useState<string | undefined>(undefined);
     const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
-    const [editingMessage, setEditingMessage] = useState<Message | null>(null);
     const [isSelectMode, setIsSelectMode] = useState(false);
     const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([]);
     const [emojiPickerMessageId, setEmojiPickerMessageId] = useState<string | null>(null);
@@ -219,12 +218,7 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
                         scrollToMessageId={scrollTargetId}
                         onScrollComplete={() => setScrollTargetId(undefined)}
                         onReplyMessage={setReplyToMessage}
-                        onEditMessage={setEditingMessage}
                         onDeleteMessage={handleDeleteMessage}
-                        onReactToMessage={(msgId, emoji) => {
-                            if (emoji === '+') setEmojiPickerMessageId(msgId);
-                            else handleReactToMessage(msgId, emoji);
-                        }}
                         onForwardMessage={handleForwardMessage}
                         onCreateTodoMessage={(msg) => {
                             const existingTodo = todoMap[msg.id];
@@ -242,9 +236,7 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
                             setIsTodoModalOpen(true);
                         }}
                         replyingTo={replyToMessage}
-                        editingMessage={editingMessage}
                         onCancelReply={() => setReplyToMessage(null)}
-                        onCancelEdit={() => setEditingMessage(null)}
                         isSelectMode={isSelectMode}
                         selectedMessageIds={selectedMessageIds}
                         onSelectMessage={(id) => setSelectedMessageIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])}

@@ -444,6 +444,7 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
                         timestamp: t,
                         status: 'sent',
                         createdAt: new Date(t || new Date()).getTime(),
+                        isDeleted: !!msg.deletedAt,
                         replyToMessageId: msg.replyToMessageId ?? msg.reply_to_message_id ?? null,
                         replyToMessage: msg.replyToMessage ? mapMessage(msg.replyToMessage) : (msg.reply_to_message ? mapMessage(msg.reply_to_message) : null),
                     };
@@ -471,12 +472,18 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
                     .on(
                         'postgres_changes',
                         {
-                            event: 'INSERT',
+                            event: '*',
                             schema: 'public',
                             table: 'ChatMessage',
                         },
                         (payload) => {
+                            if (payload.eventType === 'DELETE') {
+                                setMessages((prev) => prev.filter((m) => m.id !== payload.old.id));
+                                return;
+                            }
+
                             const newMsg = payload.new as any;
+
 
                             const payloadRoomId = newMsg.roomId || newMsg.room_id;
                             if (!payloadRoomId || String(payloadRoomId) !== String(roomId)) return;
@@ -495,9 +502,18 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
                                 timestamp: t,
                                 status: 'sent',
                                 createdAt: new Date(t || new Date()).getTime(),
+                                isDeleted: !!newMsg.deletedAt,
                                 replyToMessageId: newMsg.replyToMessageId ?? newMsg.reply_to_message_id ?? null,
                                 replyToMessage: newMsg.replyToMessage ? mapMessage(newMsg.replyToMessage) : null,
                             };
+
+                            if (payload.eventType === 'UPDATE') {
+                                setMessages((prev) =>
+                                    prev.map((msg) => (msg.id === mappedMsg.id ? mappedMsg : msg))
+                                );
+                                return;
+                            }
+
 
                             setMessages((prev) => {
                                 if (prev.find((m) => m.id === mappedMsg.id)) return prev;
@@ -561,6 +577,19 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
         await chatService.markAsRead(roomId);
     }, [roomId]);
 
+    const deleteMessage = useCallback(async (messageId: string) => {
+        if (!roomId) return;
+        try {
+            await chatService.deleteMessage(messageId);
+            setMessages(prev => prev.map(msg => 
+                msg.id === messageId ? { ...msg, isDeleted: true } : msg
+            ));
+        } catch (err) {
+            console.error('Failed to delete message', err);
+            throw err;
+        }
+    }, [roomId]);
+
     const clearMessages = useCallback(() => {
         setMessages([]);
     }, []);
@@ -572,6 +601,7 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
         isLoading,
         error,
         sendMessage,
+        deleteMessage,
         uploadFile,
         markAsRead,
         clearMessages,

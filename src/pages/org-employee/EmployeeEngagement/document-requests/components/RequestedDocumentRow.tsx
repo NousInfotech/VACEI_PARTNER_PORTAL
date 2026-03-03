@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { 
-  Upload, Loader2, Eye, Download, Edit2, Trash2, FileEdit, FileUp, RotateCcw, Plus, CheckSquare 
+  Upload, Loader2, Eye, Download, Edit2, Trash2, FileEdit, FileUp, RotateCcw, Plus, CheckSquare, Check, X 
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { todoService } from "@/api/todoService";
@@ -29,6 +29,7 @@ export const RequestedDocumentRow = ({
     uploadMutation,
     clearMutation,
     hardDeleteMutation,
+    updateRequestedDocumentStatusMutation,
     setIsTodoModalOpen,
     setTodoInitialData,
     setTodoSourceId,
@@ -37,11 +38,12 @@ export const RequestedDocumentRow = ({
   
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
-    type: 'clear' | 'delete';
+    type: 'clear' | 'delete' | 'reject';
     title: string;
     message: React.ReactNode;
     confirmLabel: string;
     variant: 'danger' | 'warning';
+    reasonRequired?: boolean;
   }>({
     isOpen: false,
     type: 'clear',
@@ -104,11 +106,38 @@ export const RequestedDocumentRow = ({
   const onConfirmAction = (reason?: string) => {
     if (confirmModal.type === 'clear') {
       clearMutation.mutate({ documentRequestId: doc.documentRequestId, docId: doc.id, reason: reason || "No reason provided" });
+    } else if (confirmModal.type === 'reject') {
+      updateRequestedDocumentStatusMutation.mutate({
+        documentRequestId: doc.documentRequestId,
+        docId: doc.id,
+        status: 'REJECTED',
+        reason: reason || 'No reason provided',
+      });
     } else {
       hardDeleteMutation.mutate({ documentRequestId: doc.documentRequestId, docId: doc.id, reason: reason || "No reason provided" });
     }
     setConfirmModal(prev => ({ ...prev, isOpen: false }));
   };
+
+  const handleReject = () => {
+    setConfirmModal({
+      isOpen: true,
+      type: 'reject',
+      title: 'Reject Document',
+      message: (
+        <>
+          Reject the uploaded file for <span className="text-slate-900 font-bold">"{doc.documentName}"</span>?
+          The file will be removed and the client can re-upload. Please provide a reason (required).
+        </>
+      ),
+      confirmLabel: 'Reject',
+      variant: 'danger',
+      reasonRequired: true,
+    });
+  };
+
+  const isStatusUpdating = updateRequestedDocumentStatusMutation.isPending &&
+    updateRequestedDocumentStatusMutation.variables?.docId === doc.id;
 
   const isCompleted = (function check(d: RequestedDocumentItem): boolean {
     if (d.count === 'SINGLE') return !!d.file;
@@ -200,6 +229,38 @@ export const RequestedDocumentRow = ({
           
           {doc.file && (
             <>
+              {doc.status === 'UPLOADED' && (
+                <>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="h-9 w-9 border-green-200 text-green-700 hover:bg-green-50 transition-all duration-200" 
+                    onClick={() => updateRequestedDocumentStatusMutation.mutate({ documentRequestId: doc.documentRequestId, docId: doc.id, status: 'ACCEPTED' })}
+                    disabled={isStatusUpdating}
+                    title="Accept"
+                  >
+                    {isStatusUpdating && updateRequestedDocumentStatusMutation.variables?.status === 'ACCEPTED' ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="h-9 w-9 border-red-200 text-red-600 hover:bg-red-50 transition-all duration-200" 
+                    onClick={handleReject}
+                    disabled={isStatusUpdating}
+                    title="Reject"
+                  >
+                    {isStatusUpdating && updateRequestedDocumentStatusMutation.variables?.status === 'REJECTED' ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <X className="h-4 w-4" />
+                    )}
+                  </Button>
+                </>
+              )}
               <Button 
                 variant="outline" 
                 size="icon" 
@@ -314,8 +375,10 @@ export const RequestedDocumentRow = ({
         message={confirmModal.message}
         confirmLabel={confirmModal.confirmLabel}
         variant={confirmModal.variant}
-        showReasonField={true}
-        loading={isClearing || isDeleting}
+        showReasonField={confirmModal.type === 'reject' || confirmModal.type === 'clear' || confirmModal.type === 'delete'}
+        reasonPlaceholder={confirmModal.type === 'reject' ? 'Rejection reason (required)' : 'Provide a reason (optional)...'}
+        reasonRequired={confirmModal.reasonRequired}
+        loading={isClearing || isDeleting || isStatusUpdating}
       />
     </li>
   );

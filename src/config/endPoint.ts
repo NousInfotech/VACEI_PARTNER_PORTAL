@@ -6,6 +6,7 @@ export const endPoints = {
     LOGOUT: '/auth/logout',
     CHANGE_PASSWORD: '/auth/change-password',
     ME: '/auth/me',
+    REFRESH: '/auth/refresh',
     VERIFY_MFA: '/auth/verify-mfa',
     MFA_VERIFY: '/auth/mfa/verify',
     MFA_PREFERENCES: '/auth/mfa/preferences',
@@ -96,6 +97,7 @@ export const endPoints = {
     UNREAD_COUNT: (roomId: string) => `/chat/rooms/${roomId}/unread-count`,
     UNREAD_SUMMARY: '/chat/unread-summary',
     UPLOAD: '/chat/upload',
+    MESSAGES_DELETE: (messageId: string) => `/chat/messages/${messageId}`,
   },
   LIBRARY: {
     FOLDERS_ROOTS: '/library/folders/roots',
