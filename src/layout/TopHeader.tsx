@@ -161,15 +161,23 @@ export default function TopHeader({
                     <div className="flex flex-col max-h-[480px]">
                         <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                             <h3 className="text-xs font-bold text-gray-900 uppercase tracking-widest text-[10px]">Latest Notifications</h3>
-                            {unreadCount > 0 && (
-                                <button 
-                                    onClick={handleMarkAllAsRead}
-                                    className="text-[10px] font-bold text-primary hover:underline uppercase tracking-widest flex items-center gap-1"
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => navigate('/notifications')}
+                                    className="text-[10px] font-bold text-gray-500 hover:text-primary uppercase tracking-widest"
                                 >
-                                    <CheckCheck className="h-3 w-3" />
-                                    Mark all
+                                    View more
                                 </button>
-                            )}
+                                {unreadCount > 0 && (
+                                    <button 
+                                        onClick={handleMarkAllAsRead}
+                                        className="text-[10px] font-bold text-primary hover:underline uppercase tracking-widest flex items-center gap-1"
+                                    >
+                                        <CheckCheck className="h-3 w-3" />
+                                        Mark all
+                                    </button>
+                                )}
+                            </div>
                         </div>
                         <div className="p-2 overflow-y-auto">
                             {latestNotifications.length > 0 ? (
@@ -216,15 +224,15 @@ export default function TopHeader({
                                 </div>
                             )}
                         </div>
-                        {/* <div className="p-2 border-t border-gray-100 bg-gray-50/50">
+                        <div className="p-2 border-t border-gray-100 bg-gray-50/50">
                             <Button 
                                 variant="ghost" 
                                 className="w-full text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-primary rounded-xl h-9"
                                 onClick={() => navigate('/notifications')}
                             >
-                                View all
+                                View all notifications
                             </Button>
-                        </div> */}
+                        </div>
                     </div>
                 </Dropdown>
 
