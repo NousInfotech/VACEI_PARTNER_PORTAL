@@ -216,15 +216,15 @@ export default function TopHeader({
                                 </div>
                             )}
                         </div>
-                        {/* <div className="p-2 border-t border-gray-100 bg-gray-50/50">
+                        <div className="p-2 border-t border-gray-100 bg-gray-50/50">
                             <Button 
                                 variant="ghost" 
                                 className="w-full text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-primary rounded-xl h-9"
                                 onClick={() => navigate('/notifications')}
                             >
-                                View all
+                                View all notifications
                             </Button>
-                        </div> */}
+                        </div>
                     </div>
                 </Dropdown>
 
