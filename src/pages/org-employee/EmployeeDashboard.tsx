@@ -1,17 +1,16 @@
-import { useQuery } from "@tanstack/react-query";
 import {
   Users,
   MessageSquare,
   FileText,
   CheckCircle2,
   Search,
-  // Filter,
   Activity
 } from "lucide-react";
 import { ShadowCard } from "../../ui/ShadowCard";
 import { PageHeader } from "../common/PageHeader";
 import { Skeleton } from "../../ui/Skeleton";
 import { useAuth } from "../../context/auth-context-core";
+import { useOrganizationAnalytics } from "../../hooks/useOrganizationAnalytics";
 import { cn } from "../../lib/utils";
 import EmployeeCompliance from "./EmployeeCompliance";
 import Engagement from "./EmployeeEngagement/Engagement";
@@ -35,15 +34,9 @@ interface EmployeeDashboardProps {
 }
 
 export default function EmployeeDashboard({ activeSection = "Dashboard" }: EmployeeDashboardProps) {
-  const { selectedService, selectedServiceLabel } = useAuth();
-
-  const { isLoading: loading } = useQuery({
-    queryKey: ['employee-dashboard', activeSection, selectedService],
-    queryFn: async () => {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return true;
-    }
-  });
+  const { selectedServiceLabel } = useAuth();
+  const { data: analytics, isLoading: analyticsLoading } = useOrganizationAnalytics();
+  const loading = analyticsLoading;
 
   return (
     <div className="mx-auto space-y-8">
@@ -84,9 +77,9 @@ export default function EmployeeDashboard({ activeSection = "Dashboard" }: Emplo
                 ))
               ) : (
                 [
-                  { label: "Active Companies", value: "24", icon: Users, color: "blue", trend: "+12%" },
-                  { label: "Open Engagements", value: "12", icon: Activity, color: "orange", trend: "+5%" },
-                  { label: "Internal Tasks", value: "48", icon: CheckCircle2, color: "green", trend: "-2%" },
+                  { label: "Active Companies", value: String(analytics.companies), icon: Users, color: "blue" as const },
+                  { label: "Open Engagements", value: String(analytics.engagements), icon: Activity, color: "orange" as const },
+                  { label: "Internal Tasks", value: String(analytics.checklists), icon: CheckCircle2, color: "green" as const },
                 ].map((stat, i) => (
                   <ShadowCard key={i} className="p-6 group hover:shadow-xl transition-all duration-300">
                     <div className="flex items-start justify-between">
@@ -98,12 +91,6 @@ export default function EmployeeDashboard({ activeSection = "Dashboard" }: Emplo
                       )}>
                         <stat.icon className="h-6 w-6" />
                       </div>
-                      <span className={cn(
-                        "text-xs font-bold px-2.5 py-1 rounded-full",
-                        stat.trend.startsWith('+') ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
-                      )}>
-                        {stat.trend}
-                      </span>
                     </div>
                     <div className="mt-4">
                       <p className="text-sm font-medium text-gray-500">{stat.label}</p>
