@@ -5,7 +5,6 @@ import {
     InstallingUpdates02Icon,
     Building01Icon,
     BubbleChatIcon,
-    NoteEditIcon,
     Notification01Icon
 } from '@hugeicons/core-free-icons';
 import type { MenuItem } from './types';
