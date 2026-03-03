@@ -6,7 +6,6 @@ import {
   Loader2, Calendar, Tag, Shield, ChevronDown, ChevronRight, Download
 } from 'lucide-react';
 import { Button } from '../../../ui/Button';
-import PageHeader from '../../common/PageHeader';
 import { ShadowCard } from '../../../ui/ShadowCard';
 import { apiGet } from '../../../config/base';
 import { endPoints } from '../../../config/endPoint';
@@ -252,22 +251,6 @@ const ViewTemplateDetail: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="View Template"
-        icon={FileText}
-        description="Full template details and content preview."
-        actions={
-          <div className="flex items-center gap-3">
-            <Button variant="header" onClick={() => navigate(`/dashboard/templates/${id}/edit`)}>
-              Edit Template
-            </Button>
-            <Button variant="header" onClick={() => navigate('/dashboard/templates')}>
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Button>
-          </div>
-        }
-      />
 
       {/* Template Header Card */}
       <ShadowCard className="rounded-3xl bg-white border border-gray-100 shadow-sm overflow-hidden">
@@ -279,11 +262,30 @@ const ViewTemplateDetail: React.FC = () => {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-4 flex-wrap">
-                <div>
+                <div className="flex-1">
                   <h1 className="text-xl font-bold text-white leading-tight">{template.name}</h1>
                   {template.description && (
                     <p className="text-sm text-white/70 mt-1.5 leading-relaxed max-w-2xl">{template.description}</p>
                   )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="bg-white/10 border-white/20 text-white hover:bg-white/20 rounded-xl"
+                    onClick={() => navigate(`/dashboard/templates/${id}/edit`)}
+                  >
+                    Edit Template
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="bg-white/10 border-white/20 text-white hover:bg-white/20 rounded-xl gap-2"
+                    onClick={() => navigate('/dashboard/templates')}
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back
+                  </Button>
                 </div>
               </div>
 

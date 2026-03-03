@@ -90,18 +90,6 @@ const DocRequestList: React.FC<Props> = ({ moduleType, showServiceFilter }) => {
           />
         </div>
 
-        {showServiceFilter && (
-          <select
-            value={serviceFilter}
-            onChange={(e) => setServiceFilter(e.target.value as Services | '')}
-            className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium text-gray-700 outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all"
-          >
-            <option value="">All Services</option>
-            {ALL_SERVICES.map(s => (
-              <option key={s} value={s}>{SERVICES_LABELS[s]}</option>
-            ))}
-          </select>
-        )}
 
         <Button
           variant="header"

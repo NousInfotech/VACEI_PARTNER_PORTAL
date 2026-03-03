@@ -48,15 +48,15 @@ export const menuData: MenuItem[] = [
         description: "Active projects & tasks",
         roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
     },
-    {
-        slug: "compliance",
-        icon: DocumentValidationIcon,
-        label: "Compliance",
-        href: "/dashboard/compliance",
-        section: "primary",
-        description: "Regulatory status",
-        roles: ["ORG_EMPLOYEE"]
-    },
+    // {
+    //     slug: "compliance",
+    //     icon: DocumentValidationIcon,
+    //     label: "Compliance",
+    //     href: "/dashboard/compliance",
+    //     section: "primary",
+    //     description: "Regulatory status",
+    //     roles: ["ORG_EMPLOYEE"]
+    // },
     {
         slug: "templates",
         icon: GitPullRequestIcon,

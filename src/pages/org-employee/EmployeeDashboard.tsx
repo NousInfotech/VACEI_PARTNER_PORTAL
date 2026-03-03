@@ -199,7 +199,7 @@ export default function EmployeeDashboard({ activeSection = "Dashboard" }: Emplo
         <Messages />
       ) : activeSection === "Engagements" ? (
         <Engagement />
-      ) : activeSection === "Document Request Templates" ? (
+      ) : activeSection === "Templates" ? (
         <TemplateManagement />
       ) : activeSection === "Create Template" ? (
         <CreateTemplateForm />

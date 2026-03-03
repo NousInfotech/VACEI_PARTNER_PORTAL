@@ -142,7 +142,7 @@ export default function AdminDashboard({ activeSection }: AdminDashboardProps) {
     return <EditProcedurePrompt />;
   }
 
-  if (activeSection === "Document Request Templates") {
+  if (activeSection === "Templates") {
     return <TemplateManagement />;
   }
 

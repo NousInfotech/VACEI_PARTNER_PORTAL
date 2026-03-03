@@ -5,7 +5,6 @@ import {
   ArrowLeft, Plus, Trash2, FileText, Layers, CheckSquare, GripVertical, Loader2, Info, LayoutGrid, Download
 } from 'lucide-react';
 import { Button } from '../../../ui/Button';
-import PageHeader from '../../common/PageHeader';
 import { ShadowCard } from '../../../ui/ShadowCard';
 import AlertMessage from '../../common/AlertMessage';
 import { apiPut, apiGet, apiPostFormData } from '../../../config/base';
@@ -481,24 +480,35 @@ const EditTemplateForm: React.FC = () => {
   const typeInfo = { DOCUMENT_REQUEST: { label: 'Document Request', icon: FileText }, MILESTONES: { label: 'Milestone', icon: Layers }, CHECKLIST: { label: 'Checklist', icon: CheckSquare } }[typeParam];
   const TypeIcon = typeInfo?.icon || FileText;
 
+
   return (
     <div className="space-y-6">
-      <PageHeader title="Edit Template" icon={FileText} description={`Editing: ${template.name}`}
-        actions={<Button variant="header" onClick={() => navigate('/dashboard/templates')}><ArrowLeft className="h-4 w-4" />Back</Button>}
-      />
-
       {alert && <AlertMessage message={alert.message} variant={alert.variant} onClose={() => setAlert(null)} />}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Meta */}
-        <ShadowCard className="rounded-3xl bg-white border border-gray-100 shadow-sm p-6 space-y-5">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2.5 rounded-2xl bg-primary/5 text-primary"><TypeIcon className="h-5 w-5" /></div>
-            <div>
-              <h2 className="font-bold text-gray-800 text-base">Template Details</h2>
-              <p className="text-xs text-gray-500"><span className="font-semibold text-primary">{typeInfo?.label}</span> · <span className="font-semibold">{template.moduleType}</span></p>
+        <ShadowCard className="rounded-3xl bg-white border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-gradient-to-r from-primary/10 to-transparent p-6 flex items-center justify-between border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-primary/5 text-primary"><TypeIcon className="h-5 w-5" /></div>
+              <div>
+                <h2 className="font-bold text-gray-800 text-base">Template Details</h2>
+                <p className="text-xs text-gray-500">
+                  <span className="font-semibold text-primary">{typeInfo?.label}</span> · <span className="font-semibold">{template.moduleType}</span>
+                </p>
+              </div>
             </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="rounded-xl gap-2 font-semibold"
+              onClick={() => navigate('/dashboard/templates')}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
           </div>
+          <div className="p-6 space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Template Name *</label>
@@ -524,7 +534,8 @@ const EditTemplateForm: React.FC = () => {
             <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full px-4 py-3 rounded-2xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-4 focus:ring-primary/5 outline-none transition-all text-sm font-medium text-gray-800 resize-none" />
           </div>
-        </ShadowCard>
+        </div>
+      </ShadowCard>
 
         {/* DOC REQUEST */}
         {typeParam === 'DOCUMENT_REQUEST' && (
