@@ -23,6 +23,7 @@ interface MessageItemProps {
   onToggleOptions?: (show: boolean) => void;
   onImageLoad?: () => void;
   linkedTodo?: any;
+  showCreateTodo?: boolean;
 }
 
 export const MessageItem: React.FC<MessageItemProps> = ({
@@ -34,6 +35,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   onReply,
   onDelete,
   onForward,
+  onCreateTodo,
   isSelectMode,
   isSelected,
   onSelect,
@@ -41,7 +43,8 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   showOptions = false,
   onToggleOptions,
   onImageLoad,
-  linkedTodo
+  linkedTodo,
+  showCreateTodo
 }) => {
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -59,7 +62,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     if (action === 'reply') onReply?.();
     else if (action === 'delete') onDelete?.();
     else if (action === 'forward') onForward?.();
-    // else if (action === 'createTodo') onCreateTodo?.();
+    else if (action === 'createTodo' || action === 'editTodo') onCreateTodo?.();
     else if (action === 'copy') {
       if (message.text) navigator.clipboard.writeText(message.text);
     }
@@ -153,6 +156,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             triggerRect={triggerCoords}
             createdAt={message.createdAt}
             hasTodo={Boolean(linkedTodo)}
+            showCreateTodo={showCreateTodo}
           />
 
           {message.type === 'image' ? (
