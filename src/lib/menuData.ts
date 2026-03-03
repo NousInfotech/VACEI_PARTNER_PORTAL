@@ -65,6 +65,15 @@ export const menuData: MenuItem[] = [
         description: "Manage templates",
         roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
     },
+    {
+        slug: "support",
+        icon: BubbleChatIcon,
+        label: "Ticket Management",
+        href: "/dashboard/support",
+        section: "primary",
+        description: "Get help from Vacei",
+        roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
+    },
     // {
     //     slug: "organization",
     //     icon: Building01Icon,
@@ -92,24 +101,16 @@ export const menuData: MenuItem[] = [
         description: "Important updates & reminders",
         roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
     },
-    {
-        slug: "support",
-        icon: BubbleChatIcon,
-        label: "Support",
-        href: "/dashboard/support",
-        section: "settings",
-        description: "Get help from Vacei",
-        roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
-    },
-    {
-        slug: "procedure-prompts",
-        icon: NoteEditIcon,
-        label: "Procedure Prompt",
-        href: "/dashboard/procedure-prompts",
-        section: "operations",
-        description: "Manage AI procedure prompts",
-        roles: ["ORG_ADMIN"]
-    },
+
+    // {
+    //     slug: "procedure-prompts",
+    //     icon: NoteEditIcon,
+    //     label: "Procedure Prompt",
+    //     href: "/dashboard/procedure-prompts",
+    //     section: "operations",
+    //     description: "Manage AI procedure prompts",
+    //     roles: ["ORG_ADMIN"]
+    // },
     {
         slug: "settings",
         icon: InstallingUpdates02Icon,

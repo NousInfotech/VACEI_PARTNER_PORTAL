@@ -101,7 +101,7 @@ export const DocumentRequestGroup = ({ req, children }: DocumentRequestGroupProp
             >
               <Edit2 className="h-4 w-4" />
             </Button>
-            {progressPercent < 100 && (
+            {progressPercent < 100 && req.status !== 'DRAFT' && (
               linkedTodo ? (
                 <Button 
                   variant="outline" 
