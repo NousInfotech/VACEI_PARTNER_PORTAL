@@ -100,7 +100,7 @@ export default function SupportFormPage() {
       {alert && (
         <AlertMessage message={alert.message} variant={alert.variant} onClose={() => setAlert(null)} />
       )}
-      <ShadowCard className="p-8 border border-gray-100 shadow-sm rounded-3xl bg-white max-w-2xl">
+      <ShadowCard className="p-8 border border-gray-100 shadow-sm rounded-3xl bg-white">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <label className="text-sm font-bold text-gray-700">Subject</label>

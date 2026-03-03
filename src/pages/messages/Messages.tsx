@@ -572,8 +572,8 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
                     type={activeChat.type}
                     participants={activeChat.participants}
                     onClose={() => setRightPaneMode(null)}
-                    onAddMember={activeChat.type === 'GROUP' ? () => setIsAddMemberModalOpen(true) : undefined}
-                    onRemoveMember={handleRemoveMemberRequest}
+                    onAddMember={(activeChat.type === 'GROUP' && isOrgAdmin) ? () => setIsAddMemberModalOpen(true) : undefined}
+                    onRemoveMember={isOrgAdmin ? handleRemoveMemberRequest : undefined}
                   />
                 ) : null}
               </div>
