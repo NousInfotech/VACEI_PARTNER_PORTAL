@@ -6,6 +6,7 @@ export const endPoints = {
     LOGOUT: '/auth/logout',
     CHANGE_PASSWORD: '/auth/change-password',
     ME: '/auth/me',
+    REFRESH: '/auth/refresh',
     VERIFY_MFA: '/auth/verify-mfa',
     MFA_VERIFY: '/auth/mfa/verify',
     MFA_PREFERENCES: '/auth/mfa/preferences',

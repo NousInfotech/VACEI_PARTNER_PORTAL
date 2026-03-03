@@ -17,6 +17,8 @@ interface ActionConfirmModalProps {
   loading?: boolean;
   showReasonField?: boolean;
   reasonPlaceholder?: string;
+  /** When true, confirm button is disabled until reason is non-empty. Use for reject. */
+  reasonRequired?: boolean;
 }
 
 export const ActionConfirmModal: React.FC<ActionConfirmModalProps> = ({
@@ -30,9 +32,11 @@ export const ActionConfirmModal: React.FC<ActionConfirmModalProps> = ({
   variant = 'primary',
   loading = false,
   showReasonField = false,
-  reasonPlaceholder = "Provide a reason (optional)..."
+  reasonPlaceholder = "Provide a reason (optional)...",
+  reasonRequired = false,
 }) => {
   const [reason, setReason] = useState("");
+  const canConfirm = !reasonRequired || (reason.trim().length > 0);
 
   const handleConfirm = () => {
     onConfirm(reason.trim() || undefined);
@@ -94,7 +98,7 @@ export const ActionConfirmModal: React.FC<ActionConfirmModalProps> = ({
           </Button>
           <Button
             onClick={handleConfirm}
-            disabled={loading}
+            disabled={loading || !canConfirm}
             className={cn("flex-2 rounded-2xl h-12 font-black text-white shadow-xl transition-all active:scale-95", buttonClass)}
           >
             {loading ? (
