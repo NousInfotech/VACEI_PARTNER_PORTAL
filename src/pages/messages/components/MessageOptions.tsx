@@ -31,17 +31,14 @@ export const MessageOptions: React.FC<MessageOptionsProps> = ({
   isMe,
   isDeleted,
   triggerRect,
-  createdAt,
   hasTodo,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState<{ top: number; left: number; transformOrigin: string } | null>(null);
-  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     if (isOpen) {
       requestAnimationFrame(() => {
-        setNow(Date.now());
         setCoords(null);
       });
     }
