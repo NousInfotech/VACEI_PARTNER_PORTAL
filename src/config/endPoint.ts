@@ -47,6 +47,8 @@ export const endPoints = {
   },
   ENGAGEMENTS: {
     GET_ALL: '/engagements',
+    /** GET /engagements/analytics/organization?organizationId=xxx - counts: companies, engagements, checklists (pending) */
+    ANALYTICS_ORGANIZATION: '/engagements/analytics/organization',
     GET_BY_ID: (engagementId: string) => `/engagements/${engagementId}`,
     UPDATE_STATUS: (engagementId: string) => `/engagements/${engagementId}/status`,
     CHECKLISTS: (id: string) => `/engagements/${id}/checklists`,
