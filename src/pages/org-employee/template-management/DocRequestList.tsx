@@ -11,7 +11,7 @@ import { DeleteConfirmModal } from '../../org-admin/components/DeleteConfirmModa
 import { apiGet, apiDelete } from '../../../config/base';
 import { endPoints } from '../../../config/endPoint';
 import type { Template, TemplateListResponse, TemplateModuleType, Services } from '../../../types/template';
-import { ALL_SERVICES, SERVICES_LABELS } from '../../../types/template';
+import { SERVICES_LABELS } from '../../../types/template';
 import { useAuth } from '../../../context/auth-context-core';
 
 interface Props {
@@ -19,12 +19,12 @@ interface Props {
   showServiceFilter?: boolean;
 }
 
-const DocRequestList: React.FC<Props> = ({ moduleType, showServiceFilter }) => {
+const DocRequestList: React.FC<Props> = ({ moduleType }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { organizationMember } = useAuth();
   const [search, setSearch] = useState('');
-  const [serviceFilter, setServiceFilter] = useState<Services | ''>('');
+  const [serviceFilter] = useState<Services | ''>('');
   const [alert, setAlert] = useState<{ message: string; variant: 'success' | 'danger' } | null>(null);
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; id: string; name: string }>({
     isOpen: false, id: '', name: '',

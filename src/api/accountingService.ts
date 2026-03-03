@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPatch, apiPut, apiDelete } from '../config/base';
+import { apiGet, apiPost, apiPatch, } from '../config/base';
 import { endPoints } from '../config/endPoint';
 
 export const AccountingStatus = {

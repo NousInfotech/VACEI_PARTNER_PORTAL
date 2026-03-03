@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { FileText, Layers, CheckSquare, Plus, FileSearch } from 'lucide-react';
+import { Layers, CheckSquare, Plus, FileSearch } from 'lucide-react';
 import { Button } from '../../../ui/Button';
 import DocRequestList from './DocRequestList';
 import MilestoneList from './MilestoneList';

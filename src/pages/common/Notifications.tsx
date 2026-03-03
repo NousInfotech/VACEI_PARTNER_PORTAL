@@ -6,14 +6,12 @@ import {
 import PageHeader from './PageHeader';
 import { Button } from '../../ui/Button';
 import { Skeleton } from '../../ui/Skeleton';
-import { ShadowCard } from '../../ui/ShadowCard';
 import { useNotifications } from '../../context/NotificationContext';
 import { 
   Bell, CheckCheck, MessageSquare, Calendar, 
-  AlertCircle, Clock, ArrowRight, Eye, Trash2
+  AlertCircle, Clock, ArrowRight, Eye
 } from 'lucide-react';
-import { Badge } from '../../ui/badge';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "../../ui/tabs";
 import EmptyState from "../../ui/EmptyState";
 import { cn } from "../../lib/utils";
 

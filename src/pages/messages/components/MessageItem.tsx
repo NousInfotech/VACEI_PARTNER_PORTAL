@@ -38,7 +38,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   isSelected,
   onSelect,
   onEnterSelectMode,
-  onCreateTodo,
   showOptions = false,
   onToggleOptions,
   onImageLoad,
@@ -60,7 +59,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     if (action === 'reply') onReply?.();
     else if (action === 'delete') onDelete?.();
     else if (action === 'forward') onForward?.();
-    else if (action === 'createTodo') onCreateTodo?.();
+    // else if (action === 'createTodo') onCreateTodo?.();
     else if (action === 'copy') {
       if (message.text) navigator.clipboard.writeText(message.text);
     }

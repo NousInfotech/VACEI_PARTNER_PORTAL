@@ -2,7 +2,6 @@ import {
     DashboardSquare02Icon,
     Book02Icon,
     GitPullRequestIcon,
-    DocumentValidationIcon,
     InstallingUpdates02Icon,
     Building01Icon,
     BubbleChatIcon,
