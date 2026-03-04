@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Users, Mail, Phone, Shield, UserPlus, Info } from "lucide-react";
+import { Users, Mail, Shield, UserPlus, Info } from "lucide-react";
 import { ShadowCard } from "../../../../ui/ShadowCard";
 import { Skeleton } from "../../../../ui/Skeleton";
 import { Button } from "../../../../ui/Button";

@@ -5,7 +5,6 @@ import {
     Users, 
     PieChart, 
     Network,
-    ClipboardList
 } from 'lucide-react';
 import { ShadowCard } from "../../../ui/ShadowCard";
 import { Skeleton } from "../../../ui/Skeleton";
