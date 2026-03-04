@@ -97,7 +97,7 @@ export const chatService = {
                         fileName: content.fileName,
                         fileSize: content.fileSize,
                         type: content.type?.toUpperCase?.() || 'TEXT',
-                        sentAt: new Date().toISOString(),
+                        // sentAt: new Date().toISOString(),
                         ...(content.replyToMessageId && { replyToMessageId: content.replyToMessageId }),
                     })
                     .select()
