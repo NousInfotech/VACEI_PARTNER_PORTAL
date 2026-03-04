@@ -35,7 +35,6 @@ const TABS = [
     { id: 'involvements', label: 'Involvements', icon: Users },
     { id: 'distribution', label: 'Distribution', icon: PieChart },
     { id: 'hierarchy', label: 'Hierarchy', icon: Network },
-    { id: 'incorporation', label: 'Incorporation', icon: ClipboardList },
 ];
 
 const ViewCompanySection: React.FC<ViewCompanySectionProps> = ({ companyId: initialCompanyId, engagementId }) => {

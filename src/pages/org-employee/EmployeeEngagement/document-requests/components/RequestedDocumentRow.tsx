@@ -14,11 +14,13 @@ import { ActionConfirmModal } from "../../components/ActionConfirmModal";
 interface RequestedDocumentRowProps {
   doc: RequestedDocumentItem;
   requestId: string;
+  requestStatus?: 'DRAFT' | 'ACTIVE' | 'COMPLETED';
 }
 
 export const RequestedDocumentRow = ({ 
   doc, 
-  requestId
+  requestId,
+  requestStatus
 }: RequestedDocumentRowProps) => {
   const { 
     handleFileUpload, 
@@ -172,7 +174,7 @@ export const RequestedDocumentRow = ({
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
-          {!isCompleted && (
+          {!isCompleted && requestStatus !== 'DRAFT' && (
             linkedTodo ? (
               <Button 
                 variant="outline" 
@@ -361,6 +363,7 @@ export const RequestedDocumentRow = ({
                 key={child.id} 
                 doc={child} 
                 requestId={requestId} 
+                requestStatus={requestStatus}
               />
             ))}
           </ul>

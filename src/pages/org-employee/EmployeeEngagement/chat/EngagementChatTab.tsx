@@ -10,7 +10,7 @@ import { AddMemberModal } from '@/pages/messages/components/AddMemberModal';
 import { MediaPreviewModal } from '@/pages/messages/components/MediaPreviewModal';
 import { ConfirmModal } from '@/pages/messages/components/ConfirmModal';
 import { EmojiPicker } from '@/pages/messages/components/EmojiPicker';
-import { Loader2, X, MessageSquare } from 'lucide-react';
+import { Loader2, X, MessageSquare, CheckCircle2, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils'; // Keep as cn
 import { useAuth } from '@/context/auth-context-core';
 import TodoModal from '../components/TodoModal';
@@ -251,6 +251,49 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
                         isLoadingMore={isLoadingMore}
                     />
                 </div>
+
+                {isSelectMode && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-50 flex items-center justify-between px-8 py-4 animate-in slide-in-from-bottom duration-300 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                <CheckCircle2 className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <span className="text-sm font-bold text-gray-900 block">{selectedMessageIds.length} messages selected</span>
+                                <button 
+                                    onClick={() => { setIsSelectMode(false); setSelectedMessageIds([]); }}
+                                    className="text-[11px] font-bold text-gray-400 hover:text-red-500 uppercase tracking-wider transition-colors"
+                                >
+                                    Deselect all
+                                </button>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <button 
+                                onClick={() => { setIsSelectMode(false); setSelectedMessageIds([]); }}
+                                className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-all active:scale-95"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    if (!activeChat) return;
+                                    const selectedMessages = activeChat.messages.filter(m => selectedMessageIds.includes(m.id));
+                                    const text = selectedMessages.map(m => `[${new Date(m.timestamp).toLocaleTimeString()}] ${m.senderId}: ${m.text || ''}`).join('\n');
+                                    navigator.clipboard.writeText(text);
+                                    import('sonner').then(m => m.toast.success("Messages copied to clipboard"));
+                                    setIsSelectMode(false);
+                                    setSelectedMessageIds([]);
+                                }}
+                                disabled={selectedMessageIds.length === 0}
+                                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary text-white text-sm font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:grayscale disabled:hover:scale-100"
+                            >
+                                <Copy className="w-4 h-4" />
+                                Copy Messages
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Right Pane */}
                 <div

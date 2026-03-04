@@ -134,12 +134,12 @@ export default function TeamsView({ engagementId }: { engagementId?: string }) {
                                                 <span className="text-sm text-gray-600 font-medium truncate">{member.email}</span>
                                             </a>
                                         )}
-                                        <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-emerald-50 transition-all group/link">
+                                        {/* <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-emerald-50 transition-all group/link">
                                             <div className="h-8 w-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover/link:bg-emerald-100 transition-colors">
                                                 <Phone size={14} />
                                             </div>
                                             <span className="text-sm text-gray-400 italic">No phone listed</span>
-                                        </div>
+                                        </div> */}
                                     </div>
                                 </div>
                             ))}

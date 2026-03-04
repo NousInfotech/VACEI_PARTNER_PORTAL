@@ -95,6 +95,7 @@ const DocumentRequestsContent = () => {
                   key={doc.id} 
                   doc={doc} 
                   requestId={req.id} 
+                  requestStatus={req.status}
                 />
               ))}
             </DocumentRequestGroup>

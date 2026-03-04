@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   Reply, 
-  Forward,
   Trash2, 
   Copy, 
   CheckSquare, 
@@ -84,7 +83,6 @@ export const MessageOptions: React.FC<MessageOptionsProps> = ({
   const mainOptions = isDeleted ? [] : [
     { id: 'reply' as const, label: 'Reply', icon: Reply },
     { id: 'copy' as const, label: 'Copy', icon: Copy },
-    { id: 'forward' as const, label: 'Forward', icon: Forward },
     ...(showCreateTodo && !hasTodo ? [{ id: 'createTodo' as const, label: 'Create Todo', icon: ListTodo }] : []),
     ...(showCreateTodo && hasTodo ? [{ id: 'editTodo' as const, label: 'Edit Todo', icon: Edit }] : []),
   ];
