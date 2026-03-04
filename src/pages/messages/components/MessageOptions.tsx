@@ -6,10 +6,12 @@ import {
   Trash2, 
   Copy, 
   CheckSquare, 
+  ListTodo,
+  Edit
 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 
-export type MessageAction = 'reply' | 'forward' | 'delete' | 'copy' | 'select';
+export type MessageAction = 'reply' | 'forward' | 'delete' | 'copy' | 'select' | 'createTodo' | 'editTodo';
 
 interface MessageOptionsProps {
   isOpen: boolean;
@@ -20,6 +22,7 @@ interface MessageOptionsProps {
   triggerRect?: DOMRect | null;
   createdAt?: number;
   hasTodo?: boolean;
+  showCreateTodo?: boolean;
 }
 
 
@@ -31,6 +34,8 @@ export const MessageOptions: React.FC<MessageOptionsProps> = ({
   isMe,
   isDeleted,
   triggerRect,
+  hasTodo,
+  showCreateTodo,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState<{ top: number; left: number; transformOrigin: string } | null>(null);
@@ -80,6 +85,8 @@ export const MessageOptions: React.FC<MessageOptionsProps> = ({
     { id: 'reply' as const, label: 'Reply', icon: Reply },
     { id: 'copy' as const, label: 'Copy', icon: Copy },
     { id: 'forward' as const, label: 'Forward', icon: Forward },
+    ...(showCreateTodo && !hasTodo ? [{ id: 'createTodo' as const, label: 'Create Todo', icon: ListTodo }] : []),
+    ...(showCreateTodo && hasTodo ? [{ id: 'editTodo' as const, label: 'Edit Todo', icon: Edit }] : []),
   ];
 
   const footerOptions = [

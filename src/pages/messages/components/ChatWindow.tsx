@@ -164,6 +164,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 showOptions={activeOptionsId === msg.id}
                 onToggleOptions={(show) => setActiveOptionsId(show ? msg.id : null)}
                 linkedTodo={todoMap?.[msg.id]}
+                showCreateTodo={!!onCreateTodoMessage}
                 onImageLoad={() => {
                   if (scrollRef.current) {
                     scrollRef.current.scrollTop = scrollRef.current.scrollHeight;

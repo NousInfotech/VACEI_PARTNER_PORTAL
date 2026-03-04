@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useChat } from '@/hooks/useChat';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { todoService } from '@/api/todoService';
 import type { Chat, Message } from '@/pages/messages/types';
 import { ChatWindow } from '@/pages/messages/components/ChatWindow';
@@ -23,6 +23,7 @@ interface EngagementChatTabProps {
 
 // EngagementChatTab.tsx
 export default function EngagementChatTab({ engagementId, companyId: propCompanyId, chatRoomId }: EngagementChatTabProps) {
+    const queryClient = useQueryClient();
     const { organizationMember } = useAuth();
     const isOrgAdmin = organizationMember?.role === 'ORG_ADMIN' || organizationMember?.role === 'OWNER';
 
@@ -331,7 +332,7 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
                 isOpen={isTodoModalOpen}
                 onClose={() => setIsTodoModalOpen(false)}
                 onSuccess={() => {
-                    // Optional: toast already handled in modal
+                    queryClient.invalidateQueries({ queryKey: ['engagement-todos', engagementId] });
                 }}
                 engagementId={engagementId}
                 mode={todoMode as any}
