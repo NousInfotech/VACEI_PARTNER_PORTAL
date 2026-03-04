@@ -81,7 +81,7 @@ import { auditService, AuditStatus } from "../../../api/auditService";
 
 const ENGAGEMENT_TABS = [
   { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
-  { id: 'requests', label: 'Document Requests', icon: FileText },
+  { id: 'requests', label: 'Workspace', icon: FileText },
   { id: 'audit', label: 'AUDIT', icon: BookOpen },
   { id: 'accounting', label: "BOOKEEPING", icon: BookMarked },
   { id: 'csp', label: 'CSP', icon: Building2 },
