@@ -62,7 +62,7 @@ const DocumentRequestsContent = () => {
               <FileIcon className="h-7 w-7" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Document Requests</h2>
+              <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Workspace</h2>
               <p className="text-sm text-gray-500 mt-1">Manage {serviceName.toLowerCase()} documentation and compliance.</p>
             </div>
           </div>
