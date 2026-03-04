@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { cn } from '../../../lib/utils';
 import type { Chat, Message } from '../types';
 import { ChatHeader } from './ChatHeader';
@@ -33,8 +33,14 @@ interface ChatWindowProps {
   selectedMessageIds: string[];
   onSelectMessage: (messageId: string) => void;
   onEnterSelectMode: () => void;
-  currentUserId: string; // Add currentUserId prop
+  currentUserId: string;
   todoMap?: Record<string, any>;
+  /** Callback to load older messages (infinite scroll) */
+  onLoadMore?: () => void;
+  /** Whether there are older messages to load */
+  hasMore?: boolean;
+  /** Whether older messages are currently being loaded */
+  isLoadingMore?: boolean;
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
@@ -59,12 +65,28 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   onSelectMessage,
   onEnterSelectMode,
   currentUserId,
-  todoMap
+  todoMap,
+  onLoadMore,
+  hasMore = false,
+  isLoadingMore = false,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [highlightedId, setHighlightedId] = React.useState<string | null>(null);
   const [activeOptionsId, setActiveOptionsId] = React.useState<string | null>(null);
   const lastMessagesLength = useRef(chat.messages.length);
+  const prevScrollHeightRef = useRef<number>(0);
+  const isLoadingMoreRef = useRef(isLoadingMore);
+  useEffect(() => { isLoadingMoreRef.current = isLoadingMore; }, [isLoadingMore]);
+
+  // Detect scroll-to-top and load older messages
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el || !onLoadMore || !hasMore || isLoadingMoreRef.current) return;
+    if (el.scrollTop < 80) {
+      prevScrollHeightRef.current = el.scrollHeight;
+      onLoadMore();
+    }
+  }, [onLoadMore, hasMore]);
 
   // Effect for search-triggered scroll
   useEffect(() => {
@@ -95,10 +117,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   // Effect for new message scroll (only if not searching)
   useEffect(() => {
-    if (chat.messages.length > lastMessagesLength.current && !scrollToMessageId) {
-      if (scrollRef.current) {
-        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-      }
+    const el = scrollRef.current;
+    if (!el) return;
+    const prevHeight = prevScrollHeightRef.current;
+    if (prevHeight > 0) {
+      // Restore scroll position after prepending older messages
+      el.scrollTop = el.scrollHeight - prevHeight;
+      prevScrollHeightRef.current = 0;
+    } else if (chat.messages.length > lastMessagesLength.current && !scrollToMessageId) {
+      el.scrollTop = el.scrollHeight;
     }
     lastMessagesLength.current = chat.messages.length;
   }, [chat.messages, scrollToMessageId]);
@@ -126,12 +153,19 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4 relative z-10 custom-scrollbar"
+        onScroll={handleScroll}
       >
-        <div className="flex justify-center">
-          <span className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-[11px] font-medium text-gray-500 shadow-sm uppercase tracking-wider">
-            Today
-          </span>
-        </div>
+        {/* Load more indicator at top */}
+        {isLoadingMore && (
+          <div className="flex justify-center py-3">
+            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
+        {hasMore && !isLoadingMore && (
+          <div className="flex justify-center py-2">
+            <span className="text-[11px] text-gray-400 font-medium">Scroll up to load older messages</span>
+          </div>
+        )}
 
         {chat.messages.map((msg) => {
           const isMe = msg.senderId === currentUserId;

@@ -365,6 +365,9 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [room, setRoom] = useState<Chat | null>(null);
+    const [hasMore, setHasMore] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const nextCursorRef = useRef<string | null>(null);
 
     const currentUserId = getDecodedUserId();
     const subscriptionRef = useRef<any>(null);
@@ -453,8 +456,13 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
                 const msgs = await chatService.getMessages(roomId);
 
                 if (msgs?.data) {
+                    const rawItems = Array.isArray(msgs.data) ? msgs.data : (msgs.data?.items ?? []);
+                    // Store pagination info from meta (nextCursor is a sentAt timestamp)
+                    const meta = (msgs as any).meta;
+                    nextCursorRef.current = meta?.nextCursor ?? null;
+                    setHasMore(meta?.hasMore ?? (rawItems.length >= 50));
 
-                    const sorted = msgs.data
+                    const sorted = rawItems
                         .map((msg: any) => mapMessage(msg))
                         .sort((a: Message, b: Message) =>
                             (a.createdAt ?? 0) - (b.createdAt ?? 0)
@@ -594,6 +602,52 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
         setMessages([]);
     }, []);
 
+    const loadMoreMessages = useCallback(async () => {
+        if (!roomId || isLoadingMore || !nextCursorRef.current) return;
+        setIsLoadingMore(true);
+        try {
+            const mapMessage = (msg: any): Message => {
+                let t = msg.sentAt || msg.sent_at || msg.created_at;
+                if (t && !t.endsWith('Z') && !t.includes('+') && !t.match(/-\d{2}:\d{2}$/)) t += 'Z';
+                return {
+                    id: msg.id,
+                    senderId: msg.senderId || msg.sender_id,
+                    text: msg.content || msg.text,
+                    fileUrl: msg.fileUrl || msg.file_url,
+                    fileName: msg.fileName || msg.file_name,
+                    fileSize: msg.fileSize || msg.file_size,
+                    type: (msg.type || 'text').toLowerCase(),
+                    timestamp: t,
+                    status: 'sent',
+                    createdAt: new Date(t || new Date()).getTime(),
+                    isDeleted: !!msg.deletedAt,
+                    replyToMessageId: msg.replyToMessageId ?? msg.reply_to_message_id ?? null,
+                    replyToMessage: msg.replyToMessage ? mapMessage(msg.replyToMessage) : null,
+                };
+            };
+
+            const res = await chatService.getMessages(roomId, nextCursorRef.current);
+            if (res?.data) {
+                const rawItems = Array.isArray(res.data) ? res.data : (res.data?.items ?? []);
+                const meta = (res as any).meta;
+                nextCursorRef.current = meta?.nextCursor ?? null;
+                setHasMore(meta?.hasMore ?? false);
+
+                const olderMsgs: Message[] = rawItems.map((msg: any) => mapMessage(msg));
+                setMessages(prev => {
+                    const existingIds = new Set(prev.map(m => m.id));
+                    const newOnes = olderMsgs.filter(m => !existingIds.has(m.id));
+                    if (newOnes.length === 0) return prev;
+                    return [...newOnes, ...prev].sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0));
+                });
+            }
+        } catch (err) {
+            console.error('Failed to load more messages:', err);
+        } finally {
+            setIsLoadingMore(false);
+        }
+    }, [roomId, isLoadingMore]);
+
     return {
         roomId,
         room,
@@ -605,6 +659,9 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
         uploadFile,
         markAsRead,
         clearMessages,
+        loadMoreMessages,
+        hasMore,
+        isLoadingMore,
         currentUserId
     };
 }

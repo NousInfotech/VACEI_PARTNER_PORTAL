@@ -34,10 +34,12 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
         error,
         sendMessage,
         markAsRead,
+        loadMoreMessages,
+        hasMore,
+        isLoadingMore,
         currentUserId: chatCurrentUserId,
     } = useChat(engagementId, { roomId: chatRoomId });
 
-    // UI State matching Messages.tsx logic
     const [rightPaneMode, setRightPaneMode] = useState<'search' | 'info' | null>(null);
     const [previewMessage, setPreviewMessage] = useState<Message | null>(null);
     const [scrollTargetId, setScrollTargetId] = useState<string | undefined>(undefined);
@@ -244,6 +246,9 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
                         onEnterSelectMode={() => setIsSelectMode(true)}
                         currentUserId={chatCurrentUserId || organizationMember?.userId || ''}
                         todoMap={todoMap}
+                        onLoadMore={loadMoreMessages}
+                        hasMore={hasMore}
+                        isLoadingMore={isLoadingMore}
                     />
                 </div>
 

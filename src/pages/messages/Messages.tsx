@@ -352,6 +352,9 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
     deleteMessage: deleteChatMessage,
     currentUserId,
     clearMessages,
+    loadMoreMessages,
+    hasMore,
+    isLoadingMore,
   } = useChat(undefined, { roomId: activeChatId ?? undefined });
 
   /** Open a room: reset its unread count and mark as read on the server */
@@ -534,6 +537,9 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
                 onSelectMessage={handleToggleSelectMessage}
                 onEnterSelectMode={() => setIsSelectMode(true)}
                 currentUserId={currentUserId || organizationMember?.userId || ''}
+                onLoadMore={loadMoreMessages}
+                hasMore={hasMore}
+                isLoadingMore={isLoadingMore}
               />
             </div>
             {isSelectMode && (

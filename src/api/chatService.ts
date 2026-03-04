@@ -160,16 +160,64 @@ export const chatService = {
     },
 
     /**
-     * Fetch messages for a room (initial load).
+     * Fetch messages for a room with optional cursor-based pagination.
+     * Uses Supabase direct query (same source as realtime) with sentAt cursor.
      */
-    getMessages: async (roomId: string) => {
+    getMessages: async (roomId: string, cursor?: string) => {
+        const LIMIT = 50;
         try {
-            return await apiGet<any>(endPoints.CHAT.MESSAGES(roomId));
-        } catch (error) {
-            console.error('Error fetching messages:', error);
-            throw error;
+            // Use Supabase directly so messages always match what realtime inserts
+            let query = supabase
+                .from('ChatMessage')
+                .select('*, sender:senderId(id, firstName, lastName)')
+                .eq('roomId', roomId)
+                .order('sentAt', { ascending: false })
+                .limit(LIMIT);
+
+            // cursor = sentAt of the oldest message from the previous fetch
+            if (cursor) {
+                query = (query as any).lt('sentAt', cursor);
+            }
+
+            const { data, error } = await query;
+
+            if (error) throw error;
+
+            const items = data || [];
+            const hasMore = items.length === LIMIT;
+            // nextCursor = sentAt of the oldest item in this batch
+            const nextCursor = hasMore && items.length > 0
+                ? (items[items.length - 1] as any).sentAt as string
+                : null;
+
+            return {
+                data: items,
+                meta: { nextCursor, hasMore },
+            };
+        } catch (supabaseError) {
+            // Fallback to REST API if Supabase fails
+            try {
+                const params = new URLSearchParams();
+                params.append('limit', String(LIMIT));
+                if (cursor) params.append('cursor', cursor);
+                const res = await apiGet<any>(`${endPoints.CHAT.MESSAGES(roomId)}?${params.toString()}`);
+                // REST returns {data: [...]} — infer hasMore from count
+                const items = Array.isArray(res?.data) ? res.data : [];
+                const hasMore = items.length === LIMIT;
+                const nextCursor = hasMore && items.length > 0
+                    ? items[items.length - 1]?.sentAt ?? null
+                    : null;
+                return {
+                    data: items,
+                    meta: { nextCursor, hasMore },
+                };
+            } catch (error) {
+                console.error('Error fetching messages:', error);
+                throw error;
+            }
         }
     },
+
 
     /**
      * Delete a message (soft delete).
