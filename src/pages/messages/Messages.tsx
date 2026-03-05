@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useChat } from '../../hooks/useChat';
 import { useQuery } from '@tanstack/react-query';
 import { ChatList } from './components/ChatList';
@@ -33,6 +34,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
   const { organizationMember } = useAuth();
   const queryClient = useQueryClient();
   const isOrgAdmin = organizationMember?.role === 'ORG_ADMIN' || organizationMember?.role === 'OWNER';
+  const [searchParams] = useSearchParams();
 
   const { data: roomsResponse, isLoading: roomsLoading } = useQuery({
     queryKey: ['chat-rooms', engagementId],
@@ -216,6 +218,19 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
   const [selectedForwardChatIds, setSelectedForwardChatIds] = useState<string[]>([]);
   const [forwardingMessages, setForwardingMessages] = useState<Message[]>([]);
   const containerRef = React.useRef<HTMLDivElement>(null);
+
+  // Support deep links from notifications: ?room=<roomId>&messageId=<messageId>
+  React.useEffect(() => {
+    const roomFromUrl = searchParams.get('room');
+    const messageIdFromUrl = searchParams.get('messageId');
+
+    if (roomFromUrl) {
+      setActiveChatId(roomFromUrl);
+    }
+    if (messageIdFromUrl) {
+      setScrollTargetId(messageIdFromUrl);
+    }
+  }, [searchParams]);
 
   React.useEffect(() => {
     setRightPaneMode(null);
