@@ -62,6 +62,7 @@ export const endPoints = {
     LIBRARY_FOLDER_BY_TYPE: (engagementId: string, type: string) => `/engagements/${engagementId}/library?type=${type}`,
     EVIDENCE_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library/evidences`,
     WORKBOOK_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library/workbooks`,
+    INVOICES_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library/invoices`,
     FILINGS: (engagementId: string) => `/engagements/${engagementId}/filings`,
     FILING_STATUS: (engagementId: string, filingId: string) => `/engagements/${engagementId}/filings/${filingId}/status`,
     /** Export endpoints (REFERENCE-PORTAL compatible). GET with responseType blob for file download. */
@@ -183,6 +184,8 @@ export const endPoints = {
       `/accounting-cycles/${cycleId}/transactions/${id}`,
     CREATE_TRANSACTION: (cycleId: string) =>
       `/accounting-cycles/${cycleId}/transactions`,
+    UPLOAD_INVOICE: (cycleId: string) =>
+      `/accounting-cycles/${cycleId}/transactions/upload-invoice`,
     UPDATE_TRANSACTION: (cycleId: string, id: string) =>
       `/accounting-cycles/${cycleId}/transactions/${id}`,
     DELETE_TRANSACTION: (cycleId: string, id: string) =>
@@ -204,6 +207,8 @@ export const endPoints = {
     INVOICE_PAYMENTS: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/invoices/payments`,
     INVOICE_IMPORT: (companyId: string, qbInvoiceId: string) =>
       `/companies/${companyId}/accounting/quickbooks/invoices/import/${qbInvoiceId}`,
+    LINK_INVOICE_FILE: (companyId: string, qbInvoiceId: string) =>
+      `/companies/${companyId}/accounting/quickbooks/invoices/${qbInvoiceId}/link-file`,
     BILLS: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/bills`,
     CREATE_BILL: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/bills`,
     BILL_IMPORT: (companyId: string, qbBillId: string) =>
