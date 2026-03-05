@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useChat } from '@/hooks/useChat';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { todoService } from '@/api/todoService';
@@ -26,6 +27,7 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
     const queryClient = useQueryClient();
     const { organizationMember } = useAuth();
     const isOrgAdmin = organizationMember?.role === 'ORG_ADMIN' || organizationMember?.role === 'OWNER';
+    const [searchParams] = useSearchParams();
 
     const {
         room,
@@ -103,6 +105,17 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
             markAsRead();
         }
     }, [activeChat, markAsRead]);
+
+    // Deep link from notifications / URLs: ?messageId=<id>
+    useEffect(() => {
+        const messageId = searchParams.get('messageId');
+        if (!messageId || !activeChat) return;
+        setScrollTargetId(messageId);
+        const msg = activeChat.messages.find((m) => m.id === messageId);
+        if (msg) {
+            setReplyToMessage(msg);
+        }
+    }, [searchParams, activeChat]);
 
     // Auto-add client members if the room has only 1 member (the current user)
     // This fixes the issue where the backend created the room but didn't add the client.
