@@ -97,17 +97,17 @@ export const DocumentRequestGroup = ({ req, children }: DocumentRequestGroupProp
   return (
     <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
       <div className="p-5 bg-gray-50/50 border-b border-gray-100 space-y-4">
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mt-1">
               <FileText className="h-6 w-6" />
             </div>
             <div>
               <div className="flex items-center gap-3 mb-1">
-                <h4 className="text-xl font-bold text-gray-900">{req.title}</h4>
+                <h4 className="text-lg font-bold text-gray-900">{req.title}</h4>
                 <select 
                   className={cn(
-                    "rounded-full px-3 py-0.5 text-[10px] font-bold uppercase border transition-colors outline-none cursor-pointer",
+                    "rounded-full px-1 py-0.5 text-[10px] font-bold uppercase border transition-colors outline-none cursor-pointer",
                     req.status === 'DRAFT' ? "bg-gray-100 text-gray-700 border-gray-200" :
                     req.status === 'ACTIVE' ? "bg-blue-50 text-blue-700 border-blue-100" :
                     "bg-green-50 text-green-700 border-green-100"
@@ -124,7 +124,7 @@ export const DocumentRequestGroup = ({ req, children }: DocumentRequestGroupProp
                   {progressPercent}% Complete
                 </span>
               </div>
-              <p className="text-sm text-gray-600">{req.description}</p>
+              <p className="text-xs text-gray-600">{req.description}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">

@@ -24,9 +24,10 @@ import { toast } from 'sonner';
 interface EngagementTodoViewProps {
     engagementId?: string;
     service?: string;
+    hideHeader?: boolean;
 }
 
-export default function EngagementTodoView({ engagementId, service }: EngagementTodoViewProps) {
+export default function EngagementTodoView({ engagementId, service, hideHeader }: EngagementTodoViewProps) {
     const [filter, setFilter] = useState<'all' | 'ACTION_REQUIRED' | 'ACTION_TAKEN' | 'COMPLETED'>('all');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedTodo, setSelectedTodo] = useState<Todo | undefined>(undefined);
@@ -104,34 +105,56 @@ export default function EngagementTodoView({ engagementId, service }: Engagement
     }
 
     return (
-        <div className="space-y-6 pb-20 font-inter">
+        <div className={cn("space-y-6 pb-20 font-inter", hideHeader && "pb-4")}>
             {/* Header & Stats */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Engagement Todos</h2>
-                    <p className="text-sm text-gray-500">Manage and track tasks for this engagement</p>
+            {!hideHeader && (
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h2 className="text-2xl font-bold text-gray-900">Engagement Todos</h2>
+                        <p className="text-sm text-gray-500">Manage and track tasks for this engagement</p>
+                    </div>
+                    <Button 
+                        onClick={() => {
+                            setSelectedTodo(undefined);
+                            setIsModalOpen(true);
+                        }}
+                        className="bg-primary text-white rounded-xl h-12 px-6 font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                    >
+                        <Plus size={20} className="mr-2" />
+                        Create Todo
+                    </Button>
                 </div>
-                <Button 
-                    onClick={() => {
-                        setSelectedTodo(undefined);
-                        setIsModalOpen(true);
-                    }}
-                    className="bg-primary text-white rounded-xl h-12 px-6 font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                >
-                    <Plus size={20} className="mr-2" />
-                    Create Todo
-                </Button>
-            </div>
+            )}
+
+            {hideHeader && (
+                <div className="flex items-center justify-between h-10">
+                    <div>
+                        <h3 className="text-lg font-bold text-gray-900 leading-none">Tasks</h3>
+                        <p className="text-[10px] uppercase font-black tracking-widest text-gray-400 mt-1">To-do list for this workspace</p>
+                    </div>
+                    <Button 
+                        onClick={() => {
+                            setSelectedTodo(undefined);
+                            setIsModalOpen(true);
+                        }}
+                        className="bg-primary text-white rounded-xl h-9 px-4 text-xs font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                    >
+                        <Plus size={16} className="mr-1.5" />
+                        Add Task
+                    </Button>
+                </div>
+            )}
 
             {/* Filters */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-                <Filter size={16} className="text-gray-400 shrink-0" />
+            <div className={cn("flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none", hideHeader && "gap-1.5")}>
+                <Filter size={hideHeader ? 14 : 16} className="text-gray-400 shrink-0" />
                 {(['all', TodoListStatus.ACTION_REQUIRED, TodoListStatus.ACTION_TAKEN, TodoListStatus.COMPLETED] as const).map(f => (
                     <button
                         key={f}
                         onClick={() => setFilter(f)}
                         className={cn(
                             "px-4 py-2 rounded-full text-xs font-bold capitalize transition-all shrink-0 border",
+                            hideHeader && "px-3 py-1 text-[10px]",
                             filter === f 
                                 ? "bg-gray-900 text-white border-gray-900 shadow-md" 
                                 : "bg-white text-gray-500 border-gray-100 hover:bg-gray-50"
@@ -143,16 +166,20 @@ export default function EngagementTodoView({ engagementId, service }: Engagement
             </div>
 
             {/* Todo List */}
-            <div className="grid grid-cols-1 gap-4">
+            <div className={cn("grid grid-cols-1 gap-4", hideHeader && "gap-3")}>
                 {filteredTodos.length > 0 ? (
                     filteredTodos.map((todo: Todo) => (
-                        <ShadowCard key={todo.id} className="group relative overflow-hidden bg-white border border-gray-100 rounded-4xl hover:shadow-xl transition-all duration-300">
-                            <div className="p-6">
+                        <ShadowCard key={todo.id} className={cn(
+                            "group relative overflow-hidden bg-white border border-gray-100 rounded-4xl hover:shadow-xl transition-all duration-300",
+                            hideHeader && "rounded-2xl"
+                        )}>
+                            <div className={cn("p-6", hideHeader && "p-4")}>
                                 <div className="flex justify-between items-start gap-4">
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-2">
                                             <div className={cn(
                                                 "p-1.5 rounded-lg flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider",
+                                                hideHeader && "p-1 text-[8px]",
                                                 todo.status === TodoListStatus.COMPLETED ? "bg-green-50 text-green-600" :
                                                 todo.status === TodoListStatus.ACTION_TAKEN ? "bg-blue-50 text-blue-600" :
                                                 "bg-amber-50 text-amber-600"
@@ -170,26 +197,29 @@ export default function EngagementTodoView({ engagementId, service }: Engagement
                                                                     type === 'CHAT' ? 'chat' : 'dashboard';
                                                         window.location.href = `/engagement-view/${engagementId}?tab=${tab}`;
                                                     }}
-                                                    className="px-2 py-1 bg-primary/5 text-primary hover:bg-primary/10 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 transition-all"
+                                                    className={cn(
+                                                        "px-2 py-1 bg-primary/5 text-primary hover:bg-primary/10 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 transition-all",
+                                                        hideHeader && "text-[8px] px-1.5 py-0.5"
+                                                    )}
                                                 >
                                                     Next
-                                                    <ExternalLink size={10} />
+                                                    <ExternalLink size={hideHeader ? 8 : 10} />
                                                 </button>
                                             )}
                                         </div>
-                                        <h3 className="text-lg font-bold text-gray-900 truncate mb-1">{todo.title}</h3>
-                                        <p className="text-sm text-gray-500 line-clamp-2 mb-4">{todo.description || 'No description provided'}</p>
+                                        <h3 className={cn("text-lg font-bold text-gray-900 truncate mb-1", hideHeader && "text-base")}>{todo.title}</h3>
+                                        <p className={cn("text-sm text-gray-500 line-clamp-2 mb-4", hideHeader && "text-xs mb-3")}>{todo.description || 'No description provided'}</p>
                                         
                                         <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-gray-400">
                                             {todo.deadline && (
-                                                <div className="flex items-center gap-1.5">
-                                                    <Calendar size={14} />
+                                                <div className={cn("flex items-center gap-1.5", hideHeader && "gap-1 text-[10px]")}>
+                                                    <Calendar size={hideHeader ? 12 : 14} />
                                                     Due {format(new Date(todo.deadline), 'MMM dd, yyyy')}
                                                 </div>
                                             )}
                                             {todo.createdBy && (
-                                                <div className="flex items-center gap-1.5">
-                                                    <User size={14} />
+                                                <div className={cn("flex items-center gap-1.5", hideHeader && "gap-1 text-[10px]")}>
+                                                    <User size={hideHeader ? 12 : 14} />
                                                     By {todo.createdBy.user?.firstName} {todo.createdBy.user?.lastName}
                                                 </div>
                                             )}
@@ -224,6 +254,7 @@ export default function EngagementTodoView({ engagementId, service }: Engagement
                                                 })}
                                                 className={cn(
                                                     "h-9 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
+                                                    hideHeader && "h-7 px-3 text-[9px]",
                                                     todo.status === TodoListStatus.ACTION_REQUIRED 
                                                         ? "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/20" 
                                                         : "bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-500/20"
@@ -238,7 +269,10 @@ export default function EngagementTodoView({ engagementId, service }: Engagement
                         </ShadowCard>
                     ))
                 ) : (
-                    <ShadowCard className="p-12 text-center rounded-[2.5rem] bg-gray-50/50 border-dashed border-2 border-gray-200">
+                    <ShadowCard className={cn(
+                        "p-12 text-center rounded-[2.5rem] bg-gray-50/50 border-dashed border-2 border-gray-200",
+                        hideHeader && "p-8 rounded-3xl"
+                    )}>
                         <div className="mb-4 flex justify-center">
                             <div className="p-4 bg-white rounded-full text-gray-300">
                                 <Plus size={32} />

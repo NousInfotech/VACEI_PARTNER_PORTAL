@@ -93,7 +93,6 @@ const ENGAGEMENT_TABS = [
   // { id: 'audit', label: 'AUDIT', icon: BookOpen },
   { id: 'library', label: 'Library', icon: Library },
   { id: 'checklist', label: 'Checklist', icon: ListChecks },
-  { id: 'todo', label: 'Todo', icon: CheckSquare },
   { id: 'compliance', label: 'Compliance', icon: ShieldCheck },
   { id: 'milestones', label: 'Milestones', icon: Landmark },
   { id: 'updates', label: 'Updates', icon: MessageSquare },
