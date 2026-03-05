@@ -58,7 +58,7 @@ export default function ExtendedTBTable({ data, onUpdateRow, onUpdateGroups, onD
     };
 
     return (
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="w-full max-w-full rounded-xl border border-gray-200 bg-white shadow-sm overflow-x-auto overflow-y-visible">
             <style>
                 {`
                     input[type=number]::-webkit-inner-spin-button, 
@@ -78,12 +78,11 @@ export default function ExtendedTBTable({ data, onUpdateRow, onUpdateGroups, onD
                     }
                 `}
             </style>
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm custom-table">
-                    <thead>
+            <table className="w-full text-sm custom-table min-w-[700px]">
+                <thead>
                         <tr className="bg-gray-50/50">
                             <th className="py-4 px-4 font-semibold text-gray-600 w-16 text-center">Code</th>
-                            <th className="py-4 px-4 font-semibold text-gray-600 min-w-[200px] text-left">Account Name</th>
+                            <th className="py-4 px-4 font-semibold text-gray-600 min-w-[240px] text-left">Account Name</th>
                             <th className="py-4 px-4 font-semibold text-gray-600 text-right whitespace-nowrap">Current Year</th>
                             <th className="py-4 px-4 font-semibold text-gray-600 text-right whitespace-nowrap">Re-Classification</th>
                             <th className="py-4 px-4 font-semibold text-gray-600 text-right whitespace-nowrap">Adjustments</th>
@@ -112,7 +111,7 @@ export default function ExtendedTBTable({ data, onUpdateRow, onUpdateGroups, onD
                                 </td>
                                 <td className="py-3 px-4 font-medium text-gray-900 text-left align-middle">
                                     {isSectionsView ? (
-                                        <div className="px-3 py-2 text-gray-900 font-medium wrap-break-word max-w-[300px] bg-white border border-gray-200 rounded-xl leading-relaxed shadow-sm">
+                                        <div className="px-3 py-2 h-fit text-gray-900 font-medium wrap-break-word max-w-[300px] bg-white border border-gray-200 rounded-xl leading-relaxed shadow-sm">
                                             {row.accountName}
                                         </div>
                                     ) : (
@@ -250,7 +249,6 @@ export default function ExtendedTBTable({ data, onUpdateRow, onUpdateGroups, onD
                         </tr>
                     </tbody>
                 </table>
-            </div>
         </div>
     );
 }
