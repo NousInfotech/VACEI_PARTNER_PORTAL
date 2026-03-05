@@ -37,6 +37,7 @@ interface DocumentRequestsContextType {
   hardDeleteMutation: any;
   attachFilesMutation: any;
   updateStatusMutation: any;
+  updateRequestedDocumentStatusMutation: any;
   engagementId?: string;
   isTodoModalOpen: boolean;
   setIsTodoModalOpen: (open: boolean) => void;
@@ -266,6 +267,28 @@ export const DocumentRequestsProvider: React.FC<{ engagementId?: string; childre
     },
   });
 
+  const updateRequestedDocumentStatusMutation = useMutation({
+    mutationFn: async ({
+      documentRequestId,
+      docId,
+      status,
+      reason,
+    }: {
+      documentRequestId: string;
+      docId: string;
+      status: 'ACCEPTED' | 'REJECTED';
+      reason?: string;
+    }) => {
+      return apiPatch(
+        endPoints.REQUESTED_DOCUMENT_BY_ID(documentRequestId, docId) + '/status',
+        { status, reason }
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["document-requests", engagementId] });
+    },
+  });
+
   const updateGroupMutation = useMutation({
     mutationFn: async ({ id, title, description }: { id: string; title: string; description: string | null }) => {
       return apiPatch(endPoints.DOCUMENT_REQUESTS + `/${id}`, { title, description });
@@ -448,6 +471,7 @@ export const DocumentRequestsProvider: React.FC<{ engagementId?: string; childre
     hardDeleteMutation,
     attachFilesMutation,
     updateStatusMutation,
+    updateRequestedDocumentStatusMutation,
     engagementId,
     isTodoModalOpen,
     setIsTodoModalOpen,
@@ -477,6 +501,7 @@ export const DocumentRequestsProvider: React.FC<{ engagementId?: string; childre
     clearMutation.isPending,
     hardDeleteMutation.isPending,
     updateStatusMutation.isPending,
+    updateRequestedDocumentStatusMutation.isPending,
     engagementId
   ]);
 

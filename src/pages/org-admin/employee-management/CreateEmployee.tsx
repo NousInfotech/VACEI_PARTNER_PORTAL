@@ -7,6 +7,7 @@ import axiosInstance from "@/config/axiosConfig";
 import { endPoints } from "@/config/endPoint";
 import { AVAILABLE_SERVICES } from "@/lib/types";
 import PageHeader from "../../common/PageHeader";
+import { useAuth } from "@/context/auth-context-core";
 
 interface CreateEmployeeProps {
     onSuccess: (data: unknown) => void;
@@ -27,6 +28,11 @@ export default function CreateEmployee({ onSuccess, onCancel }: CreateEmployeePr
         allowedServices: [] as string[]
     });
 
+    const { organizationMember } = useAuth();
+    const availableServices = organizationMember?.organization?.availableServices || [];
+    const filteredServices = AVAILABLE_SERVICES.filter(s => availableServices.includes(s.id));
+    const allowedCustomServiceIds = organizationMember?.allowedCustomServiceCycles?.map(c => c.id) || [];
+
     const { data: customServices = [], isLoading: isServicesLoading } = useQuery({
         queryKey: ['activeCustomServices'],
         queryFn: async () => {
@@ -41,7 +47,8 @@ export default function CreateEmployee({ onSuccess, onCancel }: CreateEmployeePr
         }
     });
 
-    const allAvailableServices = [...AVAILABLE_SERVICES, ...customServices];
+    const activeCustomServices = customServices.filter((s: { id: string; label: string }) => allowedCustomServiceIds.includes(s.id));
+    const allAvailableServices = [...filteredServices, ...activeCustomServices];
 
     const toggleSelectAll = () => {
         if (formData.allowedServices.length === allAvailableServices.length) {

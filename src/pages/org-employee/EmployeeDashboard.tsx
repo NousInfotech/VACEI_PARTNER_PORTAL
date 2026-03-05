@@ -1,17 +1,17 @@
-import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import {
   Users,
-  MessageSquare,
   FileText,
   CheckCircle2,
-  Search,
-  // Filter,
-  Activity
+  Activity,
+  ArrowRight,
+  Settings
 } from "lucide-react";
 import { ShadowCard } from "../../ui/ShadowCard";
 import { PageHeader } from "../common/PageHeader";
 import { Skeleton } from "../../ui/Skeleton";
 import { useAuth } from "../../context/auth-context-core";
+import { useOrganizationAnalytics } from "../../hooks/useOrganizationAnalytics";
 import { cn } from "../../lib/utils";
 import EmployeeCompliance from "./EmployeeCompliance";
 import Engagement from "./EmployeeEngagement/Engagement";
@@ -23,27 +23,48 @@ import EditTemplateForm from "./template-management/EditTemplateForm";
 import ViewTemplateDetail from "./template-management/ViewTemplateDetail";
 
 
-const MOCK_CLIENTS = [
-  { id: 1, name: "Acme Corp", lastMessage: "Can we review the Q4 audit?", status: "online", sector: "Technology" },
-  { id: 2, name: "Global Logistics", lastMessage: "Documents uploaded for VAT", status: "offline", sector: "Shipping" },
-  { id: 3, name: "Bistro Malta", lastMessage: "Payroll details for Jan", status: "online", sector: "Hospitality" },
-  { id: 4, name: "Nexus AI", lastMessage: "Ready for CFO consultation", status: "online", sector: "Technology" },
-];
+
 
 interface EmployeeDashboardProps {
   activeSection?: string;
 }
 
 export default function EmployeeDashboard({ activeSection = "Dashboard" }: EmployeeDashboardProps) {
-  const { selectedService, selectedServiceLabel } = useAuth();
+  const { selectedServiceLabel } = useAuth();
+  const { data: analytics, isLoading: analyticsLoading } = useOrganizationAnalytics();
+  const loading = analyticsLoading;
+  const navigate = useNavigate();
 
-  const { isLoading: loading } = useQuery({
-    queryKey: ['employee-dashboard', activeSection, selectedService],
-    queryFn: async () => {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return true;
+  const quickActions = [
+    { 
+      title: "View Engagements", 
+      description: "Manage active projects", 
+      icon: Activity, 
+      path: "/dashboard/engagements", 
+      color: "bg-indigo-600"
+    },
+    { 
+      title: "Template Management", 
+      description: "Manage templates", 
+      icon: FileText, 
+      path: "/dashboard/templates", 
+      color: "bg-emerald-600"
+    },
+    { 
+      title: "Messages", 
+      description: "View messages", 
+      icon: FileText, 
+      path: "/dashboard/messages", 
+      color: "bg-emerald-600"
+    },
+    { 
+      title: "System Settings", 
+      description: "Configure portal preferences", 
+      icon: Settings, 
+      path: "/dashboard/settings", 
+      color: "bg-amber-600"
     }
-  });
+  ];
 
   return (
     <div className="mx-auto space-y-8">
@@ -84,9 +105,9 @@ export default function EmployeeDashboard({ activeSection = "Dashboard" }: Emplo
                 ))
               ) : (
                 [
-                  { label: "Active Companies", value: "24", icon: Users, color: "blue", trend: "+12%" },
-                  { label: "Open Engagements", value: "12", icon: Activity, color: "orange", trend: "+5%" },
-                  { label: "Internal Tasks", value: "48", icon: CheckCircle2, color: "green", trend: "-2%" },
+                  { label: "Active Companies", value: String(analytics.companies), icon: Users, color: "blue" as const },
+                  { label: "Open Engagements", value: String(analytics.engagements), icon: Activity, color: "orange" as const },
+                  { label: "Internal Tasks", value: String(analytics.checklists), icon: CheckCircle2, color: "green" as const },
                 ].map((stat, i) => (
                   <ShadowCard key={i} className="p-6 group hover:shadow-xl transition-all duration-300">
                     <div className="flex items-start justify-between">
@@ -98,12 +119,6 @@ export default function EmployeeDashboard({ activeSection = "Dashboard" }: Emplo
                       )}>
                         <stat.icon className="h-6 w-6" />
                       </div>
-                      <span className={cn(
-                        "text-xs font-bold px-2.5 py-1 rounded-full",
-                        stat.trend.startsWith('+') ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
-                      )}>
-                        {stat.trend}
-                      </span>
                     </div>
                     <div className="mt-4">
                       <p className="text-sm font-medium text-gray-500">{stat.label}</p>
@@ -124,73 +139,34 @@ export default function EmployeeDashboard({ activeSection = "Dashboard" }: Emplo
 
           </div>
 
-          {/* Side Feedback/Chat List Area */}
+          {/* Side Feedback/Quick Actions Area */}
           <div className="space-y-8">
-            <ShadowCard className="overflow-hidden">
-              <div className="p-6 border-b border-gray-50 bg-gray-50/30">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <MessageSquare className="h-5 w-5 text-primary" />
-                    <h2 className="font-bold">Recent Chats</h2>
-                  </div>
-                  {loading ? (
-                    <Skeleton className="h-5 w-16 rounded-full" />
-                  ) : (
-                    <span className="bg-primary text-light text-[10px] font-bold px-2 py-1 rounded-full">
-                      {MOCK_CLIENTS.length} Active
-                    </span>
-                  )}
-                </div>
-                <div className="mt-4 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search clients..."
-                    className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-              </div>
-
-              <div className="divide-y divide-gray-50">
-                {loading ? (
-                  [1, 2, 3, 4].map((i) => (
-                    <div key={i} className="p-4 flex items-center gap-4">
-                      <Skeleton className="h-12 w-12 rounded-2xl shrink-0" />
-                      <div className="flex-1 space-y-2">
-                        <Skeleton className="h-4 w-1/2" />
-                        <Skeleton className="h-3 w-3/4" />
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  MOCK_CLIENTS.map((client) => (
-                    <button key={client.id} className="w-full p-4 flex items-center gap-4 hover:bg-gray-50 transition-colors text-left group">
-                      <div className="relative">
-                        <div className="h-12 w-12 rounded-2xl bg-gray-100 flex items-center justify-center font-bold text-gray-600 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                          {client.name.charAt(0)}
-                        </div>
-                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-4 border-white ${client.status === 'online' ? 'bg-green-500' : 'bg-gray-300'
-                          }`} />
+            <div className="space-y-6">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                Quick Actions
+              </h2>
+              <div className="grid grid-cols-1 gap-4">
+                {quickActions.map((action, index) => (
+                  <ShadowCard 
+                    key={index} 
+                    className="group p-6 hover:border-primary/50 cursor-pointer overflow-hidden relative border-none shadow-sm hover:shadow-xl transition-all duration-300"
+                    onClick={() => action.path && navigate(action.path)}
+                  >
+                    <div className="flex items-center gap-4 relative z-10">
+                      <div className={`w-12 h-12 rounded-xl ${action.color} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300 shrink-0`}>
+                        <action.icon className="h-6 w-6" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-0.5">
-                          <p className="font-bold text-sm text-gray-900 truncate">{client.name}</p>
-                          <span className="text-[10px] text-gray-400">2m ago</span>
-                        </div>
-                        <p className="text-xs text-gray-500 truncate">{client.lastMessage}</p>
+                        <h3 className="font-bold text-gray-900 truncate">{action.title}</h3>
+                        <p className="text-xs text-gray-500 truncate mt-0.5">{action.description}</p>
                       </div>
-                    </button>
-                  ))
-                )}
+                      <ArrowRight className="h-4 w-4 text-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                    </div>
+                    <div className={`absolute -right-4 -bottom-4 w-24 h-24 ${action.color} opacity-[0.05] rounded-full group-hover:scale-150 transition-transform duration-700`} />
+                  </ShadowCard>
+                ))}
               </div>
-
-              <button className="w-full p-4 text-sm font-bold text-primary hover:bg-primary/5 transition-colors border-t border-gray-50">
-                View All Messages
-              </button>
-            </ShadowCard>
-
-            {/* Quick Actions/Shortcuts */}
-
+            </div>
           </div>
         </div>
       ) : activeSection === "Compliance" ? (
@@ -199,7 +175,7 @@ export default function EmployeeDashboard({ activeSection = "Dashboard" }: Emplo
         <Messages />
       ) : activeSection === "Engagements" ? (
         <Engagement />
-      ) : activeSection === "Document Request Templates" ? (
+      ) : activeSection === "Templates" ? (
         <TemplateManagement />
       ) : activeSection === "Create Template" ? (
         <CreateTemplateForm />

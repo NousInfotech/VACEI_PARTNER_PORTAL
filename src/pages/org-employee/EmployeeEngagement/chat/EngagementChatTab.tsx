@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useChat } from '@/hooks/useChat';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { todoService } from '@/api/todoService';
 import type { Chat, Message } from '@/pages/messages/types';
 import { ChatWindow } from '@/pages/messages/components/ChatWindow';
@@ -10,7 +11,7 @@ import { AddMemberModal } from '@/pages/messages/components/AddMemberModal';
 import { MediaPreviewModal } from '@/pages/messages/components/MediaPreviewModal';
 import { ConfirmModal } from '@/pages/messages/components/ConfirmModal';
 import { EmojiPicker } from '@/pages/messages/components/EmojiPicker';
-import { Loader2, X, MessageSquare } from 'lucide-react';
+import { Loader2, X, MessageSquare, CheckCircle2, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils'; // Keep as cn
 import { useAuth } from '@/context/auth-context-core';
 import TodoModal from '../components/TodoModal';
@@ -23,8 +24,10 @@ interface EngagementChatTabProps {
 
 // EngagementChatTab.tsx
 export default function EngagementChatTab({ engagementId, companyId: propCompanyId, chatRoomId }: EngagementChatTabProps) {
+    const queryClient = useQueryClient();
     const { organizationMember } = useAuth();
     const isOrgAdmin = organizationMember?.role === 'ORG_ADMIN' || organizationMember?.role === 'OWNER';
+    const [searchParams] = useSearchParams();
 
     const {
         room,
@@ -33,15 +36,16 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
         error,
         sendMessage,
         markAsRead,
+        loadMoreMessages,
+        hasMore,
+        isLoadingMore,
         currentUserId: chatCurrentUserId,
     } = useChat(engagementId, { roomId: chatRoomId });
 
-    // UI State matching Messages.tsx logic
     const [rightPaneMode, setRightPaneMode] = useState<'search' | 'info' | null>(null);
     const [previewMessage, setPreviewMessage] = useState<Message | null>(null);
     const [scrollTargetId, setScrollTargetId] = useState<string | undefined>(undefined);
     const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
-    const [editingMessage, setEditingMessage] = useState<Message | null>(null);
     const [isSelectMode, setIsSelectMode] = useState(false);
     const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([]);
     const [emojiPickerMessageId, setEmojiPickerMessageId] = useState<string | null>(null);
@@ -60,7 +64,12 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
     // construct active chat object
     const activeChat: Chat | null = room ? {
         ...room,
-        messages: messages,
+        // Always show messages ordered by time (oldest → newest)
+        messages: [...messages].sort((a, b) => {
+            const aTime = a.createdAt ?? (a.timestamp ? new Date(a.timestamp).getTime() : 0);
+            const bTime = b.createdAt ?? (b.timestamp ? new Date(b.timestamp).getTime() : 0);
+            return aTime - bTime;
+        }),
         name: room.name || 'Engagement Chat',
         type: room.type || 'GROUP',
         participants: (room.participants || (room as any).members || []).map((m: any) => ({
@@ -96,6 +105,17 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
             markAsRead();
         }
     }, [activeChat, markAsRead]);
+
+    // Deep link from notifications / URLs: ?messageId=<id>
+    useEffect(() => {
+        const messageId = searchParams.get('messageId');
+        if (!messageId || !activeChat) return;
+        setScrollTargetId(messageId);
+        const msg = activeChat.messages.find((m) => m.id === messageId);
+        if (msg) {
+            setReplyToMessage(msg);
+        }
+    }, [searchParams, activeChat]);
 
     // Auto-add client members if the room has only 1 member (the current user)
     // This fixes the issue where the backend created the room but didn't add the client.
@@ -214,12 +234,7 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
                         scrollToMessageId={scrollTargetId}
                         onScrollComplete={() => setScrollTargetId(undefined)}
                         onReplyMessage={setReplyToMessage}
-                        onEditMessage={setEditingMessage}
                         onDeleteMessage={handleDeleteMessage}
-                        onReactToMessage={(msgId, emoji) => {
-                            if (emoji === '+') setEmojiPickerMessageId(msgId);
-                            else handleReactToMessage(msgId, emoji);
-                        }}
                         onForwardMessage={handleForwardMessage}
                         onCreateTodoMessage={(msg) => {
                             const existingTodo = todoMap[msg.id];
@@ -237,17 +252,61 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
                             setIsTodoModalOpen(true);
                         }}
                         replyingTo={replyToMessage}
-                        editingMessage={editingMessage}
                         onCancelReply={() => setReplyToMessage(null)}
-                        onCancelEdit={() => setEditingMessage(null)}
                         isSelectMode={isSelectMode}
                         selectedMessageIds={selectedMessageIds}
                         onSelectMessage={(id) => setSelectedMessageIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])}
                         onEnterSelectMode={() => setIsSelectMode(true)}
                         currentUserId={chatCurrentUserId || organizationMember?.userId || ''}
                         todoMap={todoMap}
+                        onLoadMore={loadMoreMessages}
+                        hasMore={hasMore}
+                        isLoadingMore={isLoadingMore}
                     />
                 </div>
+
+                {isSelectMode && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-50 flex items-center justify-between px-8 py-4 animate-in slide-in-from-bottom duration-300 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                <CheckCircle2 className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <span className="text-sm font-bold text-gray-900 block">{selectedMessageIds.length} messages selected</span>
+                                <button 
+                                    onClick={() => { setIsSelectMode(false); setSelectedMessageIds([]); }}
+                                    className="text-[11px] font-bold text-gray-400 hover:text-red-500 uppercase tracking-wider transition-colors"
+                                >
+                                    Deselect all
+                                </button>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <button 
+                                onClick={() => { setIsSelectMode(false); setSelectedMessageIds([]); }}
+                                className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-all active:scale-95"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    if (!activeChat) return;
+                                    const selectedMessages = activeChat.messages.filter(m => selectedMessageIds.includes(m.id));
+                                    const text = selectedMessages.map(m => `[${new Date(m.timestamp).toLocaleTimeString()}] ${m.senderId}: ${m.text || ''}`).join('\n');
+                                    navigator.clipboard.writeText(text);
+                                    import('sonner').then(m => m.toast.success("Messages copied to clipboard"));
+                                    setIsSelectMode(false);
+                                    setSelectedMessageIds([]);
+                                }}
+                                disabled={selectedMessageIds.length === 0}
+                                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary text-white text-sm font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:grayscale disabled:hover:scale-100"
+                            >
+                                <Copy className="w-4 h-4" />
+                                Copy Messages
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Right Pane */}
                 <div
@@ -334,7 +393,7 @@ export default function EngagementChatTab({ engagementId, companyId: propCompany
                 isOpen={isTodoModalOpen}
                 onClose={() => setIsTodoModalOpen(false)}
                 onSuccess={() => {
-                    // Optional: toast already handled in modal
+                    queryClient.invalidateQueries({ queryKey: ['engagement-todos', engagementId] });
                 }}
                 engagementId={engagementId}
                 mode={todoMode as any}

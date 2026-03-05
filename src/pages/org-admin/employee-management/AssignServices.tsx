@@ -5,6 +5,7 @@ import { Skeleton } from "@/ui/Skeleton";
 import axiosInstance from "@/config/axiosConfig";
 import { endPoints } from "@/config/endPoint";
 import { AVAILABLE_SERVICES } from "@/lib/types";
+import { useAuth } from "@/context/auth-context-core";
 
 interface Employee {
     id: string;
@@ -23,6 +24,11 @@ export default function AssignServices({ employee, onSuccess, onCancel }: Assign
     const [selectedServices, setSelectedServices] = useState<string[]>(employee.services || []);
     const [loading, setLoading] = useState(false);
 
+    const { organizationMember } = useAuth();
+    const availableServices = organizationMember?.organization?.availableServices || [];
+    const filteredServices = AVAILABLE_SERVICES.filter(s => availableServices.includes(s.id));
+    const allowedCustomServiceIds = organizationMember?.allowedCustomServiceCycles?.map(c => c.id) || [];
+
     const { data: customServices = [], isLoading: isServicesLoading } = useQuery({
         queryKey: ['activeCustomServices'],
         queryFn: async () => {
@@ -37,7 +43,8 @@ export default function AssignServices({ employee, onSuccess, onCancel }: Assign
         }
     });
 
-    const allAvailableServices = [...AVAILABLE_SERVICES, ...customServices];
+    const activeCustomServices = customServices.filter((s: { id: string; label: string }) => allowedCustomServiceIds.includes(s.id));
+    const allAvailableServices = [...filteredServices, ...activeCustomServices];
 
     const toggleService = (serviceId: string) => {
         if (selectedServices.includes(serviceId)) {
@@ -55,8 +62,6 @@ export default function AssignServices({ employee, onSuccess, onCancel }: Assign
             const standardSelected = selectedServices.filter(id => standardServiceIds.includes(id));
             const customSelected = selectedServices.filter(id => !standardServiceIds.includes(id));
 
-            console.log(`Assigning services for ${employee.id}:`, { standardSelected, customSelected });
-            
             await Promise.all([
                 axiosInstance.patch(
                     `${endPoints.ORGANIZATION.ASSIGN_SERVICES}/${employee.id}/services`,

@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft, Plus, Trash2, FileText, Layers, CheckSquare, GripVertical, Info, LayoutGrid
 } from 'lucide-react';
 import { Button } from '../../../ui/Button';
-import PageHeader from '../../common/PageHeader';
 import { ShadowCard } from '../../../ui/ShadowCard';
 import AlertMessage from '../../common/AlertMessage';
 import { apiGet, apiPost, apiPostFormData } from '../../../config/base';
@@ -299,6 +298,19 @@ const CreateTemplateForm: React.FC = () => {
     { id: uuidv4(), title: '', children: [] },
   ]);
 
+  // Auto-fill Template Name & Description
+  useEffect(() => {
+    if (!name && !description) {
+      const typeLabel = { DOCUMENT_REQUEST: 'Document Request', MILESTONES: 'Milestone', CHECKLIST: 'Checklist' }[typeParam];
+      const moduleLabel = moduleTypeParam === 'ENGAGEMENT' 
+        ? (SERVICES_LABELS[serviceCategory as Services] || 'Engagement')
+        : { KYC: 'KYC', INCORPORATION: 'Incorporation' }[moduleTypeParam];
+      
+      setName(`${moduleLabel} ${typeLabel}`);
+      setDescription(`Standard ${typeLabel.toLowerCase()} for ${moduleLabel} processes.`);
+    }
+  }, [typeParam, moduleTypeParam, serviceCategory]);
+
   const createMutation = useMutation({
     mutationFn: (payload: unknown) => apiPost<TemplateApiResponse>(endPoints.TEMPLATE.CREATE, payload as Record<string, unknown>),
     onSuccess: () => {
@@ -462,34 +474,35 @@ const CreateTemplateForm: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Create Template"
-        icon={FileText}
-        description={`Creating a new ${typeInfo.label} template for ${moduleLabel}.`}
-        actions={
-          <Button variant="outline" onClick={() => navigate('/dashboard/templates')}>
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Button>
-        }
-      />
 
       {alert && <AlertMessage message={alert.message} variant={alert.variant} onClose={() => setAlert(null)} />}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Meta section */}
-        <ShadowCard className="rounded-3xl bg-white border border-gray-100 shadow-sm p-6 space-y-5">
-          <div className="flex items-center gap-3 mb-4">
-            <div className={`p-2.5 rounded-2xl ${typeInfo.color}`}>
-              <TypeIcon className="h-5 w-5" />
+        <ShadowCard className="rounded-3xl bg-white border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-gradient-to-r from-primary/10 to-transparent p-6 flex items-center justify-between border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className={`p-2.5 rounded-2xl ${typeInfo.color}`}>
+                <TypeIcon className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="font-bold text-gray-800 text-base">Template Details</h2>
+                <p className="text-xs text-gray-500">
+                  <span className="font-semibold text-primary">{typeInfo.label}</span> · <span className="font-semibold">{moduleLabel}</span>
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="font-bold text-gray-800 text-base">Template Details</h2>
-              <p className="text-xs text-gray-500">
-                <span className="font-semibold text-primary">{typeInfo.label}</span> · <span className="font-semibold">{moduleLabel}</span>
-              </p>
-            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="rounded-xl gap-2 font-semibold"
+              onClick={() => navigate('/dashboard/templates')}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
           </div>
+          <div className="p-6 space-y-5">
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
@@ -534,7 +547,8 @@ const CreateTemplateForm: React.FC = () => {
               className="w-full px-4 py-3 rounded-2xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-4 focus:ring-primary/5 focus:border-primary/30 outline-none transition-all text-sm font-medium text-gray-800 resize-none"
             />
           </div>
-        </ShadowCard>
+        </div>
+      </ShadowCard>
 
         {/* ── DOCUMENT REQUEST content ── */}
         {typeParam === 'DOCUMENT_REQUEST' && (

@@ -10,13 +10,14 @@ import {
   Plus, 
   AlertCircle,
   X,
-  File as FileIcon
+  File as FileIcon,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "../../../../lib/utils";
 import { Button } from "../../../../ui/Button";
 import { Skeleton } from "../../../../ui/Skeleton";
-import { filingService, FilingStatus } from "../../../../api/filingService";
+import { filingService, FilingStatus, type FilingItem } from "../../../../api/filingService";
 import { 
   Dialog, 
   DialogContent, 
@@ -35,6 +36,9 @@ export default function FilingsView({ engagementId }: FilingsViewProps) {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [fileName, setFileName] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [statusTarget, setStatusTarget] = useState<FilingItem | null>(null);
+  const [statusValue, setStatusValue] = useState<FilingStatus>(FilingStatus.DRAFT);
 
   const { data: filings = [], isLoading } = useQuery({
     queryKey: ["filings", engagementId],
@@ -56,11 +60,15 @@ export default function FilingsView({ engagementId }: FilingsViewProps) {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ filingId, status }: { filingId: string; status: FilingStatus }) =>
+    mutationFn: ({ filingId, status }: { filingId: string; status: FilingStatus; fromModal?: boolean }) =>
       filingService.updateStatus(engagementId, filingId, status),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["filings", engagementId] });
       toast.success("Status updated successfully");
+      if (variables?.fromModal) {
+        setStatusModalOpen(false);
+        setStatusTarget(null);
+      }
     },
     onError: () => {
       toast.error("Failed to update status");
@@ -78,6 +86,21 @@ export default function FilingsView({ engagementId }: FilingsViewProps) {
   const resetUpload = () => {
     setFileName("");
     setSelectedFile(null);
+  };
+
+  const openStatusModal = (filing: FilingItem) => {
+    setStatusTarget(filing);
+    setStatusValue(filing.status);
+    setStatusModalOpen(true);
+  };
+
+  const handleStatusSave = () => {
+    if (!statusTarget) return;
+    updateStatusMutation.mutate({
+      filingId: statusTarget.id,
+      status: statusValue,
+      fromModal: true,
+    });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -283,26 +306,47 @@ export default function FilingsView({ engagementId }: FilingsViewProps) {
                         Submit Filing
                       </Button>
                     )}
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-10 rounded-xl border-gray-200 text-gray-700 hover:bg-gray-50 px-4 text-[10px] font-black uppercase tracking-widest"
+                      onClick={() => openStatusModal(filing)}
+                    >
+                      View / Status
+                    </Button>
                     
                     {filing.file?.url && (
-                      <Button 
-                        size="icon" 
-                        variant="ghost" 
-                        className="h-10 w-10 rounded-xl hover:bg-primary/10 text-gray-400 hover:text-primary transition-all duration-200 font-bold"
-                        onClick={() => {
-                          if (filing.file?.url) {
+                      <>
+                        <Button 
+                          size="icon" 
+                          variant="ghost" 
+                          className="h-10 w-10 rounded-xl hover:bg-primary/10 text-gray-400 hover:text-primary transition-all duration-200 font-bold"
+                          onClick={() => {
                             const link = document.createElement('a');
-                            link.href = filing.file.url;
-                            link.download = filing.file.file_name || filing.name;
+                            link.href = filing.file!.url;
+                            link.download = filing.file!.file_name || filing.name;
                             document.body.appendChild(link);
                             link.click();
                             document.body.removeChild(link);
-                          }
-                        }}
-                        title="Download"
-                      >
-                        <Download size={18} />
-                      </Button>
+                          }}
+                          title="Download"
+                        >
+                          <Download size={18} />
+                        </Button>
+
+                        <Button 
+                          size="icon" 
+                          variant="ghost" 
+                          className="h-10 w-10 rounded-xl hover:bg-primary/10 text-gray-400 hover:text-primary transition-all duration-200 font-bold"
+                          onClick={() => {
+                            window.open(filing.file!.url, "_blank", "noopener,noreferrer");
+                          }}
+                          title="View"
+                        >
+                          <ExternalLink size={18} />
+                        </Button>
+                      </>
                     )}
 
                     <Button 
@@ -325,6 +369,105 @@ export default function FilingsView({ engagementId }: FilingsViewProps) {
           })
         )}
       </div>
+      
+      {/* Status / View modal */}
+      <Dialog open={statusModalOpen} onOpenChange={setStatusModalOpen}>
+        <DialogContent className="max-w-md rounded-[32px] p-8 border-none overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black text-gray-900">
+              View filing
+            </DialogTitle>
+            <p className="text-gray-500 font-medium">
+              Review filing details and update its status.
+            </p>
+          </DialogHeader>
+
+          {statusTarget && (
+            <div className="space-y-6 py-4">
+              <div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                  Filing name
+                </p>
+                <p className="text-sm font-bold text-gray-900">
+                  {statusTarget.name}
+                </p>
+                {statusTarget.file?.file_name && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {statusTarget.file.file_name}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                  Status
+                </label>
+                <select
+                  value={statusValue}
+                  onChange={(e) => setStatusValue(e.target.value as FilingStatus)}
+                  className="w-full h-11 rounded-2xl border border-gray-200 px-3 text-sm font-medium text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value={FilingStatus.DRAFT}>Draft</option>
+                  <option value={FilingStatus.FILED}>Filed</option>
+                  <option value={FilingStatus.CANCELLED}>Cancelled</option>
+                </select>
+              </div>
+
+              {statusTarget.file?.url && (
+                <div className="flex items-center justify-between rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3">
+                  <span className="text-xs font-medium text-gray-600">
+                    Open document
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-9 w-9 rounded-xl bg-gray-100 text-gray-500 hover:bg-primary hover:text-white transition-all duration-150"
+                      onClick={() => {
+                        const link = document.createElement("a");
+                        link.href = statusTarget.file!.url;
+                        link.download =
+                          statusTarget.file!.file_name || statusTarget.name;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      title="Download"
+                    >
+                      <Download size={16} />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-9 w-9 rounded-xl bg-gray-100 text-gray-500 hover:bg-primary hover:text-white transition-all duration-150"
+                      onClick={() => {
+                        window.open(
+                          statusTarget.file!.url,
+                          "_blank",
+                          "noopener,noreferrer"
+                        );
+                      }}
+                      title="View"
+                    >
+                      <ExternalLink size={16} />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              className="w-full h-11 rounded-2xl font-black text-xs uppercase tracking-widest"
+              onClick={handleStatusSave}
+              disabled={updateStatusMutation.isPending || !statusTarget}
+            >
+              {updateStatusMutation.isPending ? "Updating..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

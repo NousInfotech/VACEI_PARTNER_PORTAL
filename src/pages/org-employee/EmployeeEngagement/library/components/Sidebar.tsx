@@ -7,7 +7,7 @@ import { cn } from '../../../../../lib/utils';
 import { useLibrary } from '../../../../../context/LibraryContext';
 
 export const Sidebar: React.FC = () => {
-  const { rootFolders, currentFolderId, handleFolderClick, setIsMobileSidebarOpen } = useLibrary();
+  const { sidebarFolders, currentFolderId, breadcrumbs, handleFolderClick, setIsMobileSidebarOpen } = useLibrary();
 
   const onFolderClick = (id: string | null) => {
     handleFolderClick(id);
@@ -29,19 +29,22 @@ export const Sidebar: React.FC = () => {
             <FolderIcon className={cn("w-4 h-4", currentFolderId === null ? "text-white fill-white/10" : "text-gray-400")} />
             All Files
           </button>
-          {rootFolders.map(folder => (
-            <button
-              key={folder.id}
-              onClick={() => onFolderClick(folder.id)}
-              className={cn(
-                "flex items-center w-full gap-3 px-3 py-2.5 rounded-xl transition-all text-sm group text-left",
-                currentFolderId === folder.id ? "bg-primary shadow-md text-white border-0" : "text-gray-600 hover:bg-gray-100/50"
-              )}
-            >
-              <FolderIcon className={cn("w-4 h-4 transition-colors", currentFolderId === folder.id ? "text-white fill-white/10" : "text-gray-400 group-hover:text-primary")} />
-              {folder.name}
-            </button>
-          ))}
+          {sidebarFolders.map(folder => {
+            const isActive = currentFolderId === folder.id || breadcrumbs.some(b => b.id === folder.id);
+            return (
+              <button
+                key={folder.id}
+                onClick={() => onFolderClick(folder.id)}
+                className={cn(
+                  "flex items-center w-full gap-3 px-3 py-2.5 rounded-xl transition-all text-sm group text-left",
+                  isActive ? "bg-primary shadow-md text-white border-0" : "text-gray-600 hover:bg-gray-100/50"
+                )}
+              >
+                <FolderIcon className={cn("w-4 h-4 transition-colors", isActive ? "text-white fill-white/10" : "text-gray-400 group-hover:text-primary")} />
+                {folder.name}
+              </button>
+            );
+          })}
         </div>
       </ScrollArea>
     </div>

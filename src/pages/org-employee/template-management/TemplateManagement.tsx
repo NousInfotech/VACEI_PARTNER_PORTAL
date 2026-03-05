@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { FileText, Layers, CheckSquare, Plus, FileSearch } from 'lucide-react';
-import PageHeader from '../../common/PageHeader';
+import { Layers, CheckSquare, Plus, FileSearch } from 'lucide-react';
 import { Button } from '../../../ui/Button';
 import DocRequestList from './DocRequestList';
 import MilestoneList from './MilestoneList';
@@ -58,40 +57,35 @@ const TemplateManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Template Management"
-        icon={FileText}
-        description="Create and manage reusable templates for document requests, milestones, and checklists."
-        actions={
-          <Button variant="header" onClick={handleCreate}>
-            <Plus className="h-5 w-5" />
-            Create Template
-          </Button>
-        }
-      />
 
       {/* Main Tabs */}
       <div className="bg-white border border-gray-100 rounded-3xl shadow-sm overflow-hidden">
-        <div className="border-b border-gray-100 bg-gray-50/60 px-6 pt-5">
-          <div className="flex gap-1">
-            {MAIN_TABS.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = mainTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => changeMainTab(tab.id)}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-t-xl text-sm font-semibold transition-all border-b-2 -mb-px ${
-                    isActive
-                      ? 'text-primary border-primary bg-white shadow-sm'
-                      : 'text-gray-500 border-transparent hover:text-gray-700 hover:bg-white/50'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {tab.label}
-                </button>
-              );
-            })}
+        <div className="border-b border-gray-100 bg-gray-50/60 px-6 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex gap-1">
+              {MAIN_TABS.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = mainTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => changeMainTab(tab.id)}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border ${
+                      isActive
+                        ? 'text-primary border-primary bg-white shadow-sm'
+                        : 'text-gray-500 border-transparent hover:text-gray-700 hover:bg-white/50'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+            <Button variant="header" onClick={handleCreate} className="rounded-xl px-6">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Template
+            </Button>
           </div>
         </div>
 

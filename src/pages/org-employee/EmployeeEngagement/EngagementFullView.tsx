@@ -76,10 +76,12 @@ import { taxService, TAXStatus } from "../../../api/taxService";
 import { mbrService, MBRStatus } from "../../../api/mbrService";
 import { payrollService, PayrollStatus } from "../../../api/payrollService";
 import { cfoService, CFOStatus } from "../../../api/cfoService";
+import { accountingService, AccountingStatus } from "../../../api/accountingService";
+import { auditService, AuditStatus } from "../../../api/auditService";
 
 const ENGAGEMENT_TABS = [
   { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
-  { id: 'requests', label: 'Document Requests', icon: FileText },
+  { id: 'requests', label: 'Workspace', icon: FileText },
   { id: 'audit', label: 'AUDIT', icon: BookOpen },
   { id: 'accounting', label: "BOOKEEPING", icon: BookMarked },
   { id: 'csp', label: 'CSP', icon: Building2 },
@@ -91,7 +93,6 @@ const ENGAGEMENT_TABS = [
   // { id: 'audit', label: 'AUDIT', icon: BookOpen },
   { id: 'library', label: 'Library', icon: Library },
   { id: 'checklist', label: 'Checklist', icon: ListChecks },
-  { id: 'todo', label: 'Todo', icon: CheckSquare },
   { id: 'compliance', label: 'Compliance', icon: ShieldCheck },
   { id: 'milestones', label: 'Milestones', icon: Landmark },
   { id: 'updates', label: 'Updates', icon: MessageSquare },
@@ -176,7 +177,8 @@ export default function EngagementFullView() {
       'MBR': 'mbr',
       'TAX': 'tax',
       'CFO': 'cfo',
-      'CSP': 'csp'
+      'CSP': 'csp',
+      'LIQUIDATION': 'liquidation'
     };
 
     const activeServiceTab = serviceMap[selectedService];
@@ -267,6 +269,8 @@ export default function EngagementFullView() {
       'MBR': { service: mbrService, statuses: MBRStatus, label: 'MBR' },
       'PAYROLL': { service: payrollService, statuses: PayrollStatus, label: 'Payroll' },
       'CFO': { service: cfoService, statuses: CFOStatus, label: 'CFO' },
+      'ACCOUNTING': { service: accountingService, statuses: AccountingStatus, label: 'Accounting' },
+      'AUDITING': { service: auditService, statuses: AuditStatus, label: 'Audit' },
     };
     return config[selectedService] || null;
   }, [selectedService]);
@@ -389,7 +393,6 @@ export default function EngagementFullView() {
       { id: 'RETURN_PENDING', label: 'Return Pending' },
       { id: 'FILED', label: 'Filed' },
       { id: 'PAID', label: 'Paid' },
-      { id: 'OVERDUE', label: 'Overdue' },
       { id: 'CLOSED', label: 'Closed' },
     ],
     'TAX': [
@@ -398,22 +401,33 @@ export default function EngagementFullView() {
       { id: 'FILED', label: 'Filed' },
       { id: 'PAID', label: 'Paid' },
       { id: 'UNDER_REVIEW', label: 'Under Review' },
-      { id: 'OVERDUE', label: 'Overdue' },
       { id: 'CLOSED', label: 'Closed' },
     ],
     'MBR': [
       { id: 'ACTIVE', label: 'Active' },
       { id: 'ANNUAL_RETURN_PENDING', label: 'Annual Return Pending' },
       { id: 'FILED', label: 'Filed' },
-      { id: 'OVERDUE', label: 'Overdue' },
       { id: 'STRUCK_OFF', label: 'Struck Off' },
       { id: 'CLOSED', label: 'Closed' },
+    ],
+    'ACCOUNTING': [
+      { id: 'PENDING', label: 'Pending' },
+      { id: 'IN_PROGRESS', label: 'In Progress' },
+      { id: 'COMPLETED', label: 'Completed' },
+      { id: 'REJECTED', label: 'Rejected' },
+    ],
+    'AUDITING': [
+      { id: 'DRAFT', label: 'Draft' },
+      { id: 'PLANNING', label: 'Planning' },
+      { id: 'FIELDWORK', label: 'Fieldwork' },
+      { id: 'REVIEW', label: 'Review' },
+      { id: 'COMPLETED', label: 'Completed' },
+      { id: 'CANCELLED', label: 'Cancelled' },
     ],
     'CSP': [
       { id: 'ACTIVE', label: 'Active' },
       { id: 'COMPLIANT', label: 'Compliant' },
       { id: 'PENDING_ACTION', label: 'Pending Action' },
-      { id: 'OVERDUE', label: 'Overdue' },
       { id: 'SUSPENDED', label: 'Suspended' },
       { id: 'CLOSED', label: 'Closed' },
     ],
@@ -651,14 +665,12 @@ export default function EngagementFullView() {
                     {isLoadingCycles ? (
                       <Skeleton className="h-64 w-full rounded-[32px]" />
                     ) : hasActiveCycle ? (
-                      !['ACCOUNTING', 'AUDITING'].includes(selectedService) && (
                         <GenericServiceOverview
                           engagementId={engagementId!}
                           serviceName={serviceConfig.label}
                           serviceApi={serviceConfig.service}
                           statusSteps={SERVICE_STATUS_STEPS[selectedService] || []}
                         />
-                      )
                     ) : (
                       <CreateCycleComponent
                         serviceName={serviceConfig.label}

@@ -52,6 +52,7 @@ function CreateCycleModal({ open, onOpenChange, serviceName, onSubmit, isPending
     taxYear: initialData?.taxYear || new Date().getFullYear(), // For TAX
     periodType: initialData?.periodType || 'MONTHLY', // For Payroll
     reportingFrequency: initialData?.reportingFrequency || 'MONTHLY', // For CFO
+    yearEndDate: initialData?.yearEndDate?.split('T')[0] || new Date().toISOString().split('T')[0], // For Audit
   });
 
   // Re-initialize if initialData changes or modal opens
@@ -68,6 +69,7 @@ function CreateCycleModal({ open, onOpenChange, serviceName, onSubmit, isPending
           taxYear: initialData.taxYear || new Date().getFullYear(),
           periodType: initialData.periodType || 'MONTHLY',
           reportingFrequency: initialData.reportingFrequency || 'MONTHLY',
+          yearEndDate: initialData.yearEndDate?.split('T')[0] || '',
         });
       } else {
         // Reset for Create mode
@@ -81,6 +83,7 @@ function CreateCycleModal({ open, onOpenChange, serviceName, onSubmit, isPending
           taxYear: new Date().getFullYear(),
           periodType: 'MONTHLY',
           reportingFrequency: 'MONTHLY',
+          yearEndDate: new Date().toISOString().split('T')[0],
         });
       }
     }
@@ -114,32 +117,49 @@ function CreateCycleModal({ open, onOpenChange, serviceName, onSubmit, isPending
 
         <div className="bg-white h-[500px] overflow-y-auto custom-scrollbar">
           <form onSubmit={handleSubmit} className="p-10 pb-12 space-y-8 bg-white">
-          <div className="grid grid-cols-2 gap-4">
+          {serviceName !== 'Audit' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-1 flex items-center gap-2">
+                  <Calendar className="h-3 w-3" /> Period Start
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={formData.periodStart}
+                  onChange={(e) => setFormData({ ...formData, periodStart: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-1 flex items-center gap-2">
+                  <Calendar className="h-3 w-3" /> Period End
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={formData.periodEnd}
+                  onChange={(e) => setFormData({ ...formData, periodEnd: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                />
+              </div>
+            </div>
+          )}
+
+          {serviceName === 'Audit' && (
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-1 flex items-center gap-2">
-                <Calendar className="h-3 w-3" /> Period Start
+                <Calendar className="h-3 w-3" /> Year End Date
               </label>
               <input
                 type="date"
                 required
-                value={formData.periodStart}
-                onChange={(e) => setFormData({ ...formData, periodStart: e.target.value })}
+                value={formData.yearEndDate}
+                onChange={(e) => setFormData({ ...formData, yearEndDate: e.target.value })}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-1 flex items-center gap-2">
-                <Calendar className="h-3 w-3" /> Period End
-              </label>
-              <input
-                type="date"
-                required
-                value={formData.periodEnd}
-                onChange={(e) => setFormData({ ...formData, periodEnd: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-              />
-            </div>
-          </div>
+          )}
 
           <div className="space-y-2">
             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-1 flex items-center gap-2">
@@ -317,15 +337,25 @@ export function CreateCycleComponent({ serviceName, engagementId, companyId, ser
 
 
   const handleCreateSubmit = (formData: any) => {
+    // Convert empty strings to null for optional fields
+    const dataToSend = {
+      ...formData,
+      nextDueDate: formData.nextDueDate === '' ? null : formData.nextDueDate,
+      notes: formData.notes === '' ? null : formData.notes,
+    };
+
     if (editingCycle) {
-      updateMutation.mutate(formData);
+      updateMutation.mutate(dataToSend);
     } else {
       createMutation.mutate({
         engagementId,
         companyId,
-        ...formData,
+        ...dataToSend,
         ...(serviceName === 'PAYROLL' ? { employeeCount: 0 } : {}),
         ...(serviceName === 'CFO' ? { reportingFrequency: formData.reportingFrequency } : {}),
+        ...(serviceName === 'Audit' ? { 
+          yearEndDate: formData.yearEndDate ? new Date(formData.yearEndDate).toISOString() : null 
+        } : {}),
       });
     }
   };

@@ -11,7 +11,7 @@ import { DeleteConfirmModal } from '../../org-admin/components/DeleteConfirmModa
 import { apiGet, apiDelete } from '../../../config/base';
 import { endPoints } from '../../../config/endPoint';
 import type { Template, TemplateListResponse, TemplateModuleType, Services } from '../../../types/template';
-import { ALL_SERVICES, SERVICES_LABELS } from '../../../types/template';
+import { SERVICES_LABELS } from '../../../types/template';
 import { useAuth } from '../../../context/auth-context-core';
 
 interface Props {
@@ -19,12 +19,12 @@ interface Props {
   showServiceFilter?: boolean;
 }
 
-const DocRequestList: React.FC<Props> = ({ moduleType, showServiceFilter }) => {
+const DocRequestList: React.FC<Props> = ({ moduleType }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { organizationMember } = useAuth();
   const [search, setSearch] = useState('');
-  const [serviceFilter, setServiceFilter] = useState<Services | ''>('');
+  const [serviceFilter] = useState<Services | ''>('');
   const [alert, setAlert] = useState<{ message: string; variant: 'success' | 'danger' } | null>(null);
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; id: string; name: string }>({
     isOpen: false, id: '', name: '',
@@ -90,18 +90,6 @@ const DocRequestList: React.FC<Props> = ({ moduleType, showServiceFilter }) => {
           />
         </div>
 
-        {showServiceFilter && (
-          <select
-            value={serviceFilter}
-            onChange={(e) => setServiceFilter(e.target.value as Services | '')}
-            className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium text-gray-700 outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all"
-          >
-            <option value="">All Services</option>
-            {ALL_SERVICES.map(s => (
-              <option key={s} value={s}>{SERVICES_LABELS[s]}</option>
-            ))}
-          </select>
-        )}
 
         <Button
           variant="header"

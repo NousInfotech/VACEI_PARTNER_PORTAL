@@ -101,7 +101,7 @@ export default function OrgAdminEngagement({
   const serviceOptions = [
     { id: "ALL", label: "All Services" },
     { id: "ACCOUNTING", label: "Accounting" },
-    { id: "AUDIT", label: "Audit" },
+    { id: "AUDITING", label: "Auditing" },
     { id: "VAT", label: "VAT" },
     { id: "TAX", label: "Tax" },
     { id: "PAYROLL", label: "Payroll" },

@@ -6,6 +6,7 @@ export const endPoints = {
     LOGOUT: '/auth/logout',
     CHANGE_PASSWORD: '/auth/change-password',
     ME: '/auth/me',
+    REFRESH: '/auth/refresh',
     VERIFY_MFA: '/auth/verify-mfa',
     MFA_VERIFY: '/auth/mfa/verify',
     MFA_PREFERENCES: '/auth/mfa/preferences',
@@ -28,6 +29,15 @@ export const endPoints = {
   NOTICE: {
     GET_TODAY: '/notices/today',
   },
+  SUPPORT: {
+    CREATE: '/support/support-requests',
+    GET_ALL: '/support/support-requests',
+    GET_BY_ID: (id: string) => `/support/support-requests/${id}`,
+    PATCH: (id: string) => `/support/support-requests/${id}`,
+    TICKETS: '/support/tickets',
+    TICKET_BY_ID: (id: string) => `/support/tickets/${id}`,
+    TICKET_UPDATES: (ticketId: string) => `/support/tickets/${ticketId}/updates`,
+  },
   NOTIFICATION: {
     BASE: '/notifications',
     UNREAD_COUNT: '/notifications/unread-count',
@@ -37,6 +47,8 @@ export const endPoints = {
   },
   ENGAGEMENTS: {
     GET_ALL: '/engagements',
+    /** GET /engagements/analytics/organization?organizationId=xxx - counts: companies, engagements, checklists (pending) */
+    ANALYTICS_ORGANIZATION: '/engagements/analytics/organization',
     GET_BY_ID: (engagementId: string) => `/engagements/${engagementId}`,
     UPDATE_STATUS: (engagementId: string) => `/engagements/${engagementId}/status`,
     CHECKLISTS: (id: string) => `/engagements/${id}/checklists`,
@@ -50,6 +62,7 @@ export const endPoints = {
     LIBRARY_FOLDER_BY_TYPE: (engagementId: string, type: string) => `/engagements/${engagementId}/library?type=${type}`,
     EVIDENCE_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library/evidences`,
     WORKBOOK_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library/workbooks`,
+    INVOICES_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library/invoices`,
     FILINGS: (engagementId: string) => `/engagements/${engagementId}/filings`,
     FILING_STATUS: (engagementId: string, filingId: string) => `/engagements/${engagementId}/filings/${filingId}/status`,
     /** Export endpoints (REFERENCE-PORTAL compatible). GET with responseType blob for file download. */
@@ -87,6 +100,7 @@ export const endPoints = {
     UNREAD_COUNT: (roomId: string) => `/chat/rooms/${roomId}/unread-count`,
     UNREAD_SUMMARY: '/chat/unread-summary',
     UPLOAD: '/chat/upload',
+    MESSAGES_DELETE: (messageId: string) => `/chat/messages/${messageId}`,
   },
   LIBRARY: {
     FOLDERS_ROOTS: '/library/folders/roots',
@@ -106,6 +120,8 @@ export const endPoints = {
     CREATE_CYCLE: '/audit-cycles',
     GET_CYCLE: (id: string) => `/audit-cycles/${id}`,
     GET_CYCLES: '/audit-cycles',
+    UPDATE_STATUS: (id: string) => `/audit-cycles/${id}/status`,
+    UPDATE: (id: string) => `/audit-cycles/${id}`,
     UPLOAD_TRIAL_BALANCE: (auditCycleId: string) => `/uploadapi/v1/services/audit/${auditCycleId}/trial-balance`,
     GET_TRIAL_BALANCES: (auditCycleId: string) => `/audit-cycles/${auditCycleId}/trial-balances`,
     GET_TRIAL_BALANCE_WITH_ACCOUNTS: (auditCycleId: string, trialBalanceId: string) => `/audit-cycles/${auditCycleId}/trial-balances/${trialBalanceId}/with-accounts`,
@@ -168,6 +184,8 @@ export const endPoints = {
       `/accounting-cycles/${cycleId}/transactions/${id}`,
     CREATE_TRANSACTION: (cycleId: string) =>
       `/accounting-cycles/${cycleId}/transactions`,
+    UPLOAD_INVOICE: (cycleId: string) =>
+      `/accounting-cycles/${cycleId}/transactions/upload-invoice`,
     UPDATE_TRANSACTION: (cycleId: string, id: string) =>
       `/accounting-cycles/${cycleId}/transactions/${id}`,
     DELETE_TRANSACTION: (cycleId: string, id: string) =>
@@ -189,6 +207,8 @@ export const endPoints = {
     INVOICE_PAYMENTS: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/invoices/payments`,
     INVOICE_IMPORT: (companyId: string, qbInvoiceId: string) =>
       `/companies/${companyId}/accounting/quickbooks/invoices/import/${qbInvoiceId}`,
+    LINK_INVOICE_FILE: (companyId: string, qbInvoiceId: string) =>
+      `/companies/${companyId}/accounting/quickbooks/invoices/${qbInvoiceId}/link-file`,
     BILLS: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/bills`,
     CREATE_BILL: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/bills`,
     BILL_IMPORT: (companyId: string, qbBillId: string) =>

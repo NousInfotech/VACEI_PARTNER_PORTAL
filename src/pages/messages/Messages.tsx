@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useChat } from '../../hooks/useChat';
 import { useQuery } from '@tanstack/react-query';
 import { ChatList } from './components/ChatList';
@@ -8,10 +9,9 @@ import { MessageSearchPane } from './components/MessageSearchPane';
 import { MediaPreviewModal } from './components/MediaPreviewModal';
 import { GroupInfoPane } from './components/GroupInfoPane';
 import { AddMemberModal } from './components/AddMemberModal';
-import { EmojiPicker } from './components/EmojiPicker';
 import { ConfirmModal } from './components/ConfirmModal';
 import type { Chat, Message } from './types';
-import { Inbox, X, Copy, Forward, Trash2, Check, Users } from 'lucide-react';
+import { Inbox, X, Copy, Forward, Check, Users } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { MessageSquare, Plus, Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/auth-context-core';
@@ -34,6 +34,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
   const { organizationMember } = useAuth();
   const queryClient = useQueryClient();
   const isOrgAdmin = organizationMember?.role === 'ORG_ADMIN' || organizationMember?.role === 'OWNER';
+  const [searchParams] = useSearchParams();
 
   const { data: roomsResponse, isLoading: roomsLoading } = useQuery({
     queryKey: ['chat-rooms', engagementId],
@@ -113,6 +114,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
                 if (t && !t.endsWith('Z') && !t.includes('+') && !t.match(/-\d{2}:\d{2}$/)) t += 'Z';
                 return t || new Date().toISOString();
               })(),
+              isDeleted: !!lastMsg.deletedAt,
               status: 'sent',
             }
           } : {})
@@ -203,20 +205,32 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
   const [previewMessage, setPreviewMessage] = useState<Message | null>(null);
   const [scrollTargetId, setScrollTargetId] = useState<string | undefined>(undefined);
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
-  const [editingMessage, setEditingMessage] = useState<Message | null>(null);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([]);
-  const [emojiPickerMessageId, setEmojiPickerMessageId] = useState<string | null>(null);
+
   const [confirmState, setConfirmState] = useState<{
     isOpen: boolean;
     type: 'message' | 'bulk-message' | 'clear-chat' | 'remove-member';
     messageId?: string;
     userId?: string;
   }>({ isOpen: false, type: 'message' });
-  const [forwardingMessages, setForwardingMessages] = useState<Message[]>([]);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [selectedForwardChatIds, setSelectedForwardChatIds] = useState<string[]>([]);
+  const [forwardingMessages, setForwardingMessages] = useState<Message[]>([]);
   const containerRef = React.useRef<HTMLDivElement>(null);
+
+  // Support deep links from notifications: ?room=<roomId>&messageId=<messageId>
+  React.useEffect(() => {
+    const roomFromUrl = searchParams.get('room');
+    const messageIdFromUrl = searchParams.get('messageId');
+
+    if (roomFromUrl) {
+      setActiveChatId(roomFromUrl);
+    }
+    if (messageIdFromUrl) {
+      setScrollTargetId(messageIdFromUrl);
+    }
+  }, [searchParams]);
 
   React.useEffect(() => {
     setRightPaneMode(null);
@@ -277,93 +291,40 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
       try {
         await chatService.clearRoom(activeChatId!);
         clearMessages();
+        setChats(prev => prev.map(chat =>
+          chat.id === activeChatId ? { ...chat, lastMessage: undefined } : chat
+        ));
       } catch (e) {
         console.error('Failed to clear chat:', e);
       }
-      setChats(prev => prev.map(chat =>
-        chat.id === activeChatId ? { ...chat, messages: [] } : chat
-      ));
       setConfirmState({ isOpen: false, type: 'message' });
       return;
     }
 
+
     const isBulk = type === 'bulk-message';
 
-    setChats(prev => prev.map(chat => {
-      if (chat.id === activeChatId) {
-        if (isBulk) {
-          return {
-            ...chat,
-            messages: chat.messages
-              .filter(m => !selectedMessageIds.includes(m.id) || !m.isDeleted)
-              .map(m =>
-                selectedMessageIds.includes(m.id) ? { ...m, isDeleted: true, text: undefined, type: 'text', reactions: {} } : m
-              )
-          };
+    try {
+      if (isBulk) {
+        // Bulk delete currently not implemented in backend as a single call, 
+        // could loop or we just focus on individual for now per user request.
+        // User said "when i click the delete show the popup conformation after delete them"
+        for (const id of selectedMessageIds) {
+          await deleteChatMessage(id);
         }
-
-        if (messageId) {
-          const isAlreadyDeleted = chat.messages.find(m => m.id === messageId)?.isDeleted;
-
-          if (isAlreadyDeleted) {
-            return {
-              ...chat,
-              messages: chat.messages.filter(m => m.id !== messageId)
-            };
-          }
-
-          return {
-            ...chat,
-            messages: chat.messages.map(m =>
-              m.id === messageId ? { ...m, isDeleted: true, text: undefined, type: 'text', reactions: {} } : m
-            )
-          };
-        }
+        setIsSelectMode(false);
+        setSelectedMessageIds([]);
+      } else if (messageId) {
+        await deleteChatMessage(messageId);
       }
-      return chat;
-    }));
-
-    if (isBulk) {
-      setIsSelectMode(false);
-      setSelectedMessageIds([]);
+    } catch (e) {
+      console.error('Failed to delete message(s):', e);
     }
+
     setConfirmState({ isOpen: false, type: 'message' });
   };
 
-  const handleReactToMessage = (chatId: string, messageId: string, emoji: string) => {
-    setChats(prev => prev.map(chat => {
-      if (chat.id === chatId) {
-        return {
-          ...chat,
-          messages: chat.messages.map(m => {
-            if (m.id === messageId) {
-              if (emoji === '+') {
-                setEmojiPickerMessageId(messageId);
-              } else {
-                const reactions = { ...(m.reactions || {}) };
-                const alreadyHasThisReaction = (reactions[emoji] || []).includes('me');
 
-                Object.keys(reactions).forEach(key => {
-                  reactions[key] = reactions[key].filter(id => id !== 'me');
-                  if (reactions[key].length === 0) delete reactions[key];
-                });
-
-                if (!alreadyHasThisReaction) {
-                  const userReactions = reactions[emoji] || [];
-                  reactions[emoji] = [...userReactions, 'me'];
-                }
-
-                return { ...m, reactions };
-              }
-              return m;
-            }
-            return m;
-          })
-        };
-      }
-      return chat;
-    }));
-  };
 
   const handleForwardMessages = () => {
     if (forwardingMessages.length === 0 || selectedForwardChatIds.length === 0) return;
@@ -403,8 +364,12 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
   const {
     messages: activeChatMessages,
     sendMessage: sendChatMessage,
+    deleteMessage: deleteChatMessage,
     currentUserId,
     clearMessages,
+    loadMoreMessages,
+    hasMore,
+    isLoadingMore,
   } = useChat(undefined, { roomId: activeChatId ?? undefined });
 
   /** Open a room: reset its unread count and mark as read on the server */
@@ -417,9 +382,16 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
   }, []);
 
   const activeChatBase = chats.find(c => c.id === activeChatId);
-  // Merge real messages from useChat into the active chat object
+  // Merge real messages from useChat into the active chat object and enforce time ordering
   const activeChat = activeChatBase
-    ? { ...activeChatBase, messages: activeChatMessages }
+    ? {
+        ...activeChatBase,
+        messages: [...activeChatMessages].sort((a, b) => {
+          const aTime = a.createdAt ?? (a.timestamp ? new Date(a.timestamp).getTime() : 0);
+          const bTime = b.createdAt ?? (b.timestamp ? new Date(b.timestamp).getTime() : 0);
+          return aTime - bTime;
+        }),
+      }
     : undefined;
 
   // Merge unreadOverrides into the displayed chat list
@@ -483,14 +455,6 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
   }) => {
     if (!activeChatId) return;
 
-    // Edit mode: update local message state only (no re-send needed)
-    if (editingMessage) {
-      // Since messages come from useChat now, we can't mutate them directly.
-      // Just clear edit state – a proper edit API call can be added later.
-      setEditingMessage(null);
-      return;
-    }
-
     try {
       const payload = replyToMessage?.id
         ? { ...content, replyToMessageId: replyToMessage.id, replyToMessage }
@@ -517,17 +481,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
     setSelectedMessageIds([]);
   };
 
-  const handleBulkDelete = () => {
-    setConfirmState({ isOpen: true, type: 'bulk-message' });
-  };
 
-  const handleBulkForward = () => {
-    if (!activeChat) return;
-    const selectedMessages = activeChat.messages.filter(m => selectedMessageIds.includes(m.id));
-    if (selectedMessages.length > 0) {
-      setForwardingMessages(selectedMessages);
-    }
-  };
 
   return (
     <div
@@ -589,41 +543,50 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
                 scrollToMessageId={scrollTargetId}
                 onScrollComplete={() => setScrollTargetId(undefined)}
                 onReplyMessage={setReplyToMessage}
-                onEditMessage={setEditingMessage}
                 onDeleteMessage={(msgId: string) => handleDeleteMessage(activeChat.id, msgId)}
-                onReactToMessage={(msgId: string, emoji: string) => handleReactToMessage(activeChat.id, msgId, emoji)}
                 onForwardMessage={(msg: Message) => setForwardingMessages([msg])}
                 replyingTo={replyToMessage}
-                editingMessage={editingMessage}
                 onCancelReply={() => setReplyToMessage(null)}
-                onCancelEdit={() => setEditingMessage(null)}
                 isSelectMode={isSelectMode}
                 selectedMessageIds={selectedMessageIds}
                 onSelectMessage={handleToggleSelectMessage}
                 onEnterSelectMode={() => setIsSelectMode(true)}
                 currentUserId={currentUserId || organizationMember?.userId || ''}
+                onLoadMore={loadMoreMessages}
+                hasMore={hasMore}
+                isLoadingMore={isLoadingMore}
               />
             </div>
             {isSelectMode && (
-              <div className="absolute bottom-0 left-0 right-0 bg-[#f0f2f5] border-t border-gray-200 z-50 flex items-center justify-between px-6 py-4 animate-in slide-in-from-bottom duration-200">
-                <div className="flex items-center gap-3">
-                  <button onClick={() => { setIsSelectMode(false); setSelectedMessageIds([]); }} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-                    <X className="w-5 h-5 text-gray-500" />
-                  </button>
-                  <span className="font-semibold text-gray-700">{selectedMessageIds.length} selected</span>
+              <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-50 flex items-center justify-between px-8 py-4 animate-in slide-in-from-bottom duration-300 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                    <Check className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-bold text-gray-900 block">{selectedMessageIds.length} messages selected</span>
+                    <button 
+                      onClick={() => { setIsSelectMode(false); setSelectedMessageIds([]); }}
+                      className="text-[11px] font-bold text-gray-400 hover:text-red-500 uppercase tracking-wider transition-colors"
+                    >
+                      Deselect all
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-6">
-                  <button onClick={handleBulkCopy} className="p-2 hover:bg-gray-200 rounded-full transition-colors flex flex-col items-center gap-1 group">
-                    <Copy className="w-5 h-5 text-gray-600 group-hover:text-primary" />
-                    <span className="text-[10px] text-gray-500 font-medium">Copy</span>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => { setIsSelectMode(false); setSelectedMessageIds([]); }}
+                    className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-all active:scale-95"
+                  >
+                    Cancel
                   </button>
-                  <button onClick={handleBulkForward} className="p-2 hover:bg-gray-200 rounded-full transition-colors flex flex-col items-center gap-1 group">
-                    <Forward className="w-5 h-5 text-gray-600 group-hover:text-primary" />
-                    <span className="text-[10px] text-gray-500 font-medium">Share</span>
-                  </button>
-                  <button onClick={handleBulkDelete} className="p-2 hover:bg-gray-200 rounded-full transition-colors flex flex-col items-center gap-1 group">
-                    <Trash2 className="w-5 h-5 text-red-500" />
-                    <span className="text-[10px] text-red-500 font-medium">Delete</span>
+                  <button 
+                    onClick={handleBulkCopy}
+                    disabled={selectedMessageIds.length === 0}
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary text-white text-sm font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:grayscale disabled:hover:scale-100"
+                  >
+                    <Copy className="w-4 h-4" />
+                    Copy Messages
                   </button>
                 </div>
               </div>
@@ -648,8 +611,8 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
                     type={activeChat.type}
                     participants={activeChat.participants}
                     onClose={() => setRightPaneMode(null)}
-                    onAddMember={activeChat.type === 'GROUP' ? () => setIsAddMemberModalOpen(true) : undefined}
-                    onRemoveMember={handleRemoveMemberRequest}
+                    onAddMember={(activeChat.type === 'GROUP' && isOrgAdmin) ? () => setIsAddMemberModalOpen(true) : undefined}
+                    onRemoveMember={isOrgAdmin ? handleRemoveMemberRequest : undefined}
                   />
                 ) : null}
               </div>
@@ -835,27 +798,7 @@ const Messages: React.FC<MessagesProps> = ({ isSingleChat = false, engagementId 
         onConfirm={confirmDelete}
         onCancel={() => setConfirmState({ isOpen: false, type: 'message' })}
       />
-      {emojiPickerMessageId && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/20 backdrop-blur-[2px]">
-          <div className="bg-white rounded-2xl shadow-2xl relative animate-in zoom-in-95 duration-200">
-            <button
-              onClick={() => setEmojiPickerMessageId(null)}
-              className="absolute -top-10 right-0 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors"
-            >
-              <X className="w-5 h-5 text-gray-500" />
-            </button>
-            <div className="p-2">
-              <EmojiPicker
-                onSelect={(emoji) => {
-                  handleReactToMessage(activeChatId!, emojiPickerMessageId, emoji);
-                  setEmojiPickerMessageId(null);
-                }}
-                onClose={() => setEmojiPickerMessageId(null)}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 };

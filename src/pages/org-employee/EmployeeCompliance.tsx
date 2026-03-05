@@ -27,7 +27,7 @@ import type { ComplianceCalendarItem } from '../../lib/types';
 
 // Partner (ORG_ADMIN, ORG_EMPLOYEE): list by role; create COMPANY only; update/delete creator only
 const PARTNER_ROLES = ['ORG_ADMIN', 'ORG_EMPLOYEE'];
-const SERVICE_OPTIONS = [...AVAILABLE_SERVICES, { id: 'CUSTOM', label: 'Custom' }];
+const SERVICE_OPTIONS = AVAILABLE_SERVICES;
 
 // Components
 

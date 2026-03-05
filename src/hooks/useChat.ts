@@ -365,6 +365,9 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [room, setRoom] = useState<Chat | null>(null);
+    const [hasMore, setHasMore] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const nextCursorRef = useRef<string | null>(null);
 
     const currentUserId = getDecodedUserId();
     const subscriptionRef = useRef<any>(null);
@@ -444,6 +447,7 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
                         timestamp: t,
                         status: 'sent',
                         createdAt: new Date(t || new Date()).getTime(),
+                        isDeleted: !!msg.deletedAt,
                         replyToMessageId: msg.replyToMessageId ?? msg.reply_to_message_id ?? null,
                         replyToMessage: msg.replyToMessage ? mapMessage(msg.replyToMessage) : (msg.reply_to_message ? mapMessage(msg.reply_to_message) : null),
                     };
@@ -452,8 +456,13 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
                 const msgs = await chatService.getMessages(roomId);
 
                 if (msgs?.data) {
+                    const rawItems = Array.isArray(msgs.data) ? msgs.data : (msgs.data?.items ?? []);
+                    // Store pagination info from meta (nextCursor is a sentAt timestamp)
+                    const meta = (msgs as any).meta;
+                    nextCursorRef.current = meta?.nextCursor ?? null;
+                    setHasMore(meta?.hasMore ?? (rawItems.length >= 50));
 
-                    const sorted = msgs.data
+                    const sorted = rawItems
                         .map((msg: any) => mapMessage(msg))
                         .sort((a: Message, b: Message) =>
                             (a.createdAt ?? 0) - (b.createdAt ?? 0)
@@ -471,12 +480,18 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
                     .on(
                         'postgres_changes',
                         {
-                            event: 'INSERT',
+                            event: '*',
                             schema: 'public',
                             table: 'ChatMessage',
                         },
                         (payload) => {
+                            if (payload.eventType === 'DELETE') {
+                                setMessages((prev) => prev.filter((m) => m.id !== payload.old.id));
+                                return;
+                            }
+
                             const newMsg = payload.new as any;
+
 
                             const payloadRoomId = newMsg.roomId || newMsg.room_id;
                             if (!payloadRoomId || String(payloadRoomId) !== String(roomId)) return;
@@ -495,9 +510,18 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
                                 timestamp: t,
                                 status: 'sent',
                                 createdAt: new Date(t || new Date()).getTime(),
+                                isDeleted: !!newMsg.deletedAt,
                                 replyToMessageId: newMsg.replyToMessageId ?? newMsg.reply_to_message_id ?? null,
                                 replyToMessage: newMsg.replyToMessage ? mapMessage(newMsg.replyToMessage) : null,
                             };
+
+                            if (payload.eventType === 'UPDATE') {
+                                setMessages((prev) =>
+                                    prev.map((msg) => (msg.id === mappedMsg.id ? mappedMsg : msg))
+                                );
+                                return;
+                            }
+
 
                             setMessages((prev) => {
                                 if (prev.find((m) => m.id === mappedMsg.id)) return prev;
@@ -561,9 +585,68 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
         await chatService.markAsRead(roomId);
     }, [roomId]);
 
+    const deleteMessage = useCallback(async (messageId: string) => {
+        if (!roomId) return;
+        try {
+            await chatService.deleteMessage(messageId);
+            setMessages(prev => prev.map(msg => 
+                msg.id === messageId ? { ...msg, isDeleted: true } : msg
+            ));
+        } catch (err) {
+            console.error('Failed to delete message', err);
+            throw err;
+        }
+    }, [roomId]);
+
     const clearMessages = useCallback(() => {
         setMessages([]);
     }, []);
+
+    const loadMoreMessages = useCallback(async () => {
+        if (!roomId || isLoadingMore || !nextCursorRef.current) return;
+        setIsLoadingMore(true);
+        try {
+            const mapMessage = (msg: any): Message => {
+                let t = msg.sentAt || msg.sent_at || msg.created_at;
+                if (t && !t.endsWith('Z') && !t.includes('+') && !t.match(/-\d{2}:\d{2}$/)) t += 'Z';
+                return {
+                    id: msg.id,
+                    senderId: msg.senderId || msg.sender_id,
+                    text: msg.content || msg.text,
+                    fileUrl: msg.fileUrl || msg.file_url,
+                    fileName: msg.fileName || msg.file_name,
+                    fileSize: msg.fileSize || msg.file_size,
+                    type: (msg.type || 'text').toLowerCase(),
+                    timestamp: t,
+                    status: 'sent',
+                    createdAt: new Date(t || new Date()).getTime(),
+                    isDeleted: !!msg.deletedAt,
+                    replyToMessageId: msg.replyToMessageId ?? msg.reply_to_message_id ?? null,
+                    replyToMessage: msg.replyToMessage ? mapMessage(msg.replyToMessage) : null,
+                };
+            };
+
+            const res = await chatService.getMessages(roomId, nextCursorRef.current);
+            if (res?.data) {
+                const rawItems = Array.isArray(res.data) ? res.data : (res.data?.items ?? []);
+                const meta = (res as any).meta;
+                nextCursorRef.current = meta?.nextCursor ?? null;
+                setHasMore(meta?.hasMore ?? false);
+
+                const olderMsgs: Message[] = rawItems.map((msg: any) => mapMessage(msg));
+                setMessages(prev => {
+                    const existingIds = new Set(prev.map(m => m.id));
+                    const newOnes = olderMsgs.filter(m => !existingIds.has(m.id));
+                    if (newOnes.length === 0) return prev;
+                    return [...newOnes, ...prev].sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0));
+                });
+            }
+        } catch (err) {
+            console.error('Failed to load more messages:', err);
+        } finally {
+            setIsLoadingMore(false);
+        }
+    }, [roomId, isLoadingMore]);
 
     return {
         roomId,
@@ -572,9 +655,13 @@ export function useChat(engagementId?: string, options: UseChatOptions = {}) {
         isLoading,
         error,
         sendMessage,
+        deleteMessage,
         uploadFile,
         markAsRead,
         clearMessages,
+        loadMoreMessages,
+        hasMore,
+        isLoadingMore,
         currentUserId
     };
 }

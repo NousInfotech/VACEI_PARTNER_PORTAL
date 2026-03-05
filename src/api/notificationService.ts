@@ -1,10 +1,29 @@
 import axiosInstance from '../config/axiosConfig';
 
-export function getPortalRedirectUrl(url?: string): string {
-  if (!url) return '';
-  const cleaned = url.replace(/^\/(partner|platform|client)/, '');
-  if (cleaned.startsWith('/dashboard') || cleaned.startsWith('/')) return cleaned;
-  return `/${cleaned}`;
+export function getPortalRedirectUrl(url?: string | null): string {
+  if (!url || typeof url !== 'string') return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+
+  let pathWithSearch = trimmed;
+
+  // Handle absolute URLs like https://partner.vacei.com/...
+  try {
+    if (/^https?:\/\//i.test(trimmed)) {
+      const parsed = new URL(trimmed);
+      pathWithSearch = `${parsed.pathname}${parsed.search}`;
+    }
+  } catch {
+    // fall back to original string if URL parsing fails
+    pathWithSearch = trimmed;
+  }
+
+  // Strip portal prefix if present (e.g. /partner/... or /client/...)
+  const withoutPrefix = pathWithSearch.replace(/^\/?(partner|platform|client)(?=\/)/, '');
+
+  // Ensure we always return an app-relative path starting with "/"
+  if (withoutPrefix.startsWith('/')) return withoutPrefix;
+  return `/${withoutPrefix}`;
 }
 
 export interface Notification {

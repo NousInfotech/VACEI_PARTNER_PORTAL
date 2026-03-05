@@ -11,6 +11,10 @@ import EngagementFullView from './pages/org-employee/EmployeeEngagement/Engageme
 import WorkbookViewerPage from './pages/common/WorkbookViewerPage'
 import Messages from './pages/messages/Messages'
 import Notifications from './pages/common/Notifications'
+import SupportFormPage from './pages/org-admin/support/SupportFormPage'
+import TicketManagementPage from './pages/org-admin/support/TicketManagementPage'
+import TicketDetailPage from './pages/org-admin/support/TicketDetailPage'
+import RequestDetailPage from './pages/org-admin/support/RequestDetailPage'
 import Settings from './pages/common/Settings'
 import { Toaster } from 'sonner'
 
@@ -34,7 +38,7 @@ const App = () => {
             <Route path="/dashboard/companies" element={<Dashboard activeSection="Companies" />} />
             <Route path="/dashboard/engagements" element={<Dashboard activeSection="Engagements" />} />
             <Route path="/dashboard/compliance" element={<Dashboard activeSection="Compliance" />} />
-            <Route path="/dashboard/templates" element={<Dashboard activeSection="Document Request Templates" />} />
+            <Route path="/dashboard/templates" element={<Dashboard activeSection="Templates" />} />
             <Route path="/dashboard/templates/create" element={<Dashboard activeSection="Create Template" />} />
             <Route path="/dashboard/templates/:id/edit" element={<Dashboard activeSection="Edit Template" />} />
             <Route path="/dashboard/templates/:id/view" element={<Dashboard activeSection="View Template" />} />
@@ -42,7 +46,10 @@ const App = () => {
             <Route path="/dashboard/employees/create" element={<Dashboard activeSection="Create Employee" />} />
             <Route path="/dashboard/messages" element={<Messages />} />
             <Route path="/notifications" element={<Notifications />} />
-            <Route path="/dashboard/support" element={<Messages isSingleChat={true} contextualChatId="support-chat" />} />
+            <Route path="/dashboard/support" element={<SupportFormPage />} />
+            <Route path="/dashboard/support/tickets" element={<TicketManagementPage />} />
+            <Route path="/dashboard/support/tickets/request/:requestId" element={<RequestDetailPage />} />
+            <Route path="/dashboard/support/tickets/:ticketId" element={<TicketDetailPage />} />
             <Route path="/dashboard/settings" element={<Settings />} />
             <Route path="/dashboard/procedure-prompts" element={<Dashboard activeSection="Procedure Prompt" />} />
             <Route path="/dashboard/procedure-prompts/create" element={<Dashboard activeSection="Create Procedure Prompt" />} />

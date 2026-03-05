@@ -2,18 +2,15 @@ import React, { useEffect, useRef, useState, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   Reply, 
-  Forward, 
   Trash2, 
   Copy, 
   CheckSquare, 
-  Plus,
-  ChevronLeft,
-  Pencil
+  ListTodo,
+  Edit
 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
-import { EMOJI_LIST } from '../constants';
 
-export type MessageAction = 'reply' | 'react' | 'forward' | 'delete' | 'copy' | 'select' | 'edit' | 'createTodo';
+export type MessageAction = 'reply' | 'forward' | 'delete' | 'copy' | 'select' | 'createTodo' | 'editTodo';
 
 interface MessageOptionsProps {
   isOpen: boolean;
@@ -24,9 +21,10 @@ interface MessageOptionsProps {
   triggerRect?: DOMRect | null;
   createdAt?: number;
   hasTodo?: boolean;
+  showCreateTodo?: boolean;
 }
 
-const COMMON_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+
 
 export const MessageOptions: React.FC<MessageOptionsProps> = ({
   isOpen,
@@ -35,19 +33,15 @@ export const MessageOptions: React.FC<MessageOptionsProps> = ({
   isMe,
   isDeleted,
   triggerRect,
-  createdAt,
   hasTodo,
+  showCreateTodo,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState<{ top: number; left: number; transformOrigin: string } | null>(null);
-  const [now, setNow] = useState(() => Date.now());
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       requestAnimationFrame(() => {
-        setNow(Date.now());
-        setShowEmojiPicker(false);
         setCoords(null);
       });
     }
@@ -86,24 +80,16 @@ export const MessageOptions: React.FC<MessageOptionsProps> = ({
 
   if (!isOpen) return null;
 
-  const isEditable = isMe && !isDeleted && createdAt && (now - createdAt < 15 * 60 * 1000);
-
   const mainOptions = isDeleted ? [] : [
     { id: 'reply' as const, label: 'Reply', icon: Reply },
-    ...(isEditable ? [{ id: 'edit' as const, label: 'Edit', icon: Pencil }] : []),
     { id: 'copy' as const, label: 'Copy', icon: Copy },
-    { id: 'forward' as const, label: 'Forward', icon: Forward },
+    ...(showCreateTodo && !hasTodo ? [{ id: 'createTodo' as const, label: 'Create Todo', icon: ListTodo }] : []),
+    ...(showCreateTodo && hasTodo ? [{ id: 'editTodo' as const, label: 'Edit Todo', icon: Edit }] : []),
   ];
 
   const footerOptions = [
     { id: 'select' as const, label: 'Select', icon: CheckSquare },
-    { 
-      id: 'createTodo' as const, 
-      label: hasTodo ? 'Edit Checklist' : 'Create Todo', 
-      icon: CheckSquare, 
-      className: 'text-amber-500' 
-    },
-    { id: 'delete' as const, label: 'Delete', icon: Trash2, className: 'text-[#ef5350]' },
+    ...(isMe ? [{ id: 'delete' as const, label: 'Delete', icon: Trash2, className: 'text-[#ef5350]' }] : []),
   ];
 
   return createPortal(
@@ -129,71 +115,7 @@ export const MessageOptions: React.FC<MessageOptionsProps> = ({
           isOpen ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"
         )}
       >
-      {/* Reactions Row */}
-      {!isDeleted && (
-        <div className="px-3 py-1 mb-1 border-b border-gray-50">
-          <div className="flex items-center justify-between gap-2">
-            {!showEmojiPicker ? (
-              <>
-                <div className="flex items-center gap-1">
-                  {COMMON_EMOJIS.map(emoji => (
-                    <button
-                      key={emoji}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onAction('react', emoji);
-                        onClose();
-                      }}
-                      className="text-[20px] w-8 h-8 flex items-center justify-center hover:scale-125 transition-transform duration-200 active:scale-95 hover:bg-gray-50 rounded-full"
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowEmojiPicker(true);
-                  }}
-                  className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-                >
-                  <Plus className="w-4 h-4 text-gray-500" />
-                </button>
-              </>
-            ) : (
-              <div className="w-full flex flex-col gap-2 py-1 animate-in slide-in-from-right-2 duration-200">
-                <div className="flex items-center gap-2 mb-1">
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowEmojiPicker(false);
-                    }}
-                    className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                  >
-                    <ChevronLeft className="w-4 h-4 text-gray-500" />
-                  </button>
-                  <span className="text-[12px] font-semibold text-gray-600">Reactions</span>
-                </div>
-                <div className="grid grid-cols-6 gap-1 max-h-[80px] overflow-y-auto custom-scrollbar px-1">
-                  {EMOJI_LIST.map(emoji => (
-                    <button
-                      key={emoji}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onAction('react', emoji);
-                        onClose();
-                      }}
-                      className="text-[20px] w-8 h-8 flex items-center justify-center hover:scale-125 transition-transform duration-200 active:scale-95 hover:bg-gray-50 rounded-full"
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+
 
       {/* Main Actions */}
       {mainOptions.length > 0 && (

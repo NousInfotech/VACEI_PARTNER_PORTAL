@@ -150,7 +150,7 @@ export default function Engagement() {
       )}
 
       <Dialog open={!!selectedRequestId} onOpenChange={() => setSelectedRequestId(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-[40px] border-none shadow-2xl">
+        <DialogContent className="max-w-4xl overflow-y-auto max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-[40px] border-none shadow-2xl">
           <DialogHeader className="px-10 py-8 border-b border-gray-50 bg-gray-50/30 shrink-0">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4 text-left">

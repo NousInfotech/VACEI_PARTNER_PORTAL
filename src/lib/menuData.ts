@@ -2,11 +2,9 @@ import {
     DashboardSquare02Icon,
     Book02Icon,
     GitPullRequestIcon,
-    DocumentValidationIcon,
     InstallingUpdates02Icon,
     Building01Icon,
     BubbleChatIcon,
-    NoteEditIcon,
     Notification01Icon
 } from '@hugeicons/core-free-icons';
 import type { MenuItem } from './types';
@@ -48,15 +46,15 @@ export const menuData: MenuItem[] = [
         description: "Active projects & tasks",
         roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
     },
-    {
-        slug: "compliance",
-        icon: DocumentValidationIcon,
-        label: "Compliance",
-        href: "/dashboard/compliance",
-        section: "primary",
-        description: "Regulatory status",
-        roles: ["ORG_EMPLOYEE"]
-    },
+    // {
+    //     slug: "compliance",
+    //     icon: DocumentValidationIcon,
+    //     label: "Compliance",
+    //     href: "/dashboard/compliance",
+    //     section: "primary",
+    //     description: "Regulatory status",
+    //     roles: ["ORG_EMPLOYEE"]
+    // },
     {
         slug: "templates",
         icon: GitPullRequestIcon,
@@ -64,6 +62,15 @@ export const menuData: MenuItem[] = [
         href: "/dashboard/templates",
         section: "primary",
         description: "Manage templates",
+        roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
+    },
+    {
+        slug: "support",
+        icon: BubbleChatIcon,
+        label: "Ticket Management",
+        href: "/dashboard/support",
+        section: "primary",
+        description: "Get help from Vacei",
         roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
     },
     // {
@@ -93,24 +100,16 @@ export const menuData: MenuItem[] = [
         description: "Important updates & reminders",
         roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
     },
+
     // {
-    //     slug: "support",
-    //     icon: BubbleChatIcon,
-    //     label: "Support",
-    //     href: "/dashboard/support",
-    //     section: "settings",
-    //     description: "Get help from Vacei",
-    //     roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
+    //     slug: "procedure-prompts",
+    //     icon: NoteEditIcon,
+    //     label: "Procedure Prompt",
+    //     href: "/dashboard/procedure-prompts",
+    //     section: "operations",
+    //     description: "Manage AI procedure prompts",
+    //     roles: ["ORG_ADMIN"]
     // },
-    {
-        slug: "procedure-prompts",
-        icon: NoteEditIcon,
-        label: "Procedure Prompt",
-        href: "/dashboard/procedure-prompts",
-        section: "operations",
-        description: "Manage AI procedure prompts",
-        roles: ["ORG_ADMIN"]
-    },
     {
         slug: "settings",
         icon: InstallingUpdates02Icon,
