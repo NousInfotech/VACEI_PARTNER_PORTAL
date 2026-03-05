@@ -337,16 +337,25 @@ export function CreateCycleComponent({ serviceName, engagementId, companyId, ser
 
 
   const handleCreateSubmit = (formData: any) => {
+    // Convert empty strings to null for optional fields
+    const dataToSend = {
+      ...formData,
+      nextDueDate: formData.nextDueDate === '' ? null : formData.nextDueDate,
+      notes: formData.notes === '' ? null : formData.notes,
+    };
+
     if (editingCycle) {
-      updateMutation.mutate(formData);
+      updateMutation.mutate(dataToSend);
     } else {
       createMutation.mutate({
         engagementId,
         companyId,
-        ...formData,
+        ...dataToSend,
         ...(serviceName === 'PAYROLL' ? { employeeCount: 0 } : {}),
         ...(serviceName === 'CFO' ? { reportingFrequency: formData.reportingFrequency } : {}),
-        ...(serviceName === 'Audit' ? { yearEndDate: new Date(formData.yearEndDate).toISOString() } : {}),
+        ...(serviceName === 'Audit' ? { 
+          yearEndDate: formData.yearEndDate ? new Date(formData.yearEndDate).toISOString() : null 
+        } : {}),
       });
     }
   };
