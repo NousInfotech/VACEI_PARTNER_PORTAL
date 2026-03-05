@@ -100,13 +100,13 @@ export default function ExtendedTBTable({ data, onUpdateRow, onUpdateGroups, onD
                             <tr key={row.id} className="hover:bg-gray-50/80 transition-colors group">
                                 <td className="py-3 px-4 font-medium text-center align-middle">
                                     {isSectionsView ? (
-                                        <div className="px-3 py-2 text-gray-500 font-medium">{row.code}</div>
+                                        <div className="p-0 m-0 w-10 h-10 text-gray-500 font-medium">{row.code}</div>
                                     ) : (
                                         <input
                                             type="text"
                                             value={row.code}
                                             onChange={(e) => onUpdateRow(row.id, 'code', e.target.value)}
-                                            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-500 font-medium text-center focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                            className=" bg-gray-50 border border-gray-200 rounded-lg p-0 m-0 text-gray-500 font-medium text-center focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all w-10 h-10"
                                         />
                                     )}
                                 </td>

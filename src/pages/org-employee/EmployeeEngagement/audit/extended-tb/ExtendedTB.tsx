@@ -575,77 +575,48 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
             const currentYear = yearEndDate ? yearEndDate.getFullYear() : new Date().getFullYear();
             const priorYear = currentYear - 1;
 
-            // Check if a PREVIOUS year trial balance exists for the prior year
-            const hasPreviousYearTrialBalance = trialBalanceList.some((tb: any) => {
-                if (tb.role === 'PREVIOUS') {
-                    // If year field exists, check it matches priorYear
-                    if (tb.year !== undefined && tb.year !== null) {
-                        return tb.year === priorYear;
-                    }
-                    // Fallback: if year not available, assume it's for prior year if role is PREVIOUS
-                    return true;
-                }
-                return false;
-            });
-
+            // Always upload the same file as both PREVIOUS and CURRENT when the file has both columns.
+            // This way Prior Year = file's prior year column, Current Year = file's current year column,
+            // and the ETB will show different values when the Excel has different Prior Year vs Current Year.
             let uploadResponse: any;
             let newTrialBalanceId: string | undefined;
 
-            if (!hasPreviousYearTrialBalance) {
-                // No PREVIOUS year trial balance exists - upload as both PREVIOUS and CURRENT
-                // First, upload as PREVIOUS year
-                const previousFormData = new FormData();
-                previousFormData.append('file', file);
-                previousFormData.append('role', 'PREVIOUS');
-                previousFormData.append('year', priorYear.toString());
+            // 1) Upload as PREVIOUS (backend stores prior year column from Excel)
+            const previousFormData = new FormData();
+            previousFormData.append('file', file);
+            previousFormData.append('role', 'PREVIOUS');
+            previousFormData.append('year', priorYear.toString());
 
-                setAlertMessage({
-                    message: 'Uploading as Previous Year trial balance...',
-                    variant: 'info'
-                });
+            setAlertMessage({
+                message: 'Uploading as Previous Year trial balance...',
+                variant: 'info'
+            });
 
-                await apiPostFormData<any>(
-                    endPoints.AUDIT.UPLOAD_TRIAL_BALANCE(auditCycleId),
-                    previousFormData
-                );
+            await apiPostFormData<any>(
+                endPoints.AUDIT.UPLOAD_TRIAL_BALANCE(auditCycleId),
+                previousFormData
+            );
 
-                // Wait a bit for backend to process
-                await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await queryClient.refetchQueries({ queryKey: ['trial-balances', auditCycleId] });
 
-                // Refresh trial balance list to get the newly created PREVIOUS one
-                await queryClient.refetchQueries({ queryKey: ['trial-balances', auditCycleId] });
+            // 2) Upload as CURRENT (backend stores current year column from Excel)
+            const currentFormData = new FormData();
+            currentFormData.append('file', file);
+            currentFormData.append('role', 'CURRENT');
+            currentFormData.append('year', currentYear.toString());
 
-                // Now upload the same file as CURRENT year
-                const currentFormData = new FormData();
-                currentFormData.append('file', file);
-                currentFormData.append('role', 'CURRENT');
-                currentFormData.append('year', currentYear.toString());
+            setAlertMessage({
+                message: 'Uploading as Current Year trial balance...',
+                variant: 'info'
+            });
 
-                setAlertMessage({
-                    message: 'Uploading as Current Year trial balance...',
-                    variant: 'info'
-                });
+            uploadResponse = await apiPostFormData<any>(
+                endPoints.AUDIT.UPLOAD_TRIAL_BALANCE(auditCycleId),
+                currentFormData
+            );
 
-                uploadResponse = await apiPostFormData<any>(
-                    endPoints.AUDIT.UPLOAD_TRIAL_BALANCE(auditCycleId),
-                    currentFormData
-                );
-
-                newTrialBalanceId = uploadResponse?.data?.id || uploadResponse?.id;
-            } else {
-                // PREVIOUS year trial balance exists - upload only as CURRENT
-                const formData = new FormData();
-                formData.append('file', file);
-                formData.append('role', 'CURRENT');
-                formData.append('year', currentYear.toString());
-
-                uploadResponse = await apiPostFormData<any>(
-                    endPoints.AUDIT.UPLOAD_TRIAL_BALANCE(auditCycleId),
-                    formData
-                );
-
-                newTrialBalanceId = uploadResponse?.data?.id || uploadResponse?.id;
-            }
+            newTrialBalanceId = uploadResponse?.data?.id || uploadResponse?.id;
 
             // Refresh trial balance data after upload
             await queryClient.invalidateQueries({ queryKey: ['trial-balances', auditCycleId] });
@@ -678,9 +649,7 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
                 });
             }
 
-            const successMessage = !hasPreviousYearTrialBalance
-                ? 'File uploaded successfully! Created both Previous Year and Current Year trial balances. Displaying Current Year data.'
-                : 'File uploaded successfully! The Current Year trial balance has been processed and is now displayed.';
+            const successMessage = 'File uploaded successfully! Prior Year and Current Year trial balances updated from your file. Displaying Current Year data.';
 
             setAlertMessage({ 
                 message: successMessage, 
