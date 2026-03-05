@@ -25,7 +25,7 @@ import { ShadowCard } from '../../../../ui/ShadowCard';
 import { Button } from '../../../../ui/Button';
 import { Skeleton } from '../../../../ui/Skeleton';
 import { useAuth } from '../../../../context/auth-context-core';
-import { apiGet, apiPost, apiPatch, apiDelete } from '../../../../config/base';
+import { apiGet, apiPost, apiPatch, apiDelete, apiPostFormData } from '../../../../config/base';
 import { endPoints } from '../../../../config/endPoint';
 import {
   Dialog,
@@ -94,6 +94,8 @@ export default function AccountingContent({ engagementId, companyId }: Accountin
   const [billFormError, setBillFormError] = useState<string | null>(null);
   const [invoiceSubmitting, setInvoiceSubmitting] = useState(false);
   const [billSubmitting, setBillSubmitting] = useState(false);
+  const [uploadInvoiceLoading, setUploadInvoiceLoading] = useState(false);
+  const [uploadInvoiceError, setUploadInvoiceError] = useState<string | null>(null);
   const [invoiceForm, setInvoiceForm] = useState({
     customer: '',
     docNumber: '',
@@ -504,6 +506,35 @@ export default function AccountingContent({ engagementId, companyId }: Accountin
     } finally {
       setMapBillLoading(null);
     }
+  };
+
+  const handleUploadInvoice = async (file: File) => {
+    if (!cycleId || !engagementId) return;
+    setUploadInvoiceError(null);
+    setUploadInvoiceLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      await apiPostFormData<{ data?: { transaction?: unknown; file?: unknown }; message?: string }>(
+        endPoints.ACCOUNTING.UPLOAD_INVOICE(cycleId),
+        formData
+      );
+      queryClient.invalidateQueries({ queryKey: ['accounting-transactions', cycleId] });
+      queryClient.invalidateQueries({ queryKey: ['accounting-cycle', engagementId] });
+      queryClient.invalidateQueries({ queryKey: ['qb-invoices', cycleCompanyId] });
+    } catch (e: unknown) {
+      const err = e as { message?: string; response?: { data?: { message?: string } } };
+      const msg = err?.response?.data?.message ?? err?.message ?? 'Upload failed';
+      setUploadInvoiceError(msg);
+    } finally {
+      setUploadInvoiceLoading(false);
+    }
+  };
+
+  const handleLinkFileToQbInvoice = async (qbInvoiceId: string, fileId: string) => {
+    if (!cycleCompanyId) return;
+    await apiPatch(endPoints.QUICKBOOKS.LINK_INVOICE_FILE(cycleCompanyId, qbInvoiceId), { fileId });
+    queryClient.invalidateQueries({ queryKey: ['qb-invoices', cycleCompanyId] });
   };
 
   const handleSyncFromQB = async () => {
@@ -1161,6 +1192,14 @@ export default function AccountingContent({ engagementId, companyId }: Accountin
                 mapInvoiceLoading={mapInvoiceLoading}
                 onMapInvoice={handleMapInvoiceToTransaction}
                 onCreateClick={() => setIsCreateInvoiceModalOpen(true)}
+                cycleId={cycleId}
+                onUploadInvoice={handleUploadInvoice}
+                uploadInvoiceLoading={uploadInvoiceLoading}
+                uploadInvoiceError={uploadInvoiceError}
+                onClearUploadError={() => setUploadInvoiceError(null)}
+                companyIdForQb={cycleCompanyId ?? companyId}
+                engagementId={engagementId}
+                onLinkFile={handleLinkFileToQbInvoice}
                 viewInvoice={viewInvoice}
                 onViewInvoice={(inv) => setViewInvoice(inv as Record<string, unknown> | null)}
               />
