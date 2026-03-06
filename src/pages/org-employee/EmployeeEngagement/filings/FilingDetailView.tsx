@@ -159,7 +159,16 @@ export default function FilingDetailView() {
     }
   };
 
-  const renderComment = (comment: any, isReply = false) => (
+  const getRoleBadge = (role: string | undefined) => {
+    const r = (role || "").toUpperCase();
+    if (r === "ORG_ADMIN") return { label: "Admin", className: "bg-violet-50 text-violet-600 border-violet-100" };
+    if (r === "ORG_EMPLOYEE") return { label: "Employee", className: "bg-amber-50 text-amber-600 border-amber-100" };
+    return { label: "Client", className: "bg-blue-50 text-blue-600 border-blue-100" };
+  };
+
+  const renderComment = (comment: any, isReply = false, files: any[] = []) => {
+    const roleBadge = getRoleBadge(comment.user?.role);
+    return (
     <div key={comment.id} className={cn("flex gap-4 group", isReply ? "ml-8 mt-4 relative" : "")}>
       {isReply && (
         <div className="absolute left-[-26px] top-4 w-6 h-6 border-l-2 border-b-2 border-gray-200 rounded-bl-xl opacity-50" />
@@ -173,6 +182,9 @@ export default function FilingDetailView() {
             <p className="text-sm font-black text-gray-900">
               {comment.user?.firstName} {comment.user?.lastName}
             </p>
+            <span className={cn("px-2 py-0.5 rounded-lg border text-[9px] font-black uppercase tracking-widest", roleBadge.className)}>
+              {roleBadge.label}
+            </span>
           </div>
           <div className="flex items-center gap-3">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">
@@ -195,7 +207,7 @@ export default function FilingDetailView() {
           {comment.referencedFileIds && comment.referencedFileIds.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-2">
               {comment.referencedFileIds.map((fileId: string) => {
-                const fileView = filing?.files.find((f: any) => f.fileId === fileId);
+                const fileView = files.find((fv: any) => fv.fileId === fileId);
                 if (!fileView) return null;
                 return (
                   <div key={fileId} className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 shadow-sm rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-600 cursor-pointer hover:border-primary/30 transition-colors" onClick={() => window.open(fileView.file.url, "_blank")}>
@@ -211,12 +223,13 @@ export default function FilingDetailView() {
         {/* Nested Replies */}
         {comment.replies && comment.replies.length > 0 && (
           <div className="space-y-4 pt-2">
-            {comment.replies.map((reply: any) => renderComment(reply, true))}
+            {comment.replies.map((reply: any) => renderComment(reply, true, files))}
           </div>
         )}
       </div>
     </div>
   );
+  };
 
   if (isLoadingFiling) {
     return (
@@ -239,6 +252,8 @@ export default function FilingDetailView() {
     );
   }
 
+  const f = filing!;
+
   return (
     <div className="min-h-screen bg-gray-50/50 p-4 md:p-8 animate-in fade-in duration-500">
       <div className="max-w-[1600px] mx-auto space-y-8">
@@ -256,14 +271,14 @@ export default function FilingDetailView() {
         />
 
         <PageHeader 
-          title={filing.name}
-          subtitle={`Last Updated ${new Date(filing.updatedAt).toLocaleDateString()}`}
+          title={f.name}
+          subtitle={`Last Updated ${new Date(f.updatedAt).toLocaleDateString()}`}
           icon={FileIcon}
           actions={
             <div className="flex items-center gap-3">
               <select
-                value={filing.status}
-                onChange={(e) => updateStatusMutation.mutate({ status: e.target.value as FilingStatus })}
+                value={f.status}
+                onChange={(e) => updateStatusMutation.mutate({ status: e.target.value as FilingStatus } as { status: FilingStatus })}
                 disabled={isLocked || updateStatusMutation.isPending}
                 className="h-12 rounded-2xl border-gray-100 bg-white px-4 text-[11px] font-black uppercase tracking-widest text-gray-600 focus:outline-none focus:ring-4 focus:ring-primary/5 disabled:opacity-50 cursor-pointer shadow-sm min-w-[160px]"
               >
@@ -315,15 +330,15 @@ export default function FilingDetailView() {
             <div className="flex items-center gap-2">
               <div className={cn(
                 "flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest shrink-0",
-                getStatusConfig(filing.status).className
+                getStatusConfig(f.status).className
               )}>
-                {getStatusConfig(filing.status).icon}
-                {getStatusConfig(filing.status).label}
+                {getStatusConfig(f.status).icon}
+                {getStatusConfig(f.status).label}
               </div>
               
-              {filing.signOffs && filing.signOffs.length > 0 && (
+              {(f.signOffs ?? []).length > 0 && (
                 <div className="flex -space-x-2">
-                  {filing.signOffs.map((s) => (
+                  {(f.signOffs ?? []).map((s) => (
                     <div 
                       key={s.id} 
                       className="h-7 w-7 rounded-full bg-white border-2 border-emerald-50 text-emerald-600 flex items-center justify-center shadow-sm relative group/avatar"
@@ -345,7 +360,7 @@ export default function FilingDetailView() {
           {/* Left Side: Files (40%) */}
           <div className="w-full lg:w-[40%] flex flex-col bg-white rounded-[32px] border border-gray-100 shadow-xl shadow-indigo-500/5 overflow-hidden">
             <div className="p-6 border-b border-gray-100 bg-white flex items-center justify-between shrink-0">
-              <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Documents ({filing.files.length})</h4>
+              <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Documents ({f.files.length})</h4>
               {!isLocked && (
                 <>
                   <input 
@@ -370,7 +385,7 @@ export default function FilingDetailView() {
             </div>
             
             <div className="flex-1 overflow-y-auto p-6 space-y-3 custom-scrollbar">
-              {filing.files.map((fileView: any) => (
+              {f.files.map((fileView: any) => (
                 <div 
                   key={fileView.id} 
                   className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-gray-100 hover:border-primary/20 transition-all group/file shadow-sm"
@@ -437,7 +452,7 @@ export default function FilingDetailView() {
                   <p className="text-xs font-medium text-gray-500 mt-1">Share your thoughts or feedback here.</p>
                 </div>
               ) : (
-                comments.map((comment: any) => renderComment(comment))
+                comments.map((comment: any) => renderComment(comment, false, f.files))
               )}
             </div>
 
@@ -447,7 +462,7 @@ export default function FilingDetailView() {
                 <div className="flex items-center justify-between bg-primary/5 px-4 py-2 mt-[-16px] mx-[-16px] mb-4 rounded-xl border border-primary/10 text-[10px] font-black uppercase tracking-widest text-primary">
                   <div className="flex items-center gap-2">
                     <CornerDownRight size={14} />
-                    Replying to {replyingTo.name}
+                    Replying to {replyingTo?.name}
                   </div>
                   <button onClick={() => setReplyingTo(null)} className="hover:bg-primary/10 p-1.5 rounded-lg transition-colors">
                     <X size={14} />
@@ -498,10 +513,10 @@ export default function FilingDetailView() {
                           </div>
                           
                           <div className="max-h-[200px] overflow-y-auto space-y-1 custom-scrollbar">
-                            {filing?.files.length === 0 ? (
+                            {f.files.length === 0 ? (
                               <p className="text-xs text-gray-400 px-2 py-2">No files uploaded yet.</p>
                             ) : (
-                              filing?.files.map((fileView: any) => (
+                              f.files.map((fileView: any) => (
                                 <label key={fileView.fileId} className="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded-xl cursor-pointer transition-colors group">
                                   <Checkbox 
                                     checked={selectedFileIds.includes(fileView.fileId)}
@@ -517,7 +532,7 @@ export default function FilingDetailView() {
                             )}
                           </div>
                           <div className="mt-3 pt-3 border-t border-gray-50 text-right">
-                            <Button size="sm" className="h-8 text-[10px] uppercase tracking-widest rounded-xl font-black bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary transition-colors" onClick={() => setIsAttachMenuOpen(false)}>Done</Button>
+                            <Button variant="default" size="sm" onClick={() => setIsAttachMenuOpen(false)}>Done</Button>
                           </div>
                         </div>
                       )}

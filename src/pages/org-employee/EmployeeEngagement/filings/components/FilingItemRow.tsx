@@ -4,7 +4,8 @@ import {
   AlertCircle,
   Clock,
   Eye,
-  Trash2
+  Trash2,
+  ChevronDown,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "../../../../../lib/utils";
@@ -98,26 +99,35 @@ export default function FilingItemRow({
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
-          {/* Status Badge */}
-          <div className={cn(
-            "flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest shrink-0",
-            statusCfg.className
-          )}>
-            {statusCfg.icon}
-            {statusCfg.label}
-          </div>
-
-          {/* Inline Status Dropdown */}
-          <select
-            value={filing.status}
-            onChange={(e) => onUpdateStatus(filing.id, e.target.value as FilingStatus)}
-            disabled={filing.status === FilingStatus.FILED}
-            className="h-9 rounded-xl border-gray-100 bg-gray-50 px-3 text-[10px] font-black uppercase tracking-widest text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/10 disabled:opacity-50 cursor-pointer"
-          >
-            <option value={FilingStatus.DRAFT}>Draft</option>
-            <option value={FilingStatus.CLIENT_REVIEW}>Client Review</option>
-            <option value={FilingStatus.FILED}>Filed</option>
-          </select>
+          {/* Status: dropdown when editable, static badge when Filed */}
+          {filing.status === FilingStatus.FILED ? (
+            <div className={cn(
+              "h-9 flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest shrink-0",
+              statusCfg.className
+            )}>
+              {statusCfg.icon}
+              {statusCfg.label}
+            </div>
+          ) : (
+            <div className="relative shrink-0">
+              <select
+                value={filing.status}
+                onChange={(e) => onUpdateStatus(filing.id, e.target.value as FilingStatus)}
+                className={cn(
+                  "h-9 flex items-center gap-2 px-3 pr-8 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/10 appearance-none",
+                  statusCfg.className
+                )}
+              >
+                <option value={FilingStatus.DRAFT}>Draft</option>
+                <option value={FilingStatus.CLIENT_REVIEW}>Client Review</option>
+                <option value={FilingStatus.FILED}>Filed</option>
+              </select>
+              <ChevronDown
+                size={12}
+                className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-current opacity-60"
+              />
+            </div>
+          )}
 
           <div className="h-6 w-px bg-gray-100 hidden md:block" />
 
