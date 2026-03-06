@@ -97,7 +97,7 @@ const ENGAGEMENT_TABS = [
   { id: 'milestones', label: 'Milestones', icon: Landmark },
   { id: 'updates', label: 'Updates', icon: MessageSquare },
   { id: 'chat', label: 'Chat', icon: MessageSquare },
-  { id: 'filing', label: 'Filing', icon: FileText },
+  { id: 'filing', label: 'Draft & Filings', icon: FileText },
   { id: 'teams', label: 'Team', icon: Users },
   { id: 'services-coverage', label: 'Services & Coverage', icon: CheckSquare }, 
 ];

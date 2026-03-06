@@ -15,6 +15,7 @@ import SupportFormPage from './pages/org-admin/support/SupportFormPage'
 import TicketManagementPage from './pages/org-admin/support/TicketManagementPage'
 import TicketDetailPage from './pages/org-admin/support/TicketDetailPage'
 import RequestDetailPage from './pages/org-admin/support/RequestDetailPage'
+import FilingDetailView from './pages/org-employee/EmployeeEngagement/filings/FilingDetailView'
 import Settings from './pages/common/Settings'
 import { Toaster } from 'sonner'
 
@@ -57,6 +58,7 @@ const App = () => {
             <Route path="*" element={<NotFound />} />
           </Route>
           <Route path="/engagement-view/:id" element={<EngagementFullView />} />
+          <Route path="/engagement-view/:engagementId/filings/:filingId" element={<FilingDetailView />} />
           <Route path="/engagement-view/services/:serviceId" element={<EngagementFullView />} />
           <Route path="/workbook-viewer/:workbookId" element={<WorkbookViewerPage />} />
           <Route path="*" element={<Navigate to="/login" replace />} />

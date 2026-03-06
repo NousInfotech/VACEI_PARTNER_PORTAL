@@ -64,7 +64,10 @@ export const endPoints = {
     WORKBOOK_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library/workbooks`,
     INVOICES_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library/invoices`,
     FILINGS: (engagementId: string) => `/engagements/${engagementId}/filings`,
+    FILING_FILES: (engagementId: string, filingId: string) => `/engagements/${engagementId}/filings/${filingId}/files`,
     FILING_STATUS: (engagementId: string, filingId: string) => `/engagements/${engagementId}/filings/${filingId}/status`,
+    FILING_COMMENTS: (engagementId: string, filingId: string) => `/engagements/${engagementId}/filings/${filingId}/comments`,
+    FILING_SIGN_OFFS: (engagementId: string, filingId: string) => `/engagements/${engagementId}/filings/${filingId}/sign-off`,
     /** Export endpoints (REFERENCE-PORTAL compatible). GET with responseType blob for file download. */
     EXPORT: (engagementId: string, type: 'evidence' | 'all-evidence' | 'all-workbooks' | 'combined' | 'etb' | 'adjustments' | 'reclassifications', format?: 'xlsx' | 'pdf') => {
       const base = `/engagements/${engagementId}/export/${type}`;
