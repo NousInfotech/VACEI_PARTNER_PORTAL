@@ -7,7 +7,6 @@ import {
   ArrowRight,
   UserPlus,
   Briefcase,
-  Settings,
   FileText
 } from "lucide-react";
 import { apiGet } from "../../config/base";
@@ -30,6 +29,7 @@ import TemplateManagement from "../org-employee/template-management/TemplateMana
 import CreateTemplateForm from "../org-employee/template-management/CreateTemplateForm";
 import EditTemplateForm from "../org-employee/template-management/EditTemplateForm";
 import ViewTemplateDetail from "../org-employee/template-management/ViewTemplateDetail";
+import ClientManagement from "./client-management/ClientManagement";
 
 interface AdminDashboardProps {
   activeSection?: string;
@@ -54,7 +54,14 @@ export default function AdminDashboard({ activeSection }: AdminDashboardProps) {
     enabled: !!orgId
   });
 
-  const loading = loadingEmployees || loadingEngagements;
+  // Fetch Clients Count
+  const { data: clientsResponse, isLoading: loadingClients } = useQuery({
+    queryKey: ['org-clients', orgId],
+    queryFn: () => apiGet<ApiResponse<unknown[]>>(endPoints.CLIENT.GET_ALL, { organizationId: orgId }),
+    enabled: !!orgId
+  });
+
+  const loading = loadingEmployees || loadingEngagements || loadingClients;
 
   const stats = [
     { 
@@ -66,19 +73,19 @@ export default function AdminDashboard({ activeSection }: AdminDashboardProps) {
       path: "/dashboard/employees"
     },
     { 
+      label: "Total Clients", 
+      value: clientsResponse?.meta?.total || clientsResponse?.data?.length || "0", 
+      icon: Users, 
+      color: "text-orange-600", 
+      bg: "bg-orange-50",
+      path: "/dashboard/clients"
+    },
+    { 
       label: "Active Engagements", 
       value: engagementsResponse?.meta?.total || engagementsResponse?.data?.length || "0", 
       icon: ShieldCheck, 
       color: "text-green-600", 
       bg: "bg-green-50",
-      path: "/dashboard/engagements"
-    },
-    { 
-      label: "Assigned Services", 
-      value: organizationMember?.allowedServices?.length || "0", 
-      icon: Briefcase, 
-      color: "text-purple-600", 
-      bg: "bg-purple-50",
       path: "/dashboard/engagements"
     },
   ];
@@ -90,6 +97,13 @@ export default function AdminDashboard({ activeSection }: AdminDashboardProps) {
       icon: UserPlus, 
       path: "/dashboard/employees/create", 
       color: "bg-primary"
+    },
+    { 
+      title: "Manage Clients", 
+      description: "View and filter client portfolio", 
+      icon: Users, 
+      path: "/dashboard/clients", 
+      color: "bg-orange-500"
     },
     { 
       title: "View Engagements", 
@@ -104,18 +118,15 @@ export default function AdminDashboard({ activeSection }: AdminDashboardProps) {
       icon: FileText, 
       path: "/dashboard/procedure-prompts", 
       color: "bg-emerald-600"
-    },
-    { 
-      title: "System Settings", 
-      description: "Configure portal preferences", 
-      icon: Settings, 
-      path: "/dashboard/settings", 
-      color: "bg-amber-600"
     }
   ];
 
   if (activeSection === "Employees") {
     return <EmployeeManagement />;
+  }
+
+  if (activeSection === "Clients") {
+    return <ClientManagement />;
   }
 
   if (activeSection === "Create Employee") {

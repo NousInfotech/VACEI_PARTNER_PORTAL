@@ -805,7 +805,7 @@ export default function EngagementFullView() {
                 <Skeleton className="h-32 w-full rounded-3xl" />
               </div>
             ) : request ? (
-              <div className="space-y-10">
+              <div className="space-y-10 h-[300px]">
                 <div className="grid grid-cols-2 gap-6 p-6 bg-slate-50 rounded-3xl border border-slate-100">
                   <div className="space-y-1">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Service</p>

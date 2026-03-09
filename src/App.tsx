@@ -37,6 +37,7 @@ const App = () => {
           <Route element={<MainLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/companies" element={<Dashboard activeSection="Companies" />} />
+            <Route path="/dashboard/clients" element={<Dashboard activeSection="Clients" />} />
             <Route path="/dashboard/engagements" element={<Dashboard activeSection="Engagements" />} />
             <Route path="/dashboard/compliance" element={<Dashboard activeSection="Compliance" />} />
             <Route path="/dashboard/templates" element={<Dashboard activeSection="Templates" />} />

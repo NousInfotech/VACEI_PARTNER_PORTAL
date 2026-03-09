@@ -5,6 +5,8 @@ import { Button } from '../../../ui/Button';
 import DocRequestList from './DocRequestList';
 import MilestoneList from './MilestoneList';
 import ChecklistList from './ChecklistList';
+import PageHeader from '../../common/PageHeader';
+import { useAuth } from '../../../context/auth-context-core';
 import type { TemplateModuleType, TemplateType } from '../../../types/template';
 
 type MainTab = 'DOC_REQUEST' | 'MILESTONE' | 'CHECKLIST';
@@ -28,6 +30,7 @@ const getTemplateType = (tab: MainTab): TemplateType => {
 
 const TemplateManagement: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const mainTabParam = (searchParams.get('tab') as MainTab) || 'DOC_REQUEST';
@@ -54,9 +57,15 @@ const TemplateManagement: React.FC = () => {
       `/dashboard/templates/create?type=${type}&moduleType=${moduleType}`
     );
   };
-
   return (
     <div className="space-y-6">
+      {user?.role === 'ORG_ADMIN' && (
+        <PageHeader 
+          title="Template Management"
+          subtitle="Define and manage standardized document requests, milestones, and checklists for all engagements."
+          icon={Layers}
+        />
+      )}
 
       {/* Main Tabs */}
       <div className="bg-white border border-gray-100 rounded-3xl shadow-sm overflow-hidden">

@@ -19,15 +19,15 @@ export const menuData: MenuItem[] = [
         description: "Service Overview",
         roles: ["ORG_ADMIN", "ORG_EMPLOYEE"]
     },
-    // {
-    //     slug: "clients",
-    //     icon: Building01Icon,
-    //     label: "Clients",
-    //     href: "/dashboard/clients",
-    //     section: "primary",
-    //     description: "Manage client companies",
-    //     roles: ["ORG_ADMIN"]
-    // },
+    {
+        slug: "clients",
+        icon: Building01Icon,
+        label: "Clients",
+        href: "/dashboard/clients",
+        section: "primary",
+        description: "Manage client companies",
+        roles: ["ORG_ADMIN"]
+    },
     {
         slug: "employees",
         icon: Building01Icon, // Using similar icon for now

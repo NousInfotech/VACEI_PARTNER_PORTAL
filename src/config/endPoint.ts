@@ -23,6 +23,10 @@ export const endPoints = {
     ASSIGN_SERVICES: '/organization-members',
     ASSIGN_CUSTOM_SERVICES: '/organization-members',
   },
+  CLIENT: {
+    GET_ALL: '/clients',
+    GET_BY_ID: (id: string) => `/clients/${id}`,
+  },
   CUSTOM_SERVICE: {
     GET_ACTIVE: '/custom-services/active',
   },
