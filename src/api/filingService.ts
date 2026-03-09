@@ -32,6 +32,7 @@ export interface FilingItem {
     files: FilingFileView[];
     comments?: FilingCommentItem[];
     signOffs?: FilingSignOffItem[];
+    documentRequestId?: string | null;
 }
 
 export interface FilingCommentItem {
@@ -105,4 +106,7 @@ export const filingService = {
 
     toggleSignOff: (engagementId: string, filingId: string, signOffStatus: boolean) =>
         apiPost<{ data: FilingSignOffItem }>(endPoints.ENGAGEMENTS.FILING_SIGN_OFFS(engagementId, filingId), { signOffStatus }).then((res) => res.data),
+
+    createDocumentRequest: (engagementId: string, filingId: string, engagementFilingDocuments: string[]) =>
+        apiPost<{ data: any }>(`${endPoints.ENGAGEMENTS.FILINGS(engagementId)}/${filingId}/document-request`, { engagementFilingDocuments }).then((res) => res.data),
 };

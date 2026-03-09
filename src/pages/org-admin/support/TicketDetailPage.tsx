@@ -68,7 +68,7 @@ export default function TicketDetailPage() {
       <div className="space-y-6">
         <PageHeader title="Ticket" description="Invalid ticket." icon={MessageSquare} />
         <p className="text-gray-500">Missing ticket ID.</p>
-        <Button variant="outline" onClick={() => navigate("/dashboard/support/tickets")}>
+        <Button variant="header" onClick={() => navigate("/dashboard/support/tickets")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to tickets
         </Button>

@@ -17,7 +17,7 @@ export const ListView: React.FC = () => {
         <tr className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">
           <th className="pb-2 pl-4">Name</th>
           <th className="pb-2 hidden sm:table-cell">Type</th>
-          <th className="pb-2 hidden md:table-cell">Size</th>
+          <th className="pb-2 hidden md:table-cell">Date Modified</th>
           <th className="pb-2 text-right pr-4">Actions</th>
         </tr>
       </thead>
@@ -53,7 +53,7 @@ export const ListView: React.FC = () => {
                 <span className="text-xs text-gray-500 uppercase font-medium">{item.fileType || 'Folder'}</span>
               </td>
               <td className="py-3 hidden md:table-cell">
-                <span className="text-xs text-gray-500">{item.size}</span>
+                <span className="text-xs text-gray-500">{item.updatedAt}</span>
               </td>
               <td className="pr-4 text-right rounded-r-xl relative">
                 <div className="flex items-center justify-end gap-1 opacity-10 md:opacity-0 group-hover:opacity-100 transition-opacity">

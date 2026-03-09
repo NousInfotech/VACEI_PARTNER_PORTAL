@@ -85,14 +85,14 @@ const DocumentRequestsContent = () => {
     queryKey: ["document-requests", engagementId],
     enabled: !!engagementId,
     queryFn: async () => {
-      const res = await apiGet<ApiResponse<DocumentRequestItem | DocumentRequestItem[] | null>>(
+      const res = await apiGet<ApiResponse<DocumentRequestItem[]>>(
         endPoints.DOCUMENT_REQUESTS,
         { engagementId } as Record<string, unknown>
       );
       if (!res?.data) return [];
-      const items = Array.isArray(res.data) ? res.data : [res.data];
-      return items.filter(i => !!i);
+      return Array.isArray(res.data) ? res.data : [res.data];
     },
+    select: (items) => items.filter(i => !!i),
   });
 
   const docRequests = data ?? [];
@@ -111,7 +111,7 @@ const DocumentRequestsContent = () => {
                 <FileIcon className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-gray-900 tracking-tight leading-none">Workspace</h2>
+                <h2 className="text-lg font-bold text-gray-900 tracking-tight leading-none">Document Requests</h2>
                 <p className="text-[9px] uppercase font-black tracking-widest text-gray-400 mt-1">Documentation & Compliance</p>
               </div>
             </div>

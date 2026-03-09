@@ -15,12 +15,14 @@ interface RequestedDocumentRowProps {
   doc: RequestedDocumentItem;
   requestId: string;
   requestStatus?: 'DRAFT' | 'ACTIVE' | 'COMPLETED';
+  isFilingRequest?: boolean;
 }
 
 export const RequestedDocumentRow = ({ 
   doc, 
   requestId,
-  requestStatus
+  requestStatus,
+  isFilingRequest
 }: RequestedDocumentRowProps) => {
   const { 
     handleFileUpload, 
@@ -364,6 +366,7 @@ export const RequestedDocumentRow = ({
                 doc={child} 
                 requestId={requestId} 
                 requestStatus={requestStatus}
+                isFilingRequest={isFilingRequest}
               />
             ))}
           </ul>

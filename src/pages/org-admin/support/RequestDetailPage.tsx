@@ -98,7 +98,7 @@ export default function RequestDetailPage() {
       <div className="space-y-6">
         <PageHeader title="Support request" description="Invalid request." icon={MessageSquare} />
         <p className="text-gray-500">Missing request ID.</p>
-        <Button variant="outline" onClick={() => navigate("/dashboard/support/tickets")}>
+        <Button variant="header" onClick={() => navigate("/dashboard/support/tickets")}>
           Back to my requests
         </Button>
       </div>
@@ -111,7 +111,7 @@ export default function RequestDetailPage() {
         <PageHeader title="Support request" description={error ?? "Loading..."} icon={MessageSquare} />
         {loading && <div className="py-12 text-center text-gray-500">Loading...</div>}
         {error && !loading && (
-          <Button variant="outline" onClick={() => navigate("/dashboard/support/tickets")}>
+          <Button variant="header" onClick={() => navigate("/dashboard/support/tickets")}>
             Back to my requests
           </Button>
         )}
@@ -126,7 +126,7 @@ export default function RequestDetailPage() {
         description={request.subject}
         icon={MessageSquare}
         actions={
-          <Button variant="outline" onClick={() => navigate("/dashboard/support/tickets")}>
+          <Button variant="header" onClick={() => navigate("/dashboard/support/tickets")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to my requests
           </Button>

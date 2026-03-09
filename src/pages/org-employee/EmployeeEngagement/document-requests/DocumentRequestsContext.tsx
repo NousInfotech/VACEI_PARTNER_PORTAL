@@ -164,9 +164,9 @@ export const DocumentRequestsProvider: React.FC<{ engagementId?: string; childre
       
       // Auto update linked todo to ACTION_TAKEN
       const todos = queryClient.getQueryData<any[]>(['engagement-todos', engagementId]);
-      const docGroups = queryClient.getQueryData<DocumentRequestItem[]>(["document-requests", engagementId]);
+      const docGroups = queryClient.getQueryData<DocumentRequestItem[]>(["document-requests", engagementId]) || [];
       
-      if (!todos || !docGroups) return;
+      if (!todos || docGroups.length === 0) return;
 
       const completionCheck = (d: RequestedDocumentItem): boolean => {
         if (d.id === variables.docId) return true; // Account for the fact that this one is now uploaded

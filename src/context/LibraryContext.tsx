@@ -109,6 +109,22 @@ const formatFileSize = (bytes?: number) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
+const formatLibraryDate = (dateString?: string) => {
+  if (!dateString) return '';
+  const d = new Date(dateString);
+  if (isNaN(d.getTime())) return '';
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  let hours = d.getHours();
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'pm' : 'am';
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  const strHours = String(hours).padStart(2, '0');
+  return `${day}-${month}-${year} ${strHours}:${minutes}${ampm}`;
+};
+
 export const LibraryProvider: React.FC<{ children: React.ReactNode; engagementId?: string }> = ({ children, engagementId }) => {
   const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -211,7 +227,7 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode; engagementId
       type: 'folder' as const,
       fileType: 'Folder',
       size: '',
-      updatedAt: f.updatedAt ? new Date(f.updatedAt).toLocaleDateString() : '',
+      updatedAt: formatLibraryDate(f.updatedAt),
     })) as LibraryItem[];
   }, [rootsData]);
 
@@ -221,14 +237,18 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode; engagementId
 
     if (!currentFolderId) {
       folders = rootFolders as LibraryItem[];
-      files = (rootFiles ?? []).map((f: ApiFile) => ({
-        ...f,
-        name: f.filename || f.file_name,
-        type: 'file' as const,
-        fileType: f.fileType || f.file_type || 'File',
-        size: formatFileSize(f.size || f.file_size),
-        updatedAt: f.updatedAt ? new Date(f.updatedAt).toLocaleDateString() : (f.createdAt ? new Date(f.createdAt).toLocaleDateString() : ''),
-      })) as LibraryItem[];
+      files = (rootFiles ?? []).map((f: ApiFile) => {
+        const name = f.filename || f.file_name || '';
+        const ext = name.includes('.') ? name.split('.').pop()?.toUpperCase() : null;
+        return {
+          ...f,
+          name,
+          type: 'file' as const,
+          fileType: ext || f.fileType || f.file_type || 'File',
+          size: formatFileSize(f.size || f.file_size),
+          updatedAt: formatLibraryDate(f.updatedAt || f.createdAt),
+        };
+      }) as LibraryItem[];
     } else if (contentData) {
       folders = (contentData.folders ?? []).map((f: ApiFolder) => ({
         ...f,
@@ -236,16 +256,20 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode; engagementId
         type: 'folder' as const,
         fileType: 'Folder',
         size: '',
-        updatedAt: f.updatedAt ? new Date(f.updatedAt).toLocaleDateString() : '',
+        updatedAt: formatLibraryDate(f.updatedAt),
       }));
-      files = (contentData.files ?? []).map((f: ApiFile) => ({
-        ...f,
-        name: f.filename || f.file_name,
-        type: 'file' as const,
-        fileType: f.fileType || f.file_type || 'File',
-        size: formatFileSize(f.size || f.file_size),
-        updatedAt: f.updatedAt ? new Date(f.updatedAt).toLocaleDateString() : (f.createdAt ? new Date(f.createdAt).toLocaleDateString() : ''),
-      }));
+      files = (contentData.files ?? []).map((f: ApiFile) => {
+        const name = f.filename || f.file_name || '';
+        const ext = name.includes('.') ? name.split('.').pop()?.toUpperCase() : null;
+        return {
+          ...f,
+          name,
+          type: 'file' as const,
+          fileType: ext || f.fileType || f.file_type || 'File',
+          size: formatFileSize(f.size || f.file_size),
+          updatedAt: formatLibraryDate(f.updatedAt || f.createdAt),
+        };
+      });
     }
 
     const allItems = [...folders, ...files].filter(item => {

@@ -226,7 +226,7 @@ export default function EngagementFullView() {
     },
   });
 
-  const docRequests = Array.isArray(docRequestsResponse) ? docRequestsResponse : docRequestsResponse ? [docRequestsResponse] : [];
+  const docRequests = (Array.isArray(docRequestsResponse) ? docRequestsResponse : docRequestsResponse ? [docRequestsResponse] : []).filter((r: any) => !!r);
 
   const updateDocRequestStatusMutation = useMutation({
     mutationFn: async ({ requestId, status }: { requestId: string; status: string }) => {

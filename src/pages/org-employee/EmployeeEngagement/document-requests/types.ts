@@ -29,6 +29,7 @@ export interface DocumentRequestItem {
   createdAt: string;
   unassignedFiles: { id: string; file_name: string; url: string }[];
   requestedDocuments: RequestedDocumentItem[];
+  isFilingRequest?: boolean;
 }
 
 export interface FormDataMultipleItem {

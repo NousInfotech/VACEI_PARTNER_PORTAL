@@ -16,7 +16,8 @@ import {
   CornerDownRight,
   X,
   Paperclip,
-  RefreshCw
+  RefreshCw,
+  FileCheck
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "../../../../ui/Button";
@@ -28,17 +29,31 @@ import PageHeader from "../../../common/PageHeader";
 import { Skeleton } from "../../../../ui/Skeleton";
 import { useAuth } from "../../../../context/auth-context-core";
 import { ActionConfirmModal } from "../components/ActionConfirmModal";
+import { DocumentRequestsProvider, useDocumentRequests } from "../document-requests/DocumentRequestsContext";
+import { DocumentRequestGroup } from "../document-requests/components/DocumentRequestGroup";
+import { RequestedDocumentRow } from "../document-requests/components/RequestedDocumentRow";
+import { DocumentRequestModal } from "../document-requests/components/DocumentRequestModal";
+import TodoModal from "../components/TodoModal";
+import { apiGet } from "../../../../config/base";
+import { endPoints } from "../../../../config/endPoint";
+import type { DocumentRequestItem } from "../document-requests/types";
 
-export default function FilingDetailView() {
+// Inner component to safely consume DocumentRequestsContext
+function FilingDetailContent() {
   const { engagementId, filingId } = useParams<{ engagementId: string; filingId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, selectedService } = useAuth();
+  const { 
+    isTodoModalOpen, setIsTodoModalOpen, 
+    todoMode, todoSourceId, todoInitialData 
+  } = useDocumentRequests();
   const [newComment, setNewComment] = useState("");
   const [isSignOffModalOpen, setIsSignOffModalOpen] = useState(false);
   const [replyingTo, setReplyingTo] = useState<{ id: string; name: string } | null>(null);
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
   const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
+  const [selectedDocFileIds, setSelectedDocFileIds] = useState<string[]>([]);
 
   // Fetch Filing Data
   const { data: filing, isLoading: isLoadingFiling } = useQuery({
@@ -52,6 +67,28 @@ export default function FilingDetailView() {
     queryKey: ["filing-comments", engagementId, filingId],
     queryFn: () => filingService.getComments(engagementId!, filingId!),
     enabled: !!engagementId && !!filingId,
+  });
+
+  // Fetch Document Requests
+  const { data: docRequests = [] } = useQuery({
+    queryKey: ["document-requests", engagementId],
+    queryFn: () => apiGet<{ data: DocumentRequestItem[] }>(endPoints.DOCUMENT_REQUESTS, { engagementId }).then(res => res.data),
+    enabled: !!engagementId,
+  });
+
+  // Create Document Request Mutation
+  const createDocRequestMutation = useMutation({
+    mutationFn: (fileIds: string[]) =>
+      filingService.createDocumentRequest(engagementId!, filingId!, fileIds),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["filing-detail", engagementId, filingId] });
+      queryClient.invalidateQueries({ queryKey: ["document-requests", engagementId] });
+      setSelectedDocFileIds([]);
+      toast.success(data.message || "Document request processed successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Failed to process document request");
+    }
   });
 
   // Update Status Mutation
@@ -111,6 +148,7 @@ export default function FilingDetailView() {
   });
 
   const isLocked = filing?.status === FilingStatus.FILED;
+  const isClientReview = filing?.status === FilingStatus.CLIENT_REVIEW;
   const userSignOff = filing?.signOffs?.find(s => s.userId === user?.id);
   const hasSignedOff = !!userSignOff?.signOffStatus;
 
@@ -361,70 +399,131 @@ export default function FilingDetailView() {
           <div className="w-full lg:w-[40%] flex flex-col bg-white rounded-[32px] border border-gray-100 shadow-xl shadow-indigo-500/5 overflow-hidden">
             <div className="p-6 border-b border-gray-100 bg-white flex items-center justify-between shrink-0">
               <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Documents ({f.files.length})</h4>
-              {!isLocked && (
-                <>
-                  <input 
-                    type="file" 
-                    id="add-file-detail" 
-                    className="hidden" 
-                    multiple 
-                    onChange={handleFileAdd} 
-                  />
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="h-8 rounded-xl text-primary hover:bg-primary/5 gap-2 text-[10px] font-black uppercase tracking-widest"
-                    onClick={() => document.getElementById('add-file-detail')?.click()}
-                    disabled={addFilesMutation.isPending}
-                  >
-                    <Plus size={14} />
-                    Add Files
-                  </Button>
-                </>
-              )}
+              <div className="flex items-center gap-2">
+                {!isLocked && isClientReview && (
+                  <>
+                    <button 
+                      className="text-[10px] font-black text-primary hover:text-primary/70 uppercase tracking-widest transition-colors mr-2"
+                      onClick={() => {
+                        const allAvailableIds = f.files
+                          .filter((ff: any) => !docRequests?.some((dr: any) => dr.requestedDocuments.some((rd: any) => rd.templateFile?.id === ff.file.id)))
+                          .map((ff: any) => ff.id);
+                        
+                        if (selectedDocFileIds.length === allAvailableIds.length) {
+                          setSelectedDocFileIds([]);
+                        } else {
+                          setSelectedDocFileIds(allAvailableIds);
+                        }
+                      }}
+                    >
+                      {selectedDocFileIds.length > 0 && selectedDocFileIds.length === f.files.filter((ff: any) => !docRequests?.some((dr: any) => dr.requestedDocuments.some((rd: any) => rd.templateFile?.id === ff.file.id))).length ? "Deselect All" : "Select All"}
+                    </button>
+
+                    {selectedDocFileIds.length > 0 && (
+                      <Button
+                        size="sm"
+                        variant={f.documentRequestId ? "outline" : "default"}
+                        className="h-8 rounded-xl gap-2 text-[10px] font-black uppercase tracking-widest"
+                        onClick={() => createDocRequestMutation.mutate(selectedDocFileIds)}
+                        isLoading={createDocRequestMutation.isPending}
+                      >
+                        {f.documentRequestId ? <Plus size={14} /> : <FileCheck size={14} />}
+                        {f.documentRequestId ? "Add Files" : "Create Request"}
+                      </Button>
+                    )}
+
+                    <div className="w-px h-6 bg-gray-100 mx-1" />
+
+                    <input 
+                      type="file" 
+                      id="add-file-detail" 
+                      className="hidden" 
+                      multiple 
+                      onChange={handleFileAdd} 
+                    />
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="h-8 rounded-xl text-primary hover:bg-primary/5 gap-2 text-[10px] font-black uppercase tracking-widest"
+                      onClick={() => document.getElementById('add-file-detail')?.click()}
+                      disabled={addFilesMutation.isPending}
+                    >
+                      <Plus size={14} />
+                      Add Files
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
             
             <div className="flex-1 overflow-y-auto p-6 space-y-3 custom-scrollbar">
-              {f.files.map((fileView: any) => (
-                <div 
-                  key={fileView.id} 
-                  className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-gray-100 hover:border-primary/20 transition-all group/file shadow-sm"
-                >
-                  <div className="p-3 rounded-xl bg-gray-50 text-gray-400 group-hover/file:bg-primary/5 group-hover/file:text-primary transition-colors">
-                    <FileIcon size={20} />
+              {f.files.map((fileView: any) => {
+                const isSelected = selectedDocFileIds.includes(fileView.id);
+                const alreadyInDr = docRequests?.some((dr: any) => dr.requestedDocuments.some((rd: any) => rd.templateFile?.id === fileView.file.id));
+
+                return (
+                  <div 
+                    key={fileView.id} 
+                    className={cn(
+                      "flex items-center gap-4 p-4 rounded-2xl bg-white border transition-all group/file shadow-sm",
+                      alreadyInDr ? "bg-emerald-50/20 border-emerald-100 opacity-90" : 
+                      isSelected ? "border-primary/40 bg-primary/5" : "border-gray-100 hover:border-primary/20"
+                    )}
+                  >
+                    {!alreadyInDr && !isLocked && isClientReview && (
+                      <Checkbox 
+                        checked={isSelected}
+                        onCheckedChange={(checked) => {
+                          if (checked) setSelectedDocFileIds(prev => [...prev, fileView.id]);
+                          else setSelectedDocFileIds(prev => prev.filter(id => id !== fileView.id));
+                        }}
+                        className="rounded-lg h-5 w-5"
+                      />
+                    )}
+                    {alreadyInDr && (
+                      <div className="h-5 w-5 flex items-center justify-center text-emerald-500">
+                        <CheckCircle2 size={16} />
+                      </div>
+                    )}
+                    <div className="p-3 rounded-xl bg-gray-50 text-gray-400 group-hover/file:bg-primary/5 group-hover/file:text-primary transition-colors">
+                      <FileIcon size={20} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-gray-900 truncate">{fileView.file.file_name}</p>
+                      {alreadyInDr && (
+                         <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mt-0.5">Part of Document Request</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="h-9 w-9 rounded-xl hover:bg-primary/5 text-gray-400 hover:text-primary"
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.href = fileView.file.url;
+                          link.download = fileView.file.file_name;
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                        title="Download"
+                      >
+                        <Download size={16} />
+                      </Button>
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="h-9 w-9 rounded-xl hover:bg-primary/5 text-gray-400 hover:text-primary"
+                        onClick={() => window.open(fileView.file.url, "_blank")}
+                        title="View"
+                      >
+                        <ExternalLink size={16} />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-gray-900 truncate">{fileView.file.file_name}</p>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button 
-                      size="icon" 
-                      variant="ghost" 
-                      className="h-9 w-9 rounded-xl hover:bg-primary/5 text-gray-400 hover:text-primary"
-                      onClick={() => {
-                        const link = document.createElement('a');
-                        link.href = fileView.file.url;
-                        link.download = fileView.file.file_name;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                      }}
-                      title="Download"
-                    >
-                      <Download size={16} />
-                    </Button>
-                    <Button 
-                      size="icon" 
-                      variant="ghost" 
-                      className="h-9 w-9 rounded-xl hover:bg-primary/5 text-gray-400 hover:text-primary"
-                      onClick={() => window.open(fileView.file.url, "_blank")}
-                      title="View"
-                    >
-                      <ExternalLink size={16} />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -559,9 +658,66 @@ export default function FilingDetailView() {
                 </Button>
               </div>
             </div>
+          </div>        </div>
+
+        {/* Associated Document Request Section */}
+        {f.documentRequestId && (
+          <div className="p-8 bg-white rounded-[32px] border border-gray-100 shadow-xl shadow-indigo-500/5 space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-lg font-bold text-gray-900 leading-none">Associated Document Request</h4>
+                <p className="text-[10px] uppercase font-black tracking-widest text-gray-400 mt-1">Requested components for this filing</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {(() => {
+                const group = docRequests.find((dr: any) => dr.id === f.documentRequestId);
+                if (!group) return <Skeleton className="h-32 w-full rounded-2xl" />;
+                
+                return (
+                  <DocumentRequestGroup req={group}>
+                    {group.requestedDocuments.map((doc: any) => (
+                      <RequestedDocumentRow 
+                        key={doc.id} 
+                        doc={doc} 
+                        requestId={group.id} 
+                        requestStatus={group.status}
+                        isFilingRequest={group.isFilingRequest}
+                      />
+                    ))}
+                  </DocumentRequestGroup>
+                );
+              })()}
+            </div>
           </div>
-        </div>
+        )}
       </div>
+
+      {f.documentRequestId && (
+        <>
+          <DocumentRequestModal />
+          <TodoModal 
+            isOpen={isTodoModalOpen}
+            onClose={() => setIsTodoModalOpen(false)}
+            onSuccess={() => {}}
+            engagementId={engagementId!}
+            mode={todoMode}
+            sourceId={todoSourceId}
+            initialData={todoInitialData}
+            service={selectedService || 'AUDITING'}
+          />
+        </>
+      )}
     </div>
+  );
+}
+
+export default function FilingDetailView() {
+  const { engagementId } = useParams<{ engagementId: string }>();
+  return (
+    <DocumentRequestsProvider engagementId={engagementId}>
+      <FilingDetailContent />
+    </DocumentRequestsProvider>
   );
 }
