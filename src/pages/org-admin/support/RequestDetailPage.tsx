@@ -143,12 +143,12 @@ export default function RequestDetailPage() {
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Request status</p>
             <span
-              className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
                 request.status === "ACCEPTED" ? "bg-emerald-100 text-emerald-800" :
                 request.status === "REJECTED" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800"
               }`}
             >
-              {request.status}
+              {request.status.toLowerCase()}
             </span>
           </div>
         </div>

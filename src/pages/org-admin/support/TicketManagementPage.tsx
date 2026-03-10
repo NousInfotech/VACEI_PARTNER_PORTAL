@@ -19,9 +19,9 @@ interface SupportRequestItem {
 
 function RequestStatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    PENDING: "bg-amber-100 text-amber-800",
-    ACCEPTED: "bg-emerald-100 text-emerald-800",
-    REJECTED: "bg-red-100 text-red-800",
+    pending: "bg-amber-100 text-amber-800",
+    accepted: "bg-emerald-100 text-emerald-800",
+    rejected: "bg-red-100 text-red-800",
   };
   return (
     <span
@@ -34,11 +34,11 @@ function RequestStatusBadge({ status }: { status: string }) {
 
 function TicketStatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    PENDING: "bg-amber-100 text-amber-800",
-    ACTIVE: "bg-blue-100 text-blue-800",
-    IN_PROGRESS: "bg-blue-100 text-blue-800",
-    RESOLVED: "bg-emerald-100 text-emerald-800",
-    CLOSED: "bg-gray-100 text-gray-700",
+    pending: "bg-amber-100 text-amber-800",
+    active: "bg-blue-100 text-blue-800",
+    in_progress: "bg-blue-100 text-blue-800",
+    resolved: "bg-emerald-100 text-emerald-800",
+    closed: "bg-gray-100 text-gray-700",
   };
   return (
     <span
@@ -119,11 +119,11 @@ export default function TicketManagementPage() {
                     <td className="py-4 text-sm text-gray-600 max-w-xs">
                       <span className="line-clamp-2">{r.description || "—"}</span>
                     </td>
-                    <td className="py-4">
-                      <RequestStatusBadge status={r.status} />
+                    <td className="py-4 capitalize">
+                      <RequestStatusBadge status={r.status.toLowerCase()} />
                     </td>
-                    <td className="py-4">
-                      <TicketStatusBadge status={ticketStatus(r)} />
+                    <td className="py-4 capitalize">
+                      <TicketStatusBadge status={ticketStatus(r).toLowerCase()} />
                     </td>
                     <td className="py-4 text-sm text-gray-500">
                       {new Date(r.createdAt).toLocaleDateString()}
