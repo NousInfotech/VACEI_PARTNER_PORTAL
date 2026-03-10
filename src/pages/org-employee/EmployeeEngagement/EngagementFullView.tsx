@@ -219,7 +219,7 @@ export default function EngagementFullView() {
     enabled: !!engagementId,
     queryFn: async () => {
       const res = await apiGet<any>(
-        endPoints.DOCUMENT_REQUESTS,
+        endPoints.DOCUMENT_REQUESTS.BASE,
         { engagementId } as Record<string, unknown>
       );
       return res?.data || [];
@@ -713,7 +713,9 @@ export default function EngagementFullView() {
 
               </div>
             ) : activeTab === 'library' ? (
-              <LibraryExplorer engagementId={engagementId ?? undefined} />
+              <div className="flex flex-col h-[calc(100vh-250px)] md:h-[calc(100vh-200px)] overflow-hidden gap-5">
+                <LibraryExplorer engagementId={engagementId ?? undefined} />
+              </div>
             ) : activeTab === 'audit' ? (
               <AuditContent engagementId={engagementId ?? undefined} />
             ) : activeTab === 'accounting' ? (

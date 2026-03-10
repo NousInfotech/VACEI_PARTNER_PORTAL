@@ -3,7 +3,6 @@
 import React, { useEffect } from 'react';
 import { FolderIcon } from 'lucide-react';
 import { cn } from '../../../../lib/utils';
-import { ScrollArea } from '../../../../ui/scroll-area';
 import { useLibrary, LibraryProvider } from '../../../../context/LibraryContext';
 
 // Modular Components
@@ -67,7 +66,7 @@ const LibraryContent: React.FC = () => {
 
         {/* Content Area */}
         <div className="flex-1 flex flex-col min-w-0" onClick={() => { setSelectedItems([]); closeContextMenu(); }}>
-          <ScrollArea className="flex-1">
+          <div className="flex-1 overflow-y-auto scrollbar-thin">
             <div className="p-4 md:p-6" onClick={(e) => e.stopPropagation()}>
               {isLoading ? (
                 viewMode === 'list' ? <ListViewSkeleton /> : <GridViewSkeleton />
@@ -82,7 +81,7 @@ const LibraryContent: React.FC = () => {
                 <GridView />
               )}
             </div>
-          </ScrollArea>
+          </div>
         </div>
       </div>
 
@@ -93,7 +92,7 @@ const LibraryContent: React.FC = () => {
 
 export function LibraryExplorer({ className, engagementId }: LibraryExplorerProps) {
   return (
-    <div className={cn("flex flex-col h-[600px] md:h-[700px] lg:h-[800px] bg-white border border-gray-200 rounded-2xl overflow-hidden", className)}>
+    <div className={cn("flex flex-col flex-1 min-h-0 bg-white border border-gray-200 rounded-2xl overflow-hidden", className)}>
       <LibraryProvider engagementId={engagementId}>
         <LibraryContent />
       </LibraryProvider>

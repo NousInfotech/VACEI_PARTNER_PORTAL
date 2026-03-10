@@ -18,7 +18,13 @@ interface PageHeaderProps {
   actions?: React.ReactNode;
   className?: string;
   animate?: boolean;
+  showBack?: boolean;
+  backUrl?: string;
 }
+
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "../../ui/Button";
 
 export const PageHeader = ({
   title,
@@ -31,8 +37,11 @@ export const PageHeader = ({
   actions,
   className,
   animate = true,
+  showBack = false,
+  backUrl,
 }: PageHeaderProps) => {
   const hasStatusBar = !!(activeCompany || badge || riskLevel);
+  const navigate = useNavigate();
 
   return (
     <ShadowCard animate={animate} className={cn("p-8 bg-[#0f1729] border-white/10", className)}>
@@ -86,11 +95,18 @@ export const PageHeader = ({
           )}
         </div>
 
-        {actions && (
-          <div className="flex items-center gap-4">
-            {actions}
-          </div>
-        )}
+        <div className="flex items-center gap-4">
+          {showBack && (
+            <Button 
+              onClick={() => backUrl ? navigate(backUrl) : navigate(-1)}
+              variant='header'
+            >
+              <ArrowLeft className="h-5 w-5" />
+              Back
+            </Button>
+          )}
+          {actions}
+        </div>
       </div>
     </ShadowCard>
   );

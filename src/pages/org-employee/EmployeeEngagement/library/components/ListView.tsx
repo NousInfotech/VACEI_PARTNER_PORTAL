@@ -8,7 +8,7 @@ import { getFileIcon } from '../../../../../lib/libraryData';
 import { useLibrary } from '../../../../../context/LibraryContext';
 
 export const ListView: React.FC = () => {
-  const { currentItems, selectedItems, handleDoubleClick, handleSelection, handleContextMenu, handleDownload, handleDelete } = useLibrary();
+  const { currentItems, selectedItems, handleDoubleClick, handleSelection, handleContextMenu, handleDownload, handleDelete, handleMoveItem } = useLibrary();
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   return (
@@ -25,6 +25,8 @@ export const ListView: React.FC = () => {
         {currentItems.map((item) => {
           const Icon = item.type === 'folder' ? FolderIcon : getFileIcon(item.fileType);
           const isSelected = selectedItems.includes(item.id);
+          const canDelete = !item.isProtected && item.createdBy === 'user';
+          const canDrag = !item.isProtected && item.createdBy === 'user';
           
           return (
             <tr 
@@ -32,6 +34,32 @@ export const ListView: React.FC = () => {
               onDoubleClick={() => handleDoubleClick(item)}
               onClick={(e) => handleSelection(item.id, e)}
               onContextMenu={(e) => handleContextMenu(e, item.id)}
+              draggable={canDrag}
+              onDragStart={(e) => {
+                if (!canDrag) return;
+                e.dataTransfer.setData('text/plain', JSON.stringify({ id: item.id, type: item.type }));
+                e.dataTransfer.effectAllowed = 'move';
+              }}
+              onDragOver={(e) => {
+                if (item.type === 'folder') { // Only folders can be drop targets
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = 'move';
+                  e.currentTarget.classList.add('bg-primary/10');
+                }
+              }}
+              onDragLeave={(e) => {
+                e.currentTarget.classList.remove('bg-primary/10');
+              }}
+              onDrop={(e) => {
+                if (item.type === 'folder') { // Only folders can be drop targets
+                  e.preventDefault();
+                  e.currentTarget.classList.remove('bg-primary/10');
+                  const dragData = JSON.parse(e.dataTransfer.getData('text/plain'));
+                  if (dragData.id !== item.id) { // Prevent dropping an item into itself
+                    handleMoveItem(dragData.id, dragData.type, item.id);
+                  }
+                }
+              }}
               className={cn(
                 "group hover:bg-gray-100 cursor-pointer transition-all border border-gray-100 rounded-xl overflow-hidden",
                 isSelected && "bg-primary/5 border-primary/20 hover:bg-primary/5"
@@ -75,17 +103,19 @@ export const ListView: React.FC = () => {
                       <Eye className="w-4 h-4 text-gray-600" />
                     </Button>
                   )}
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={(e) => { 
-                      e.stopPropagation(); 
-                      setDeleteTargetId(item.id);
-                    }}
-                    className="h-10 w-10 p-0 rounded-lg hover:bg-white shadow-sm border border-transparent hover:border-gray-200"
-                  >
-                    <Trash2 className="w-4 h-4 text-gray-600" />
-                  </Button>
+                  {canDelete && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        setDeleteTargetId(item.id);
+                      }}
+                      className="h-10 w-10 p-0 rounded-lg hover:bg-white shadow-sm border border-transparent hover:border-gray-200"
+                    >
+                      <Trash2 className="w-4 h-4 text-gray-600" />
+                    </Button>
+                  )}
                 </div>
 
                 {deleteTargetId === item.id && (

@@ -18,6 +18,12 @@ import RequestDetailPage from './pages/org-admin/support/RequestDetailPage'
 import FilingDetailView from './pages/org-employee/EmployeeEngagement/filings/FilingDetailView'
 import Settings from './pages/common/Settings'
 import { Toaster } from 'sonner'
+import ServiceRequestTemplates from './pages/org-admin/services/servicesRequestTemplates/ServiceRequestTemplates'
+import CreateTemplate from './pages/org-admin/services/servicesRequestTemplates/CreateTemplate'
+import ViewTemplate from './pages/org-admin/services/servicesRequestTemplates/ViewTemplate'
+import TemplatePreview from './pages/org-admin/services/servicesRequestTemplates/TemplatePreview'
+import ServiceRequestManagement from './pages/org-admin/services/servicesRequestManagement/ServiceRequestManagement'
+import ViewServiceRequest from './pages/org-admin/services/servicesRequestManagement/ViewServiceRequest'
 
 import { NotificationProvider } from './context/NotificationContext'
 
@@ -38,6 +44,9 @@ const App = () => {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/companies" element={<Dashboard activeSection="Companies" />} />
             <Route path="/dashboard/clients" element={<Dashboard activeSection="Clients" />} />
+            <Route path="/dashboard/clients/create" element={<Dashboard activeSection="Create Client" />} />
+            <Route path="/dashboard/clients/:clientId" element={<Dashboard activeSection="View Client" />} />
+            <Route path="/dashboard/clients/:clientId/company/:companyId" element={<Dashboard activeSection="View Company" />} />
             <Route path="/dashboard/engagements" element={<Dashboard activeSection="Engagements" />} />
             <Route path="/dashboard/compliance" element={<Dashboard activeSection="Compliance" />} />
             <Route path="/dashboard/templates" element={<Dashboard activeSection="Templates" />} />
@@ -56,12 +65,18 @@ const App = () => {
             <Route path="/dashboard/procedure-prompts" element={<Dashboard activeSection="Procedure Prompt" />} />
             <Route path="/dashboard/procedure-prompts/create" element={<Dashboard activeSection="Create Procedure Prompt" />} />
             <Route path="/dashboard/procedure-prompts/:id/edit" element={<Dashboard activeSection="Edit Procedure Prompt" />} />
+            <Route path="/dashboard/service-request-templates" element={<ServiceRequestTemplates />} />
+            <Route path="/dashboard/service-request-templates/create" element={<CreateTemplate />} />
+            <Route path="/dashboard/service-request-templates/:id/view" element={<ViewTemplate />} />
+            <Route path="/dashboard/service-request-management" element={<ServiceRequestManagement />} />
+            <Route path="/dashboard/service-request-management/:id" element={<ViewServiceRequest />} />
             <Route path="*" element={<NotFound />} />
           </Route>
           <Route path="/engagement-view/:id" element={<EngagementFullView />} />
           <Route path="/engagement-view/:engagementId/filings/:filingId" element={<FilingDetailView />} />
           <Route path="/engagement-view/services/:serviceId" element={<EngagementFullView />} />
           <Route path="/workbook-viewer/:workbookId" element={<WorkbookViewerPage />} />
+          <Route path="/dashboard/service-request-templates/:id/preview" element={<TemplatePreview />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </Router>

@@ -86,7 +86,7 @@ const DocumentRequestsContent = () => {
     enabled: !!engagementId,
     queryFn: async () => {
       const res = await apiGet<ApiResponse<DocumentRequestItem[]>>(
-        endPoints.DOCUMENT_REQUESTS,
+        endPoints.DOCUMENT_REQUESTS.BASE,
         { engagementId } as Record<string, unknown>
       );
       if (!res?.data) return [];

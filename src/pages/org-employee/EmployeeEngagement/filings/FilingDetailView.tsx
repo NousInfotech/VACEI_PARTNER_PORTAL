@@ -72,7 +72,7 @@ function FilingDetailContent() {
   // Fetch Document Requests
   const { data: docRequests = [] } = useQuery({
     queryKey: ["document-requests", engagementId],
-    queryFn: () => apiGet<{ data: DocumentRequestItem[] }>(endPoints.DOCUMENT_REQUESTS, { engagementId }).then(res => res.data),
+    queryFn: () => apiGet<{ data: DocumentRequestItem[] }>(endPoints.DOCUMENT_REQUESTS.BASE, { engagementId }).then(res => res.data),
     enabled: !!engagementId,
   });
 

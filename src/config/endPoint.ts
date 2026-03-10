@@ -17,18 +17,41 @@ export const endPoints = {
     MFA_WEBAUTHN_LOGIN_CHALLENGE: '/auth/mfa/webauthn/login-challenge',
   },
   ORGANIZATION: {
+    BASE: '/organizations',
+    GET_ALL: '/organizations',
+    GET_BY_ID: (id: string) => `/organizations/${id}`,
     CREATE_MEMBER: '/organization-members',
     GET_MEMBERS: '/organization-members',
     GET_MEMBER_BY_ID: (id: string) => `/organization-members/${id}`,
     ASSIGN_SERVICES: '/organization-members',
     ASSIGN_CUSTOM_SERVICES: '/organization-members',
   },
+  ONBOARDING: {
+    CREATE_CLIENT_FOR_ORG: '/onboarding/clients',
+  },
   CLIENT: {
     GET_ALL: '/clients',
+    CREATE: '/clients',
     GET_BY_ID: (id: string) => `/clients/${id}`,
   },
   CUSTOM_SERVICE: {
+    BASE: '/custom-services',
+    LIST: '/custom-services',
     GET_ACTIVE: '/custom-services/active',
+    GET_BY_ID: (id: string) => `/custom-services/${id}`,
+    CREATE: '/custom-services',
+    UPDATE: (id: string) => `/custom-services/${id}`,
+    PATCH_STATUS: (id: string) => `/custom-services/${id}/status`,
+    DELETE: (id: string) => `/custom-services/${id}`,
+  },
+  SERVICE_REQUEST_TEMPLATE: {
+    BASE: '/service-request-templates',
+    GET_ACTIVE_GENERAL: '/service-request-templates/active/general',
+    GET_ACTIVE_SERVICE: (service: string) => `/service-request-templates/active/service/${service}`,
+    GET_ALL: '/service-request-templates',
+    GET_BY_ID: (id: string) => `/service-request-templates/${id}`,
+    CREATE: '/service-request-templates',
+    UPDATE: (id: string) => `/service-request-templates/${id}`,
   },
   NOTICE: {
     GET_TODAY: '/notices/today',
@@ -50,6 +73,39 @@ export const endPoints = {
     PREFERENCES: '/notifications/preferences',
   },
   ENGAGEMENTS: {
+    CREATE: '/engagements',
+    GET_ALL: '/engagements',
+    /** GET /engagements/analytics/organization?organizationId=xxx - counts: companies, engagements, checklists (pending) */
+    ANALYTICS_ORGANIZATION: '/engagements/analytics/organization',
+    GET_BY_ID: (engagementId: string) => `/engagements/${engagementId}`,
+    UPDATE_STATUS: (engagementId: string) => `/engagements/${engagementId}/status`,
+    CHECKLISTS: (id: string) => `/engagements/${id}/checklists`,
+    CHECKLIST_BY_ID: (engId: string, checklistId: string) => `/engagements/${engId}/checklists/${checklistId}`,
+    CHECKLIST_STATUS: (engId: string, checklistId: string) => `/engagements/${engId}/checklists/${checklistId}/status`,
+    COMPLIANCES: (id: string) => `/engagements/${id}/compliances`,
+    TEAM: (engagementId: string) => `/engagements/${engagementId}/team`,
+    CHAT_ROOM: (engagementId: string) => `/chat/engagements/${engagementId}/room`,
+    MILESTONES: (engagementId: string) => `/engagements/${engagementId}/milestones`,
+    LIBRARY_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library`,
+    LIBRARY_FOLDER_BY_TYPE: (engagementId: string, type: string) => `/engagements/${engagementId}/library?type=${type}`,
+    EVIDENCE_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library/evidences`,
+    WORKBOOK_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library/workbooks`,
+    INVOICES_FOLDER: (engagementId: string) => `/engagements/${engagementId}/library/invoices`,
+    FILINGS: (engagementId: string) => `/engagements/${engagementId}/filings`,
+    FILING_FILES: (engagementId: string, filingId: string) => `/engagements/${engagementId}/filings/${filingId}/files`,
+    FILING_STATUS: (engagementId: string, filingId: string) => `/engagements/${engagementId}/filings/${filingId}/status`,
+    FILING_COMMENTS: (engagementId: string, filingId: string) => `/engagements/${engagementId}/filings/${filingId}/comments`,
+    FILING_SIGN_OFFS: (engagementId: string, filingId: string) => `/engagements/${engagementId}/filings/${filingId}/sign-off`,
+    /** Export endpoints (REFERENCE-PORTAL compatible). GET with responseType blob for file download. */
+    EXPORT: (engagementId: string, type: 'evidence' | 'all-evidence' | 'all-workbooks' | 'combined' | 'etb' | 'adjustments' | 'reclassifications', format?: 'xlsx' | 'pdf') => {
+      const base = `/engagements/${engagementId}/export/${type}`;
+      if (type === 'combined' && format === 'pdf') return `${base}?format=pdf`;
+      if ((type === 'etb' || type === 'adjustments' || type === 'reclassifications') && format) return `${base}?format=${format}`;
+      return base;
+    },
+  },
+  ENGAGEMENT: {
+    CREATE: '/engagements',
     GET_ALL: '/engagements',
     /** GET /engagements/analytics/organization?organizationId=xxx - counts: companies, engagements, checklists (pending) */
     ANALYTICS_ORGANIZATION: '/engagements/analytics/organization',
@@ -86,11 +142,26 @@ export const endPoints = {
     GET_BY_ID: (id: string) => `/service-requests/${id}`,
     UPDATE_STATUS: (id: string) => `/service-requests/${id}/status`,
   },
-  DOCUMENT_REQUESTS: '/document-requests',
-  DOCUMENT_REQUEST_STATUS: (requestId: string) => `/document-requests/${requestId}/status`,
-  REQUESTED_DOCUMENTS: (requestId: string) => `/document-requests/${requestId}/documents`,
-  REQUESTED_DOCUMENT_BY_ID: (requestId: string, docId: string) => `/document-requests/${requestId}/documents/${docId}`,
+  DOCUMENT_REQUESTS: {
+    BASE: '/document-requests',
+    DOCUMENTS: (requestId: string) => `/document-requests/${requestId}/documents`,
+    DOCUMENT_BY_ID: (requestId: string, docId: string) => `/document-requests/${requestId}/documents/${docId}`,
+    UPLOAD: (requestId: string, docId: string) => `/document-requests/${requestId}/documents/${docId}/upload`,
+    UPLOAD_TEMPLATE: (requestId: string, docId: string) => `/document-requests/${requestId}/documents/${docId}/upload-template`,
+    CLEAR: (requestId: string, docId: string) => `/document-requests/${requestId}/documents/${docId}/clear`,
+    UPDATE: (requestId: string, docId: string) => `/document-requests/${requestId}/documents/${docId}`,
+    DELETE: (requestId: string, docId: string) => `/document-requests/${requestId}/documents/${docId}`,
+    STATUS: (docId: string) => `/document-requests/requested-documents/${docId}/status`,
+    UPDATE_STATUS: (requestId: string) => `/document-requests/${requestId}/status`,
+    ATTACH_FILES: (requestId: string, docId: string) => `/document-requests/${requestId}/documents/${docId}/attach`,
+    UNASSIGNED_FILE: (requestId: string, fileId: string) => `/document-requests/${requestId}/unassigned-files/${fileId}`,
+    FROM_TEMPLATE: '/document-requests/from-template',
+  },
+  // Document Requests (Flat Aliases for backward compatibility)
   REQUESTED_DOCUMENT_UPLOAD: (requestId: string, docId: string) => `/document-requests/${requestId}/documents/${docId}/upload`,
+  REQUESTED_DOCUMENT_BY_ID: (requestId: string, docId: string) => `/document-requests/${requestId}/documents/${docId}`,
+  REQUESTED_DOCUMENTS: (requestId: string) => `/document-requests/${requestId}/documents`,
+  DOCUMENT_REQUEST_STATUS: (requestId: string) => `/document-requests/${requestId}/status`,
   COMPLIANCE_CALENDAR: {
     BASE: '/compliance-calendar',
     GET_BY_ID: (id: string) => `/compliance-calendar/${id}`
@@ -118,10 +189,21 @@ export const endPoints = {
     FILE_BY_ID: (id: string) => `/library/files/${id}`,
     FOLDER_DELETE: (folderId: string) => `/library/folders/${folderId}`,
     FOLDER_DOWNLOAD: (id: string) => `/library/folders/${id}/download`,
+    FOLDER_MOVE: (id: string) => `/library/folders/${id}/move`,
+    FILE_MOVE: (id: string) => `/library/files/${id}/move`,
   },
   COMPANY: {
     BASE: '/companies',
+    GET_ALL: '/companies',
     GET_BY_ID: (id: string) => `/companies/${id}`,
+    CREATE: '/companies',
+    UPDATE: (id: string) => `/companies/${id}`,
+    DELETE: (id: string) => `/companies/${id}`,
+    GET_BY_CLIENT: (clientId: string) => `/companies?clientId=${clientId}`,
+    GET_BY_CLIENT_ID: (clientId: string) => `/companies?clientId=${clientId}`,
+    INCORPORATION: (companyId: string) => `/companies/${companyId}/incorporation`,
+    KYC: (companyId: string) => `/companies/${companyId}/kyc`,
+    KYC_DOCUMENT_REQUEST: (kycId: string) => `/kyc/${kycId}/document-request`,
   },
   AUDIT: {
     CREATE_CYCLE: '/audit-cycles',
@@ -242,9 +324,26 @@ export const endPoints = {
       `/companies/${companyId}/accounting/quickbooks/sync/chart-accounts`,
     SYNC_COMPANY_DATA: (companyId: string) =>
       `/companies/${companyId}/accounting/quickbooks/sync/company-data`,
+    CONNECT_URL: (companyId: string, clientId: string) => `/companies/${companyId}/accounting/quickbooks/connect?clientId=${clientId}`,
+    REVOKE: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/revoke`,
   },
   INCORPORATION: {
     GET_BY_COMPANY: (companyId: string) => `/incorporation/company/${companyId}`,
+    CREATE_DOCUMENT_REQUEST: (incorporationId: string) => `/incorporation/${incorporationId}/document-requests`,
+  },
+  PERSON: {
+    GET_ALL: '/persons',
+    CREATE: '/persons',
+    GET_BY_ID: (id: string) => `/persons/${id}`,
+    UPDATE: (id: string) => `/persons/${id}`,
+  },
+  INVOLVEMENT: {
+    GET_ALL: '/involvements',
+    CREATE: '/involvements',
+    GET_BY_ID: (id: string) => `/involvements/${id}`,
+    UPDATE: (id: string) => `/involvements/${id}`,
+    DELETE: (id: string) => `/involvements/${id}`,
+    GET_BY_COMPANY: (companyId: string) => `/involvements/company/${companyId}`,
   },
   TODO: {
     BASE: '/todos',

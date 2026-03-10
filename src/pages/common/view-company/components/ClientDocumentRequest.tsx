@@ -29,7 +29,7 @@ const ClientDocumentRequest: React.FC<ClientDocumentRequestProps> = ({ requestId
     mutationFn: ({ file }: { file: File }) => {
       const fd = new FormData();
       fd.append("files", file);
-      return apiPostFormData(endPoints.REQUESTED_DOCUMENT_UPLOAD(requestId, doc._id), fd);
+      return apiPostFormData(endPoints.DOCUMENT_REQUESTS.UPLOAD(requestId, doc._id), fd);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["incorporation-cycle"] });
@@ -40,7 +40,7 @@ const ClientDocumentRequest: React.FC<ClientDocumentRequestProps> = ({ requestId
 
   const clearMutation = useMutation({
     mutationFn: () => {
-        return apiDelete(endPoints.REQUESTED_DOCUMENT_BY_ID(requestId, doc._id) + '/clear');
+        return apiDelete(endPoints.DOCUMENT_REQUESTS.CLEAR(requestId, doc._id));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["incorporation-cycle"] });

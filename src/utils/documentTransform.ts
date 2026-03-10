@@ -5,6 +5,12 @@ export const transformBackendDocReq = (docReq: any): any => {
     category: docReq.title,
     address: null,
     status: docReq.status,
+    unassignedFiles: (docReq.unassignedFiles || []).map((f: any) => ({
+      fileId: f.id,
+      fileName: f.file_name || f.filename,
+      url: f.url,
+      uploadDate: f.createdAt
+    })),
     documents: (docReq.requestedDocuments || [])
       .filter((d: any) => !d.parentId && d.count === 'SINGLE')
       .map((d: any) => ({
@@ -12,6 +18,7 @@ export const transformBackendDocReq = (docReq: any): any => {
         name: d.documentName || d.title,
         description: d.description,
         status: d.status.toLowerCase(),
+        rejectionReason: d.rejectionReason,
         url: d.file?.url,
         uploadedAt: d.file?.url ? new Date().toISOString() : undefined,
         uploadedFileName: d.file?.file_name,
@@ -29,6 +36,7 @@ export const transformBackendDocReq = (docReq: any): any => {
                 _id: c.id,
                 label: c.documentName || c.title,
                 status: c.status.toLowerCase(),
+                rejectionReason: c.rejectionReason,
                 url: c.file?.url,
                 uploadedFileName: c.file?.file_name,
                 template: c.templateFile ? { url: c.templateFile.url } : undefined

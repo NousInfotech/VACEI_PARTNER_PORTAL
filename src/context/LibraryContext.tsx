@@ -18,6 +18,8 @@ export interface LibraryItem {
   file_name?: string;
   file_size?: number;
   createdAt?: string;
+  isProtected?: boolean;
+  createdBy?: string;
 }
 
 interface ApiFolder {
@@ -25,6 +27,8 @@ interface ApiFolder {
   folder_name: string;
   name?: string;
   updatedAt?: string;
+  isProtected?: boolean;
+  createdBy?: string;
 }
 
 interface ApiFile {
@@ -38,6 +42,8 @@ interface ApiFile {
   url?: string;
   createdAt?: string;
   updatedAt?: string;
+  isProtected?: boolean;
+  createdBy?: string;
 }
 
 interface LibraryContentResponse {
@@ -97,6 +103,7 @@ interface LibraryContextType {
   handleCreateFolder: (name: string) => Promise<void>;
   handleUpload: (files: FileList) => Promise<void>;
   handleDelete: (item: LibraryItem) => Promise<void>;
+  handleMoveItem: (itemId: string, itemType: 'folder' | 'file', targetFolderId: string | null) => Promise<void>;
 }
 
 const LibraryContext = createContext<LibraryContextType | undefined>(undefined);
@@ -199,6 +206,19 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode; engagementId
     }
   });
 
+  const moveItemMutation = useMutation({
+    mutationFn: async ({ itemId, itemType, targetFolderId }: { itemId: string, itemType: 'folder' | 'file', targetFolderId: string | null }) => {
+      const url = itemType === 'folder' 
+        ? endPoints.LIBRARY.FOLDER_MOVE(itemId)
+        : endPoints.LIBRARY.FILE_MOVE(itemId);
+      return apiPost(url, { targetFolderId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['library-content', currentFolderId] });
+      queryClient.invalidateQueries({ queryKey: ['library-roots'] });
+    }
+  });
+
   const deleteItemMutation = useMutation({
     mutationFn: async (item: LibraryItem) => {
       const url = item.type === 'folder' 
@@ -228,6 +248,8 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode; engagementId
       fileType: 'Folder',
       size: '',
       updatedAt: formatLibraryDate(f.updatedAt),
+      isProtected: f.isProtected ?? false,
+      createdBy: f.createdBy ?? 'system',
     })) as LibraryItem[];
   }, [rootsData]);
 
@@ -257,6 +279,8 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode; engagementId
         fileType: 'Folder',
         size: '',
         updatedAt: formatLibraryDate(f.updatedAt),
+        isProtected: f.isProtected ?? false,
+        createdBy: f.createdBy ?? 'system',
       }));
       files = (contentData.files ?? []).map((f: ApiFile) => {
         const name = f.filename || f.file_name || '';
@@ -268,6 +292,8 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode; engagementId
           fileType: ext || f.fileType || f.file_type || 'File',
           size: formatFileSize(f.size || f.file_size),
           updatedAt: formatLibraryDate(f.updatedAt || f.createdAt),
+          isProtected: f.isProtected ?? false,
+          createdBy: f.createdBy ?? 'system',
         };
       });
     }
@@ -435,6 +461,10 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode; engagementId
     await deleteItemMutation.mutateAsync(item);
   };
 
+  const handleMoveItem = async (itemId: string, itemType: 'folder' | 'file', targetFolderId: string | null) => {
+    await moveItemMutation.mutateAsync({ itemId, itemType, targetFolderId });
+  };
+
   const value = {
     engagementId,
     viewMode, setViewMode,
@@ -461,7 +491,8 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode; engagementId
     handleDownload,
     handleCreateFolder,
     handleUpload,
-    handleDelete
+    handleDelete,
+    handleMoveItem
   };
 
   return <LibraryContext.Provider value={value}>{children}</LibraryContext.Provider>;
