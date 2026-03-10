@@ -6,7 +6,7 @@ import { cn } from '../../../../../lib/utils';
 import { getFileIcon } from '../../../../../lib/libraryData';
 import { useLibrary } from '../../../../../context/LibraryContext';
 export const GridView: React.FC = () => {
-  const { currentItems, selectedItems, handleDoubleClick, handleSelection, handleContextMenu, handleDelete } = useLibrary();
+  const { currentItems, selectedItems, handleDoubleClick, handleSelection, handleContextMenu, handleDelete, handleMoveItem } = useLibrary();
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   return (
@@ -14,6 +14,8 @@ export const GridView: React.FC = () => {
       {currentItems.map((item) => {
         const Icon = item.type === 'folder' ? FolderIcon : getFileIcon(item.fileType);
         const isSelected = selectedItems.includes(item.id);
+        const canDelete = !item.isProtected && item.createdBy === 'user';
+        const canDrag = !item.isProtected && item.createdBy === 'user';
 
         return (
           <div 
@@ -21,6 +23,32 @@ export const GridView: React.FC = () => {
             onDoubleClick={() => handleDoubleClick(item)}
             onClick={(e) => handleSelection(item.id, e)}
             onContextMenu={(e) => handleContextMenu(e, item.id)}
+            draggable={canDrag}
+            onDragStart={(e) => {
+              if (!canDrag) return;
+              e.dataTransfer.setData('text/plain', JSON.stringify({ id: item.id, type: item.type }));
+              e.dataTransfer.effectAllowed = 'move';
+            }}
+            onDragOver={(e) => {
+              if (item.type === 'folder') {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                e.currentTarget.classList.add('ring-2', 'ring-primary', 'ring-inset');
+              }
+            }}
+            onDragLeave={(e) => {
+              e.currentTarget.classList.remove('ring-2', 'ring-primary', 'ring-inset');
+            }}
+            onDrop={(e) => {
+              if (item.type === 'folder') {
+                e.preventDefault();
+                e.currentTarget.classList.remove('ring-2', 'ring-primary', 'ring-inset');
+                const dragData = JSON.parse(e.dataTransfer.getData('text/plain'));
+                if (dragData.id !== item.id) {
+                  handleMoveItem(dragData.id, dragData.type, item.id);
+                }
+              }
+            }}
             className={cn(
               "group p-4 rounded-2xl border transition-all cursor-pointer flex flex-col items-center gap-3 relative",
               isSelected 
@@ -41,16 +69,18 @@ export const GridView: React.FC = () => {
                 {item.fileType || 'Folder'} {item.size && `• ${item.size}`}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setDeleteTargetId(item.id);
-              }}
-              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity rounded-full p-1.5 bg-white shadow border border-gray-200"
-            >
-              <Trash2 className="w-4 h-4 text-gray-600" />
-            </button>
+            {canDelete && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDeleteTargetId(item.id);
+                }}
+                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity rounded-full p-1.5 bg-white shadow border border-gray-200"
+              >
+                <Trash2 className="w-4 h-4 text-gray-600" />
+              </button>
+            )}
 
             {deleteTargetId === item.id && (
               <div

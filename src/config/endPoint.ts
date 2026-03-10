@@ -118,6 +118,8 @@ export const endPoints = {
     FILE_BY_ID: (id: string) => `/library/files/${id}`,
     FOLDER_DELETE: (folderId: string) => `/library/folders/${folderId}`,
     FOLDER_DOWNLOAD: (id: string) => `/library/folders/${id}/download`,
+    FOLDER_MOVE: (id: string) => `/library/folders/${id}/move`,
+    FILE_MOVE: (id: string) => `/library/files/${id}/move`,
   },
   COMPANY: {
     BASE: '/companies',
