@@ -364,8 +364,20 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
 
     const isLoadingTrialBalanceData = isLoadingTrialBalances || isLoadingAccounts;
 
-    // Map backend data to ExtendedTBRow format
+    // Map backend data to ExtendedTBRow format. Only use data that belongs to the current engagement's trial balance.
+    // When there is no trial balance or the response is for a different trial balance, clear data.
     React.useEffect(() => {
+        if (!trialBalanceId) {
+            setData([]);
+            setOriginalData([]);
+            return;
+        }
+        const responseTbId = trialBalanceWithAccountsData?.data?.trialBalance?.id;
+        if (responseTbId && responseTbId !== trialBalanceId) {
+            setData([]);
+            setOriginalData([]);
+            return;
+        }
         if (trialBalanceWithAccountsData?.data?.accounts) {
             const accounts = trialBalanceWithAccountsData.data.accounts;
             const mappedData: ExtendedTBRow[] = accounts.map((account: any, index: number) => {
@@ -414,8 +426,8 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
             setData(mappedData);
             // Set originalData to track changes - use deep copy to avoid reference issues
             setOriginalData(JSON.parse(JSON.stringify(mappedData)));
-        } else if (!trialBalanceId || (!isLoadingTrialBalanceData && !trialBalanceWithAccountsData)) {
-            // If no trial balance exists yet, show empty array
+        } else if (!isLoadingTrialBalanceData && !trialBalanceWithAccountsData?.data?.accounts) {
+            // No accounts in response (e.g. no trial balance uploaded yet)
             setData([]);
             setOriginalData([]);
         }

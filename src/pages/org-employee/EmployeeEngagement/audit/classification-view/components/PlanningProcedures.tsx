@@ -124,6 +124,7 @@ export default function PlanningProcedures({ title: _title, engagementId }: Plan
                             materialityAmount="0"
                             onProceed={handleClassificationProceed}
                             onBack={handleBackToMode}
+                            engagementId={engagementId}
                         />
                     )}
                 </TabsContent>

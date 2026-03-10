@@ -73,10 +73,17 @@ export const useETBData = (engagementId?: string) => {
     enabled: !!auditCycleId && !!trialBalanceId,
   });
 
-  // Process the data
+  // Process the data — only use data that belongs to the current engagement's trial balance.
+  // When there is no trial balance for the current engagement (trialBalanceId undefined), or when
+  // the cached response is for a different trial balance, return null so procedures do not show wrong engagement data.
   const processedData = React.useMemo(() => {
+    if (!trialBalanceId) return null;
     // API response structure: { data: { accounts: [...], trialBalance: {...} } }
     if (!trialBalanceWithAccountsData?.data?.accounts) {
+      return null;
+    }
+    const responseTrialBalanceId = trialBalanceWithAccountsData?.data?.trialBalance?.id;
+    if (responseTrialBalanceId && responseTrialBalanceId !== trialBalanceId) {
       return null;
     }
 

@@ -190,6 +190,22 @@ export const ClassificationStep: React.FC<ClassificationStepProps> = ({
     );
   }
 
+  if (!etbData || etbRows.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center max-w-md px-4">
+          <AlertCircle className="h-10 w-10 text-amber-500 mx-auto mb-4" />
+          <p className="font-body font-medium text-gray-900 mb-2">
+            No Extended Trial Balance for this engagement
+          </p>
+          <p className="text-sm text-muted-foreground font-body text-gray-500">
+            Upload a trial balance for the selected engagement in the Extended TB tab first. Account selection and classifications will be available once trial balance data exists.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <Card className="border border-gray-200">

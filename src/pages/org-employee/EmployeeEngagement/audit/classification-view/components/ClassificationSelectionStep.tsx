@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
-import { CheckCircle, Circle, CheckCircle2, Euro, Info, Filter, Sparkles, ArrowLeft } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { CheckCircle, Circle, CheckCircle2, Euro, Info, Filter, Sparkles, ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "../../../../../../ui/Button";
+import { useETBData } from "../../hooks/useETBData";
 
 interface ClassificationSelectionStepProps {
     onProceed: () => void;
@@ -8,6 +9,8 @@ interface ClassificationSelectionStepProps {
     mode?: 'manual' | 'ai' | 'hybrid';
     materialityAmount?: string;
     stepLabel?: string;
+    /** When provided, Extended Trial Balance is loaded for this engagement only. If no trial balance, empty state is shown. */
+    engagementId?: string;
 }
 
 interface AccountRow {
@@ -19,69 +22,119 @@ interface AccountRow {
     classification: string;
 }
 
-const MOCK_DATA: AccountRow[] = [
-    { id: '1', valid: true, code: '1', accountName: 'Cash and cash equivalents', finalBalance: 265769, classification: 'Intangible assets - Cost' },
-    { id: '2', valid: true, code: '2', accountName: 'Accruals', finalBalance: -5285, classification: 'Equity' },
-    { id: '3', valid: true, code: '3', accountName: 'FSS & NI DUE', finalBalance: -14740, classification: 'Unclassified' },
-    { id: '4', valid: true, code: '4', accountName: "Shareholders' Loan", finalBalance: -453816, classification: 'Unclassified' },
-    { id: '5', valid: true, code: '5', accountName: 'Other payables', finalBalance: -8671, classification: 'Unclassified' },
-    { id: '6', valid: true, code: '6', accountName: 'Opening Balance Equity', finalBalance: 216983, classification: 'Unclassified' },
-    { id: '7', valid: true, code: '7', accountName: 'Share capital', finalBalance: -240, classification: 'Unclassified' },
-    { id: '8', valid: true, code: '8', accountName: 'Sales', finalBalance: -60000, classification: 'Unclassified' },
-    { id: '9', valid: true, code: '9', accountName: 'Administrative Expenses:Professional Fees', finalBalance: 0, classification: 'Unclassified' },
-    { id: '10', valid: true, code: '10', accountName: 'Administrative Expenses:Tax Return Fee', finalBalance: 385, classification: 'Unclassified' },
-    { id: '11', valid: true, code: '8', accountName: 'Administrative Expenses:Annual Return Fee', finalBalance: 100, classification: 'Unclassified' },
-    { id: '12', valid: true, code: '12', accountName: 'Audit Fees', finalBalance: 1100, classification: 'Unclassified' },
-    { id: '13', valid: true, code: '13', accountName: 'Wage expenses:6000 Gross Salary', finalBalance: 64962, classification: 'Unclassified' },
-    { id: '14', valid: true, code: '14', accountName: 'Other Income:Other Income (not taxable)', finalBalance: -4917, classification: 'Unclassified' },
-];
+export default function ClassificationSelectionStep({
+    onProceed,
+    onBack,
+    mode = 'manual',
+    materialityAmount = '0',
+    stepLabel = 'Step 1 of 2',
+    engagementId,
+}: ClassificationSelectionStepProps) {
+    const { data: etbData, isLoading: loadingETB } = useETBData(engagementId);
+    const etbRows = etbData?.etbRows ?? [];
 
-export default function ClassificationSelectionStep({ onProceed, onBack, mode = 'manual', materialityAmount = '0', stepLabel = 'Step 1 of 2' }: ClassificationSelectionStepProps) {
+    const accountRows: AccountRow[] = useMemo(() => {
+        return etbRows.map((row: any, idx: number) => {
+            const classificationParts = [
+                row.group1,
+                row.group2,
+                row.group3,
+                row.group4,
+            ].filter(Boolean);
+            const classification = classificationParts.join(" > ") || "Unclassified";
+            return {
+                id: row.accountId ?? String(row.id) ?? `row-${idx}`,
+                valid: false,
+                code: row.code ?? "",
+                accountName: row.accountName ?? "",
+                finalBalance: Number(row.finalBalance) ?? 0,
+                classification: classification.trim() || "Unclassified",
+            };
+        });
+    }, [etbRows]);
+
     const materialityNum = Number(materialityAmount) || 0;
     const defaultSelectedIds = useMemo(() => {
         return new Set(
-            MOCK_DATA.filter(
+            accountRows.filter(
                 (r) =>
                     Math.abs(r.finalBalance) >= materialityNum &&
                     Boolean(r.classification?.trim()) &&
-                    r.classification.trim() !== 'Unclassified'
+                    r.classification.trim() !== "Unclassified"
             ).map((r) => r.id)
         );
-    }, [materialityNum]);
+    }, [accountRows, materialityNum]);
+
     const [selectedIds, setSelectedIds] = useState<Set<string>>(defaultSelectedIds);
 
+    useEffect(() => {
+        setSelectedIds(defaultSelectedIds);
+    }, [defaultSelectedIds]);
+
     const toggleSelection = (id: string) => {
-        const newSelected = new Set(selectedIds);
-        if (newSelected.has(id)) {
-            newSelected.delete(id);
-        } else {
-            newSelected.add(id);
-        }
-        setSelectedIds(newSelected);
+        setSelectedIds((prev) => {
+            const newSelected = new Set(prev);
+            if (newSelected.has(id)) newSelected.delete(id);
+            else newSelected.add(id);
+            return newSelected;
+        });
     };
 
     const toggleAll = () => {
-        if (selectedIds.size === MOCK_DATA.length) {
+        if (accountRows.length === 0) return;
+        if (selectedIds.size === accountRows.length) {
             setSelectedIds(new Set());
         } else {
-            setSelectedIds(new Set(MOCK_DATA.map(r => r.id)));
+            setSelectedIds(new Set(accountRows.map((r) => r.id)));
         }
     };
 
     const activeClassifications = useMemo(() => {
-        const classes = new Set(MOCK_DATA.filter(r => selectedIds.has(r.id)).map(r => r.classification));
-        return Array.from(classes).filter(c => c !== 'Unclassified');
-    }, [selectedIds]);
-
-
+        const classes = new Set(
+            accountRows.filter((r) => selectedIds.has(r.id)).map((r) => r.classification)
+        );
+        return Array.from(classes).filter((c) => c !== "Unclassified");
+    }, [selectedIds, accountRows]);
 
     const stats = useMemo(() => {
-        const selectedAccounts = MOCK_DATA.filter(r => selectedIds.has(r.id));
+        const selectedAccounts = accountRows.filter((r) => selectedIds.has(r.id));
         const totalAmount = selectedAccounts.reduce((sum, r) => sum + r.finalBalance, 0);
-        const uniqueClasses = new Set(selectedAccounts.map(r => r.classification).filter(c => c !== 'Unclassified')).size;
+        const uniqueClasses = new Set(
+            selectedAccounts.map((r) => r.classification).filter((c) => c !== "Unclassified")
+        ).size;
         return { count: selectedAccounts.length, totalAmount, uniqueClasses };
-    }, [selectedIds]);
+    }, [selectedIds, accountRows]);
 
+
+    if (engagementId && loadingETB) {
+        return (
+            <div className="flex items-center justify-center py-16">
+                <div className="text-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-gray-400 mx-auto mb-4" />
+                    <p className="text-sm text-gray-500">Loading Extended Trial Balance for this engagement...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (engagementId && !loadingETB && accountRows.length === 0) {
+        return (
+            <div className="flex items-center justify-center py-16">
+                <div className="text-center max-w-md px-4">
+                    <AlertCircle className="h-10 w-10 text-amber-500 mx-auto mb-4" />
+                    <p className="font-medium text-gray-900 mb-2">No Extended Trial Balance for this engagement</p>
+                    <p className="text-sm text-gray-500 mb-6">
+                        Upload a trial balance for the selected engagement in the Extended TB tab first. Account selection will be available once trial balance data exists.
+                    </p>
+                    {onBack && (
+                        <Button variant="outline" onClick={onBack}>
+                            Back
+                        </Button>
+                    )}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -168,7 +221,7 @@ export default function ClassificationSelectionStep({ onProceed, onBack, mode = 
                         onClick={toggleAll}
                         className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
                     >
-                        {selectedIds.size === MOCK_DATA.length ? 'Deselect All' : 'Select All'}
+                        {selectedIds.size === accountRows.length ? 'Deselect All' : 'Select All'}
                     </button>
                 </div>
 
@@ -184,7 +237,7 @@ export default function ClassificationSelectionStep({ onProceed, onBack, mode = 
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {MOCK_DATA.map((row) => {
+                            {accountRows.map((row) => {
                                 const isSelected = selectedIds.has(row.id);
                                 return (
                                     <tr
