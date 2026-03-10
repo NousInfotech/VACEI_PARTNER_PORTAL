@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Button } from "../../../../../ui/Button";
 import ExtendedTBTable from "./ExtendedTBTable";
+import ClassificationBuilder from "./ClassificationBuilder";
 import type { ExtendedTBRow } from "./data";
 import { apiGet, apiPostFormData, apiPost, apiPatch } from "../../../../../config/base";
 import { endPoints } from "../../../../../config/endPoint";
@@ -69,6 +70,13 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
     const [isSubmittingReview, setIsSubmittingReview] = useState(false);
     const [reviewWorkflow, setReviewWorkflow] = useState<{ reviews: Array<{ id: string; userId: string; userName: string; timestamp: string; comment: string; status: string }>; isSignedOff: boolean } | null>(null);
     const [reviewLoading, setReviewLoading] = useState(false);
+
+    // State for row selection and bulk classification editing (matches REFERENCE-PORTAL)
+    const [selectedRowIds, setSelectedRowIds] = useState<Set<number>>(new Set());
+    const [bulkGroup1, setBulkGroup1] = useState<string | null>(null);
+    const [bulkGroup2, setBulkGroup2] = useState<string | null>(null);
+    const [bulkGroup3, setBulkGroup3] = useState<string | null>(null);
+    const [bulkGroup4, setBulkGroup4] = useState<string | null>(null);
 
     const { toast } = useToast();
     const { organizationMember, user } = useAuth();
@@ -141,7 +149,83 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
 
     const handleDeleteRow = (id: number) => {
         setData(prevData => prevData.filter(row => row.id !== id));
+        setSelectedRowIds(prev => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+        });
     };
+
+    // Toggle individual row selection
+    const toggleRowSelection = useCallback((rowId: number) => {
+        setSelectedRowIds(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(rowId)) newSet.delete(rowId);
+            else newSet.add(rowId);
+            return newSet;
+        });
+    }, []);
+
+    // Toggle all data rows selection
+    const toggleAllRows = useCallback(() => {
+        setSelectedRowIds(prev => {
+            if (prev.size === data.length) return new Set();
+            return new Set(data.map(row => row.id));
+        });
+    }, [data.length]);
+
+    // Clear selection
+    const clearSelection = useCallback(() => {
+        setSelectedRowIds(new Set());
+        setBulkGroup1(null);
+        setBulkGroup2(null);
+        setBulkGroup3(null);
+        setBulkGroup4(null);
+    }, []);
+
+    // Apply bulk classification (groups) to all selected rows
+    const applyBulkGroups = useCallback((groups: { group1: string | null; group2: string | null; group3: string | null; group4: string | null }) => {
+        setBulkGroup1(groups.group1);
+        setBulkGroup2(groups.group2);
+        setBulkGroup3(groups.group3);
+        setBulkGroup4(groups.group4);
+        const classification = [groups.group1, groups.group2, groups.group3, groups.group4].filter(Boolean).join(" > ") || "";
+        setData(prevData => prevData.map(row => {
+            if (!selectedRowIds.has(row.id)) return row;
+            return {
+                ...row,
+                group1: groups.group1 ?? null,
+                group2: groups.group2 ?? null,
+                group3: groups.group3 ?? null,
+                group4: groups.group4 ?? null,
+                classification,
+            };
+        }));
+    }, [selectedRowIds]);
+
+    // Sync bulk editor from first selected row when selection changes
+    const prevSelectionRef = useRef<Set<number>>(new Set());
+    useEffect(() => {
+        const selectionChanged =
+            prevSelectionRef.current.size !== selectedRowIds.size ||
+            [...selectedRowIds].some(id => !prevSelectionRef.current.has(id));
+        if (!selectionChanged) return;
+        prevSelectionRef.current = new Set(selectedRowIds);
+        if (selectedRowIds.size > 0) {
+            const first = data.find(row => selectedRowIds.has(row.id));
+            if (first) {
+                setBulkGroup1(first.group1 ?? null);
+                setBulkGroup2(first.group2 ?? null);
+                setBulkGroup3(first.group3 ?? null);
+                setBulkGroup4(first.group4 ?? null);
+            }
+        } else {
+            setBulkGroup1(null);
+            setBulkGroup2(null);
+            setBulkGroup3(null);
+            setBulkGroup4(null);
+        }
+    }, [selectedRowIds, data]);
 
     // Show adjustment details for a specific row
     const showAdjustmentDetailsForRow = async (row: ExtendedTBRow) => {
@@ -1096,15 +1180,58 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
                     </Button>
                 </div>
             ) : (
-                <ExtendedTBTable
-                    data={data}
-                    onUpdateRow={handleUpdateRow}
-                    onUpdateGroups={handleUpdateGroups}
-                    onDeleteRow={handleDeleteRow}
-                    onShowAdjustmentDetails={showAdjustmentDetailsForRow}
-                    onShowReclassificationDetails={showReclassificationDetailsForRow}
-                    isSectionsView={isSectionsView}
-                />
+                <>
+                    {/* Bulk Classification Editor – matches REFERENCE-PORTAL */}
+                    {!isSectionsView && selectedRowIds.size > 0 && (
+                        <div className="mb-4 p-4 border rounded-lg bg-blue-50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800">
+                            <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                                            Bulk Classification Editor
+                                        </h3>
+                                        <Badge variant="secondary" className="text-xs">
+                                            {selectedRowIds.size} row{selectedRowIds.size !== 1 ? "s" : ""} selected
+                                        </Badge>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mb-3">
+                                        Change classification for all selected rows
+                                    </p>
+                                    <ClassificationBuilder
+                                        value={[bulkGroup1, bulkGroup2, bulkGroup3, bulkGroup4].filter(Boolean).join(" > ") || ""}
+                                        onChange={() => {}}
+                                        group1={bulkGroup1}
+                                        group2={bulkGroup2}
+                                        group3={bulkGroup3}
+                                        group4={bulkGroup4}
+                                        onGroupsChange={(groups) => applyBulkGroups(groups)}
+                                    />
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={clearSelection}
+                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                    title="Clear selection"
+                                >
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                    <ExtendedTBTable
+                        data={data}
+                        onUpdateRow={handleUpdateRow}
+                        onUpdateGroups={handleUpdateGroups}
+                        onDeleteRow={handleDeleteRow}
+                        onShowAdjustmentDetails={showAdjustmentDetailsForRow}
+                        onShowReclassificationDetails={showReclassificationDetailsForRow}
+                        isSectionsView={isSectionsView}
+                        selectedRowIds={selectedRowIds}
+                        onToggleRowSelection={toggleRowSelection}
+                        onToggleAllRows={toggleAllRows}
+                    />
+                </>
             )}
 
             <CreateAuditCycleDialog

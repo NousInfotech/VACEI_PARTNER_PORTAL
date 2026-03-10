@@ -3,16 +3,23 @@ import { Search, X } from "lucide-react";
 import { Button } from "../../../../../ui/Button";
 import type { ExtendedTBRow } from "../extended-tb/data";
 
+export type EntryType = "Debit" | "Credit";
+
 interface AddEntryDialogProps {
     isOpen: boolean;
     onClose: () => void;
-    onAdd: (account: ExtendedTBRow) => void;
+    /** Called with selected account, type (Debit/Credit), and amount when user clicks Add Entry */
+    onAdd: (account: ExtendedTBRow, type: EntryType, amount: number) => void;
     accounts?: ExtendedTBRow[];
+    /** Dialog subtitle - e.g. "adjustment" or "reclassification" */
+    subtitle?: string;
 }
 
-export default function AddEntryDialog({ isOpen, onClose, onAdd, accounts = [] }: AddEntryDialogProps) {
+export default function AddEntryDialog({ isOpen, onClose, onAdd, accounts = [], subtitle = "adjustment" }: AddEntryDialogProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedId, setSelectedId] = useState<number | string | null>(null);
+    const [tempType, setTempType] = useState<"DR" | "CR">("DR");
+    const [tempAmount, setTempAmount] = useState("");
 
     const filteredAccounts = useMemo(() => {
         if (accounts.length === 0) return [];
@@ -22,13 +29,28 @@ export default function AddEntryDialog({ isOpen, onClose, onAdd, accounts = [] }
         );
     }, [searchQuery, accounts]);
 
+    const selectedAccount = useMemo(
+        () => (selectedId != null ? accounts.find(a => a.id === selectedId || a.accountId === selectedId) ?? null : null),
+        [selectedId, accounts]
+    );
+
     const handleAdd = () => {
-        const selectedAccount = accounts.find(a => a.id === selectedId || a.accountId === selectedId);
-        if (selectedAccount) {
-            onAdd(selectedAccount);
-            setSelectedId(null);
-            onClose();
-        }
+        if (!selectedAccount) return;
+        const amount = parseFloat(tempAmount);
+        if (!tempAmount.trim() || isNaN(amount) || amount <= 0) return;
+        const type: EntryType = tempType === "DR" ? "Debit" : "Credit";
+        onAdd(selectedAccount, type, amount);
+        setSelectedId(null);
+        setTempAmount("");
+        setTempType("DR");
+        onClose();
+    };
+
+    const handleClose = () => {
+        setSelectedId(null);
+        setTempAmount("");
+        setTempType("DR");
+        onClose();
     };
 
     if (!isOpen) return null;
@@ -40,9 +62,9 @@ export default function AddEntryDialog({ isOpen, onClose, onAdd, accounts = [] }
                 <div className="flex items-center justify-between p-6 border-b border-gray-100">
                     <div>
                         <h2 className="text-xl font-bold text-gray-900">Select Account</h2>
-                        <p className="text-sm text-gray-500 mt-1">Choose an account to add to the adjustment</p>
+                        <p className="text-sm text-gray-500 mt-1">Choose an account to add to the {subtitle}</p>
                     </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+                    <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 transition-colors">
                         <X size={20} />
                     </button>
                 </div>
@@ -107,16 +129,56 @@ export default function AddEntryDialog({ isOpen, onClose, onAdd, accounts = [] }
                             </div>
                         )}
                     </div>
+
+                    {/* Selected Account section – Type and Amount (matches REFERENCE-PORTAL) */}
+                    {selectedAccount && (
+                        <div className="border-t border-gray-200 pt-4 space-y-3">
+                            <div className="font-medium text-gray-700">Selected Account:</div>
+                            <div className="text-sm text-gray-600">
+                                {selectedAccount.code} - {selectedAccount.accountName}
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                                    <select
+                                        value={tempType}
+                                        onChange={(e) => setTempType(e.target.value as "DR" | "CR")}
+                                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                    >
+                                        <option value="DR">Debit (DR)</option>
+                                        <option value="CR">Credit (CR)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                                    <input
+                                        type="number"
+                                        placeholder="Enter amount"
+                                        value={tempAmount}
+                                        onChange={(e) => setTempAmount(e.target.value)}
+                                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                        min={0}
+                                        step={1}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer */}
                 <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50 rounded-b-xl">
-                    <Button variant="outline" onClick={onClose} className="bg-white">
+                    <Button variant="outline" onClick={handleClose} className="bg-white">
                         Cancel
                     </Button>
                     <Button
                         onClick={handleAdd}
-                        disabled={!selectedId}
+                        disabled={
+                            !selectedAccount ||
+                            !tempAmount.trim() ||
+                            isNaN(parseFloat(tempAmount)) ||
+                            parseFloat(tempAmount) <= 0
+                        }
                         className="bg-gray-900 hover:bg-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Add Entry
