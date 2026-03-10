@@ -7,6 +7,7 @@ import {
 
 import ClassificationBuilder from "./ClassificationBuilder";
 import type { ExtendedTBRow } from "./data";
+import { Checkbox } from "../../../../../ui/checkbox";
 
 interface ExtendedTBTableProps {
     data: ExtendedTBRow[];
@@ -16,6 +17,10 @@ interface ExtendedTBTableProps {
     onShowAdjustmentDetails?: (row: ExtendedTBRow) => void;
     onShowReclassificationDetails?: (row: ExtendedTBRow) => void;
     isSectionsView?: boolean;
+    /** Row selection for bulk classification editor */
+    selectedRowIds?: Set<number>;
+    onToggleRowSelection?: (id: number) => void;
+    onToggleAllRows?: () => void;
 }
 
 
@@ -48,7 +53,18 @@ function ResizableTextarea({ value, onChange, placeholder }: { value: string, on
     );
 }
 
-export default function ExtendedTBTable({ data, onUpdateRow, onUpdateGroups, onDeleteRow, onShowAdjustmentDetails, onShowReclassificationDetails, isSectionsView = false }: ExtendedTBTableProps) {
+export default function ExtendedTBTable({
+    data,
+    onUpdateRow,
+    onUpdateGroups,
+    onDeleteRow,
+    onShowAdjustmentDetails,
+    onShowReclassificationDetails,
+    isSectionsView = false,
+    selectedRowIds = new Set(),
+    onToggleRowSelection,
+    onToggleAllRows,
+}: ExtendedTBTableProps) {
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-US', {
             style: 'decimal',
@@ -81,6 +97,15 @@ export default function ExtendedTBTable({ data, onUpdateRow, onUpdateGroups, onD
             <table className="w-full text-sm custom-table min-w-[700px]">
                 <thead>
                         <tr className="bg-gray-50/50">
+                            {!isSectionsView && (
+                                <th className="py-4 px-2 font-semibold text-gray-600 w-12 text-center align-middle">
+                                    <Checkbox
+                                        checked={data.length > 0 && selectedRowIds.size === data.length}
+                                        onCheckedChange={onToggleAllRows}
+                                        aria-label="Select all rows"
+                                    />
+                                </th>
+                            )}
                             <th className="py-4 px-4 font-semibold text-gray-600 w-16 text-center">Code</th>
                             <th className="py-4 px-4 font-semibold text-gray-600 min-w-[240px] text-left">Account Name</th>
                             <th className="py-4 px-4 font-semibold text-gray-600 text-right whitespace-nowrap">Current Year</th>
@@ -96,7 +121,21 @@ export default function ExtendedTBTable({ data, onUpdateRow, onUpdateGroups, onD
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                         {data.map((row) => (
-                            <tr key={row.id} className="hover:bg-gray-50/80 transition-colors group">
+                            <tr
+                                key={row.id}
+                                className={`hover:bg-gray-50/80 transition-colors group ${selectedRowIds.has(row.id) ? "bg-blue-50 dark:bg-blue-950/30" : ""}`}
+                            >
+                                {!isSectionsView && (
+                                    <td className="py-3 px-2 text-center align-middle">
+                                        <div className="flex items-center justify-center">
+                                            <Checkbox
+                                                checked={selectedRowIds.has(row.id)}
+                                                onCheckedChange={() => onToggleRowSelection?.(row.id)}
+                                                aria-label={`Select row ${row.code || row.accountName}`}
+                                            />
+                                        </div>
+                                    </td>
+                                )}
                                 <td className="py-3 px-4 font-medium text-center align-middle">
                                     {isSectionsView ? (
                                         <div className="p-0 m-0 w-10 h-10 text-gray-500 font-medium">{row.code}</div>
@@ -228,7 +267,7 @@ export default function ExtendedTBTable({ data, onUpdateRow, onUpdateGroups, onD
                             </tr>
                         ))}
                         <tr className="bg-gray-50 font-bold">
-                            <td colSpan={2} className="py-4 px-4 text-center text-gray-900 uppercase text-xs tracking-wider">Total</td>
+                            <td colSpan={!isSectionsView ? 3 : 2} className="py-4 px-4 text-center text-gray-900 uppercase text-xs tracking-wider">Total</td>
                             <td className="py-4 px-4 text-right text-gray-900">
                                 {formatCurrency(data.reduce((acc, row) => acc + row.currentYear, 0))}
                             </td>

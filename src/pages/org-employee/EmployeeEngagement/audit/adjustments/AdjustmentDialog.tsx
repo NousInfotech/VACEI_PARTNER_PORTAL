@@ -98,14 +98,14 @@ export default function AdjustmentDialog({ isOpen, onClose, onSave, initialData,
         return { debits, credits, balance, isBalanced };
     }, [entries]);
 
-    const handleAddEntry = (account: ExtendedTBRow) => {
+    const handleAddEntry = (account: ExtendedTBRow, type: 'Debit' | 'Credit', amount: number) => {
         const newEntry: AdjustmentEntry = {
             id: Date.now(),
             accountId: account.accountId || String(account.id), // Use accountId (UUID) if available, fallback to id
             code: account.code,
             accountName: account.accountName,
-            type: 'Debit',
-            amount: 0,
+            type,
+            amount,
             details: ""
         };
         setEntries([...entries, newEntry]);
@@ -336,6 +336,7 @@ export default function AdjustmentDialog({ isOpen, onClose, onSave, initialData,
                 onClose={() => setIsAddEntryOpen(false)}
                 onAdd={handleAddEntry}
                 accounts={accounts}
+                subtitle={entityName.toLowerCase()}
             />
         </>
     );
