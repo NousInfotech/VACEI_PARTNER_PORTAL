@@ -2,7 +2,6 @@ import type React from "react";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { Button } from "@/ui/Button";
-import { Checkbox } from "@/ui/checkbox";
 import { Badge } from "@/ui/badge";
 import {
   Table,
@@ -16,6 +15,7 @@ import { ScrollArea } from "@/ui/scroll-area";
 import { Alert, AlertDescription } from "@/ui/alert";
 import {
   CheckCircle,
+  Circle,
   ArrowRight,
   Filter,
   AlertCircle,
@@ -295,7 +295,7 @@ export const ClassificationStep: React.FC<ClassificationStepProps> = ({
                   <TableHead>Code</TableHead>
                   <TableHead>Account Name</TableHead>
                   <TableHead className="text-right">Final Balance</TableHead>
-                  <TableHead>Classification</TableHead>
+                  <TableHead className="min-w-[160px]">Classification</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -304,28 +304,37 @@ export const ClassificationStep: React.FC<ClassificationStepProps> = ({
                     key={selection?.rowId}
                     className={selection.isValid ? "bg-muted/20 bg-gray-50" : ""}
                   >
-                    <TableCell>
-                      <Checkbox
-                        checked={selection.isValid}
-                        onCheckedChange={(checked) =>
-                          handleValidityChange(selection.rowId, !!checked)
-                        }
-                      />
+                    <TableCell className="align-middle">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleValidityChange(selection.rowId, !selection.isValid);
+                        }}
+                        className="inline-flex items-center justify-center p-0 border-0 bg-transparent cursor-pointer rounded-full focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+                        aria-label={selection.isValid ? "Deselect row" : "Select row"}
+                      >
+                        {selection.isValid ? (
+                          <CheckCircle className="fill-gray-900 text-white shrink-0 rounded-full" size={20} />
+                        ) : (
+                          <Circle className="text-gray-400 shrink-0" size={20} />
+                        )}
+                      </button>
                     </TableCell>
-                    <TableCell className="font-mono text-sm">
+                    <TableCell className="font-mono text-sm align-middle">
                       {selection.code}
                     </TableCell>
-                    <TableCell className="font-body">
+                    <TableCell className="font-body align-middle">
                       {selection.accountName}
                     </TableCell>
-                    <TableCell className="text-right font-mono">
+                    <TableCell className="text-right font-mono align-middle">
                       {formatCurrency(selection.finalBalance)}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="align-middle min-w-0 max-w-[280px]">
                       {selection.classification ? (
                         <Badge
                           variant="outline"
-                          className="font-body text-xs"
+                          className="font-body text-xs break-words whitespace-normal max-w-full bg-gray-50 border-gray-200 text-gray-700"
                         >
                           {formatClassificationForDisplay(
                             selection.classification
@@ -364,29 +373,33 @@ export const ClassificationStep: React.FC<ClassificationStepProps> = ({
                     .map((s) => getDeepestClassification(s.classification))
                     .filter(Boolean),
                 ),
-              ].map((classification) => (
-                <div key={classification} className="flex items-center gap-2">
-                  <Checkbox
-                    checked={selectedClassifications.includes(classification)}
-                    onCheckedChange={() =>
-                      handleClassificationToggle(classification)
-                    }
-                  />
-                  <Badge
-                    variant={
-                      selectedClassifications.includes(classification)
-                        ? "default"
-                        : "outline"
-                    }
-                    className={`font-body cursor-pointer ${selectedClassifications.includes(classification) ? "!bg-gray-800 !text-white hover:!bg-gray-700" : ""}`}
-                    onClick={() =>
-                      handleClassificationToggle(classification)
-                    }
+              ].map((classification) => {
+                const isChecked = selectedClassifications.includes(classification);
+                return (
+                  <div
+                    key={classification}
+                    role="button"
+                    tabIndex={0}
+                    className="flex items-center gap-2 cursor-pointer"
+                    onClick={() => handleClassificationToggle(classification)}
+                    onKeyDown={(e) => e.key === "Enter" && handleClassificationToggle(classification)}
                   >
-                    {formatClassificationForDisplay(classification)}
-                  </Badge>
-                </div>
-              ))}
+                    <span className="inline-flex shrink-0 pointer-events-none">
+                      {isChecked ? (
+                        <CheckCircle className="fill-gray-900 text-white shrink-0 rounded-full" size={20} />
+                      ) : (
+                        <Circle className="text-gray-400 shrink-0" size={20} />
+                      )}
+                    </span>
+                    <Badge
+                      variant={isChecked ? "default" : "outline"}
+                      className={`font-body ${isChecked ? "bg-gray-800 text-white hover:bg-gray-700" : ""}`}
+                    >
+                      {formatClassificationForDisplay(classification)}
+                    </Badge>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>

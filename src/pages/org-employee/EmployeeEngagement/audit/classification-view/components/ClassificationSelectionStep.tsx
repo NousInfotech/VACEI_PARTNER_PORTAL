@@ -233,7 +233,7 @@ export default function ClassificationSelectionStep({
                                 <th className="px-6 py-4 w-20">Code</th>
                                 <th className="px-6 py-4">Account Name</th>
                                 <th className="px-6 py-4 text-right">Final Balance</th>
-                                <th className="px-6 py-4">Classification</th>
+                                <th className="px-6 py-4 min-w-[260px] align-top">Classification</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
@@ -245,20 +245,20 @@ export default function ClassificationSelectionStep({
                                         className="hover:bg-gray-50 cursor-pointer"
                                         onClick={() => toggleSelection(row.id)}
                                     >
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-4 align-middle">
                                             {isSelected ? (
-                                                <CheckCircle className="fill-gray-900 text-white" size={20} />
+                                                <CheckCircle className="fill-gray-900 text-white shrink-0 rounded-full" size={20} />
                                             ) : (
-                                                <Circle className="text-gray-400" size={20} />
+                                                <Circle className="text-gray-400 shrink-0" size={20} />
                                             )}
                                         </td>
-                                        <td className="px-6 py-4 text-gray-500">{row.code}</td>
-                                        <td className="px-6 py-4 font-medium text-gray-900">{row.accountName}</td>
-                                        <td className="px-6 py-4 text-right font-medium text-gray-900">
+                                        <td className="px-6 py-4 text-gray-500 align-middle">{row.code}</td>
+                                        <td className="px-6 py-4 font-medium text-gray-900 align-middle">{row.accountName}</td>
+                                        <td className="px-6 py-4 text-right font-medium text-gray-900 align-middle">
                                             €{row.finalBalance.toLocaleString()}
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${row.classification === 'Unclassified'
+                                        <td className="px-6 py-4 align-middle min-w-0 max-w-[280px]">
+                                            <span className={`inline-block px-3 py-1.5 rounded-full text-xs font-medium border break-words whitespace-normal max-w-full ${row.classification === 'Unclassified'
                                                 ? 'bg-transparent border-transparent text-gray-500'
                                                 : 'bg-gray-50 border-gray-200 text-gray-700'
                                                 }`}>
