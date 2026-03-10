@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiGet, apiPatch } from "../../../config/base";
 import { endPoints } from "../../../config/endPoint";
@@ -40,6 +41,7 @@ const ITEMS_PER_PAGE = 8;
 
 export default function EngagementList({ companyId }: EngagementListProps) {
   const { organizationMember } = useAuth();
+  const navigate = useNavigate();
   const orgId = organizationMember?.organizationId;
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -89,7 +91,7 @@ export default function EngagementList({ companyId }: EngagementListProps) {
 
   const handleViewEngagement = (engagementId: string, serviceType: string) => {
     const targetUrl = `/engagement-view/${engagementId}?service=${encodeURIComponent(serviceType)}&tab=dashboard`;
-    window.open(targetUrl, `engagement_${engagementId}`)?.focus();
+    navigate(targetUrl);
   };
 
   const handleUpdateStatus = async (engagementId: string, status: string, reason?: string) => {

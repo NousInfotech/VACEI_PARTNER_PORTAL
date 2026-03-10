@@ -219,7 +219,7 @@ export default function EngagementFullView() {
     enabled: !!engagementId,
     queryFn: async () => {
       const res = await apiGet<any>(
-        endPoints.DOCUMENT_REQUESTS,
+        endPoints.DOCUMENT_REQUESTS.BASE,
         { engagementId } as Record<string, unknown>
       );
       return res?.data || [];

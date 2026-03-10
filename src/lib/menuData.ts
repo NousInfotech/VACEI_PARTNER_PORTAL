@@ -55,6 +55,25 @@ export const menuData: MenuItem[] = [
     //     description: "Regulatory status",
     //     roles: ["ORG_EMPLOYEE"]
     // },
+
+    {
+        slug: "service-request-management",
+        icon: GitPullRequestIcon,
+        label: "Service Requests Management",
+        href: "/dashboard/service-request-management",
+        section: "primary",
+        description: "Manage incoming service requests",
+        roles: ["ORG_ADMIN"]
+    },
+    {
+        slug: "service-request-templates",
+        icon: GitPullRequestIcon,
+        label: "Service Request Templates",
+        href: "/dashboard/service-request-templates",
+        section: "primary",
+        description: "Configure service request forms",
+        roles: ["ORG_ADMIN"]
+    },
     {
         slug: "templates",
         icon: GitPullRequestIcon,

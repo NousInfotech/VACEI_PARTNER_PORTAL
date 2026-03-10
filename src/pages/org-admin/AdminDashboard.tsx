@@ -29,7 +29,10 @@ import TemplateManagement from "../org-employee/template-management/TemplateMana
 import CreateTemplateForm from "../org-employee/template-management/CreateTemplateForm";
 import EditTemplateForm from "../org-employee/template-management/EditTemplateForm";
 import ViewTemplateDetail from "../org-employee/template-management/ViewTemplateDetail";
-import ClientManagement from "./client-management/ClientManagement";
+import ClientManagement from "./client-management/Clients";
+import CreateClient from "./client-management/CreateClient";
+import ViewClient from "./client-management/ViewClient";
+import ViewCompany from "./client-management/view-company/ViewCompany";
 
 interface AdminDashboardProps {
   activeSection?: string;
@@ -127,6 +130,18 @@ export default function AdminDashboard({ activeSection }: AdminDashboardProps) {
 
   if (activeSection === "Clients") {
     return <ClientManagement />;
+  }
+
+  if (activeSection === "Create Client") {
+    return <CreateClient />;
+  }
+
+  if (activeSection === "View Client") {
+    return <ViewClient />;
+  }
+
+  if (activeSection === "View Company") {
+    return <ViewCompany />;
   }
 
   if (activeSection === "Create Employee") {

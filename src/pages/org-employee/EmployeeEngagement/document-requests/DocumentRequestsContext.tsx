@@ -291,7 +291,7 @@ export const DocumentRequestsProvider: React.FC<{ engagementId?: string; childre
 
   const updateGroupMutation = useMutation({
     mutationFn: async ({ id, title, description }: { id: string; title: string; description: string | null }) => {
-      return apiPatch(endPoints.DOCUMENT_REQUESTS + `/${id}`, { title, description });
+      return apiPatch(endPoints.DOCUMENT_REQUESTS.BASE + `/${id}`, { title, description });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["document-requests", engagementId] });
@@ -316,7 +316,7 @@ export const DocumentRequestsProvider: React.FC<{ engagementId?: string; childre
 
   const deleteContainerMutation = useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
-      return apiDelete(endPoints.DOCUMENT_REQUESTS + `/${id}`, { reason });
+      return apiDelete(endPoints.DOCUMENT_REQUESTS.BASE + `/${id}`, { reason });
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["document-requests", engagementId] });
