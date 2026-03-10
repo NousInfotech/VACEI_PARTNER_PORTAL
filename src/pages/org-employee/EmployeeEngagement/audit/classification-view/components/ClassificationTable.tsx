@@ -36,7 +36,7 @@ export default function ClassificationTable({ title = "Intangible assets - Cost"
     return (
         <div className="space-y-4">
             {/* Section Badge - REFERENCE style */}
-            <div className="inline-block px-3 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full">
+            <div className="inline-block px-3 py-1 bg-primary text-white text-xs font-bold rounded-full">
                 {title}
             </div>
 
