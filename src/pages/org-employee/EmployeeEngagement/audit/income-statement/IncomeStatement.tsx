@@ -113,7 +113,7 @@ export default function IncomeStatement({ engagementId }: IncomeStatementProps) 
             });
 
             // Other items
-            ['Other operating income', 'Investment income', 'Investment losses', 'Finance costs', 'Share of profit of subsidiary', 'PBT Expenses', 'Income tax expense'].forEach((key) => {
+            ['Other operating income', 'Investment income', 'Other Gains/Losses', 'Finance costs', 'Income tax expense'].forEach((key) => {
                 if (incomeStatement.current_year.breakdowns[key]) {
                     tableData.push([
                         key,
@@ -325,7 +325,7 @@ export default function IncomeStatement({ engagementId }: IncomeStatementProps) 
                         })}
 
                         {/* Other items */}
-                        {['Other operating income', 'Investment income', 'Investment losses', 'Finance costs', 'Share of profit of subsidiary', 'PBT Expenses', 'Income tax expense'].map((key) => {
+                        {['Other operating income', 'Investment income', 'Other Gains/Losses', 'Finance costs', 'Income tax expense'].map((key) => {
                             if (!incomeStatement.current_year.breakdowns[key]) return null;
                             return (
                                 <div key={key} className="grid grid-cols-[1fr_80px_120px_120px] px-6 py-2 text-sm border-b border-gray-100">
