@@ -36,7 +36,7 @@ interface MiniCompany {
   address: string;
 }
 
-const ROLES: RepresentationRole[] = ['DIRECTOR', 'SHAREHOLDER', 'LEGAL_REPRESENTATIVE', 'SECRETARY'];
+const ROLES: RepresentationRole[] = ['DIRECTOR', 'SHAREHOLDER', 'LEGAL_REPRESENTATIVE', 'JUDICIAL_REPRESENTATIVE', 'SECRETARY'];
 
 const InvolvementModal: React.FC<InvolvementModalProps> = ({
   isOpen,
