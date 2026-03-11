@@ -47,8 +47,12 @@ const NumericInput: React.FC<NumericInputProps> = ({
     const v = e.target.value;
     // Allow: digits, single dot, leading minus only if min < 0
     if (/^-?\d*\.?\d*$/.test(v) || v === '' || v === '-') {
-      setRaw(v);
       const parsed = parseFloat(v);
+      if (!isNaN(parsed) && max !== undefined && parsed > max) {
+        // Enforce max digit limit by blocking further typing if it exceeds max
+        return;
+      }
+      setRaw(v);
       if (!isNaN(parsed)) onChange(parsed);
     }
   };
@@ -94,7 +98,7 @@ const NumericInput: React.FC<NumericInputProps> = ({
         tabIndex={-1}
         aria-label="Decrease"
       >
-        <Minus size={14} />
+        <Minus size={10} />
       </button>
       <input
         type="text"
@@ -104,7 +108,7 @@ const NumericInput: React.FC<NumericInputProps> = ({
         onKeyDown={handleKeyDown}
         onBlur={handleBlur}
         placeholder={placeholder}
-        className="flex-1 min-w-0 px-2 py-3 bg-transparent outline-none text-sm font-semibold text-gray-800 text-center"
+        className="flex-1 w-full py-3 bg-transparent outline-none text-sm font-semibold text-gray-800 text-center"
       />
       <button
         type="button"
@@ -113,7 +117,7 @@ const NumericInput: React.FC<NumericInputProps> = ({
         tabIndex={-1}
         aria-label="Increase"
       >
-        <Plus size={14} />
+        <Plus size={10} />
       </button>
     </div>
   );

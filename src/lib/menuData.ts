@@ -66,6 +66,15 @@ export const menuData: MenuItem[] = [
         roles: ["ORG_ADMIN"]
     },
     {
+        slug: "accepting-services",
+        icon: GitPullRequestIcon,
+        label: "Accepting Services",
+        href: "/dashboard/accepting-services",
+        section: "primary",
+        description: "View and accept client requests",
+        roles: ["ORG_ADMIN"]
+    },
+    {
         slug: "service-request-templates",
         icon: GitPullRequestIcon,
         label: "Service Request Templates",

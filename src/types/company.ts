@@ -8,6 +8,7 @@ export interface CompanyShareClass {
   id: string;
   class: ShareClass;
   issued: number;
+  perShareValue?: number;
 }
 
 export interface CompanyInvolvement {
@@ -18,6 +19,10 @@ export interface CompanyInvolvement {
   classB: number;
   classC: number;
   ordinary: number;
+  classAPaidUpPercentage?: number;
+  classBPaidUpPercentage?: number;
+  classCPaidUpPercentage?: number;
+  ordinaryPaidUpPercentage?: number;
   person?: {
     id: string;
     name: string;

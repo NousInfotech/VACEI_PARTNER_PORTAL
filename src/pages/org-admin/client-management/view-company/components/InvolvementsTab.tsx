@@ -138,10 +138,38 @@ const InvolvementsTab: React.FC<InvolvementsTabProps> = ({
                                                             
                                                             <div className="mb-4 space-y-3">
                                                                 <div className="flex flex-wrap gap-2">
-                                                                    {(inv.classA || 0) > 0 && <span className="bg-blue-50 text-blue-700 border border-blue-200 rounded-lg px-3 py-1 text-sm font-medium">Class A: {(inv.classA || 0).toLocaleString()}</span>}
-                                                                    {(inv.classB || 0) > 0 && <span className="bg-blue-50 text-blue-700 border border-blue-200 rounded-lg px-3 py-1 text-sm font-medium">Class B: {(inv.classB || 0).toLocaleString()}</span>}
-                                                                    {(inv.classC || 0) > 0 && <span className="bg-blue-50 text-blue-700 border border-blue-200 rounded-lg px-3 py-1 text-sm font-medium">Class C: {(inv.classC || 0).toLocaleString()}</span>}
-                                                                    {(inv.ordinary || 0) > 0 && <span className="bg-blue-50 text-blue-700 border border-blue-200 rounded-lg px-3 py-1 text-sm font-medium">Ordinary: {(inv.ordinary || 0).toLocaleString()}</span>}
+                                                                    {(inv.classA || 0) > 0 && (
+                                                                        <span className="bg-blue-50 text-blue-700 border border-blue-200 rounded-lg px-3 py-1 text-sm font-medium flex flex-col items-center">
+                                                                            <span>Class A: {(inv.classA || 0).toLocaleString()}</span>
+                                                                            {inv.classAPaidUpPercentage != null && (
+                                                                                <span className="text-[13px] text-blue-500 font-medium border border-blue-200 rounded-lg px-3 py-1">{Number(inv.classAPaidUpPercentage)}% Paid</span>
+                                                                            )}
+                                                                        </span>
+                                                                    )}
+                                                                    {(inv.classB || 0) > 0 && (
+                                                                        <span className="bg-blue-50 text-blue-700 border border-blue-200 rounded-lg px-3 py-1 text-sm font-medium flex flex-col items-center">
+                                                                            <span>Class B: {(inv.classB || 0).toLocaleString()}</span>
+                                                                            {inv.classBPaidUpPercentage != null && (
+                                                                                <span className="text-[13px] text-blue-500 font-medium border border-blue-200 rounded-lg px-3 py-1">{Number(inv.classBPaidUpPercentage)}% Paid</span>
+                                                                            )}
+                                                                        </span>
+                                                                    )}
+                                                                    {(inv.classC || 0) > 0 && (
+                                                                        <span className="bg-blue-50 text-blue-700 border border-blue-200 rounded-lg px-3 py-1 text-sm font-medium flex flex-col items-center">
+                                                                            <span>Class C: {(inv.classC || 0).toLocaleString()}</span>
+                                                                            {inv.classCPaidUpPercentage != null && (
+                                                                                <span className="text-[13px] text-blue-500 font-medium border border-blue-200 rounded-lg px-3 py-1">{Number(inv.classCPaidUpPercentage)}% Paid</span>
+                                                                            )}
+                                                                        </span>
+                                                                    )}
+                                                                    {(inv.ordinary || 0) > 0 && (
+                                                                        <span className="bg-blue-50 text-blue-700 border border-blue-200 rounded-lg px-3 py-1 text-sm font-medium flex flex-col items-center">
+                                                                            <span>Ordinary: {(inv.ordinary || 0).toLocaleString()}</span>
+                                                                            {inv.ordinaryPaidUpPercentage != null && (
+                                                                                <span className="text-[13px] text-blue-500 font-medium border border-blue-200 rounded-lg px-3 py-1">{Number(inv.ordinaryPaidUpPercentage)}% Paid</span>
+                                                                            )}
+                                                                        </span>
+                                                                    )}
                                                                 </div>
 
                                                                 <div className="flex flex-wrap gap-2">
