@@ -40,9 +40,24 @@ interface ExtendedTBProps {
     engagementId?: string;
 }
 
+/** Numeric-aware code comparison so 0002, 0008, 0010, 0050 sort correctly (not 0050 before 0002). */
+function compareCodeNumeric(a: unknown, b: unknown): number {
+    return String(a ?? '').localeCompare(String(b ?? ''), undefined, { numeric: true });
+}
+
+// Normalize for comparison and payload (empty string -> null)
+const normalizeGroup = (value: string | null | undefined): string | null => {
+    if (value === null || value === undefined) return null;
+    const trimmed = String(value).trim();
+    return trimmed === '' ? null : trimmed;
+};
+
 export default function ExtendedTB({ isSectionsView = false, engagementId }: ExtendedTBProps) {
     const [data, setData] = useState<ExtendedTBRow[]>([]);
     const [originalData, setOriginalData] = useState<ExtendedTBRow[]>([]); // Store original data to track changes
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); // Prevent refetch from overwriting local edits
+    const dataRef = useRef<ExtendedTBRow[]>([]);
+    const originalDataRef = useRef<ExtendedTBRow[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -81,6 +96,10 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
     const { toast } = useToast();
     const { organizationMember, user } = useAuth();
 
+    // Keep refs in sync so save mutation always uses latest data (avoids stale closure)
+    dataRef.current = data;
+    originalDataRef.current = originalData;
+
     const handleAddRow = () => {
         const newRow: ExtendedTBRow = {
             id: Math.max(...data.map(d => d.id), 0) + 1,
@@ -103,6 +122,7 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
     };
 
     const handleUpdateRow = (id: number, field: string, value: string | number | null | undefined) => {
+        setHasUnsavedChanges(true);
         setData(prevData => prevData.map(row => {
             if (row.id === id) {
                 const updatedRow = { ...row, [field]: value };
@@ -124,6 +144,7 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
 
     // Handle group updates - update all groups at once to avoid stale state
     const handleUpdateGroups = (id: number, groups: { group1: string | null; group2: string | null; group3: string | null; group4: string | null }) => {
+        setHasUnsavedChanges(true);
         setData(prevData => prevData.map(row => {
             if (row.id === id) {
                 const updatedRow = { 
@@ -185,6 +206,7 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
 
     // Apply bulk classification (groups) to all selected rows
     const applyBulkGroups = useCallback((groups: { group1: string | null; group2: string | null; group3: string | null; group4: string | null }) => {
+        setHasUnsavedChanges(true);
         setBulkGroup1(groups.group1);
         setBulkGroup2(groups.group2);
         setBulkGroup3(groups.group3);
@@ -366,21 +388,32 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
 
     // Map backend data to ExtendedTBRow format. Only use data that belongs to the current engagement's trial balance.
     // When there is no trial balance or the response is for a different trial balance, clear data.
+    // Do not overwrite local state when the user has unsaved changes (e.g. after switching tabs and refetch).
     React.useEffect(() => {
         if (!trialBalanceId) {
             setData([]);
             setOriginalData([]);
+            setHasUnsavedChanges(false);
             return;
         }
         const responseTbId = trialBalanceWithAccountsData?.data?.trialBalance?.id;
         if (responseTbId && responseTbId !== trialBalanceId) {
             setData([]);
             setOriginalData([]);
+            setHasUnsavedChanges(false);
+            return;
+        }
+        if (hasUnsavedChanges) {
+            // Preserve user's local edits when refetch runs (e.g. after tab switch); do not overwrite
             return;
         }
         if (trialBalanceWithAccountsData?.data?.accounts) {
             const accounts = trialBalanceWithAccountsData.data.accounts;
-            const mappedData: ExtendedTBRow[] = accounts.map((account: any, index: number) => {
+            // Sort by Code only (numeric-aware) so order is consistent: 0002, 0008, 0010, 0050, 0051, 0052, etc.
+            const sortedAccounts = [...accounts].sort((a: any, b: any) =>
+                compareCodeNumeric(a.code, b.code)
+            );
+            const mappedData: ExtendedTBRow[] = sortedAccounts.map((account: any, index: number) => {
                 // Convert amounts to numbers (handle Decimal types from Prisma)
                 const parseAmount = (value: any): number => {
                     if (value === null || value === undefined || value === '-') return 0;
@@ -431,7 +464,16 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
             setData([]);
             setOriginalData([]);
         }
-    }, [trialBalanceWithAccountsData, trialBalanceId, isLoadingTrialBalanceData]);
+    }, [trialBalanceWithAccountsData, trialBalanceId, isLoadingTrialBalanceData, hasUnsavedChanges]);
+
+    // When user switches to a different trial balance, allow loading its data by clearing dirty state
+    const prevTrialBalanceIdRef = useRef<string | undefined>(undefined);
+    React.useEffect(() => {
+        if (prevTrialBalanceIdRef.current !== trialBalanceId) {
+            prevTrialBalanceIdRef.current = trialBalanceId;
+            setHasUnsavedChanges(false);
+        }
+    }, [trialBalanceId]);
 
     // ETB classification ID for Review / Sign-off / Review History (section sidebar)
     const { etbClassificationId, isLoading: isLoadingETBClassification } = useETBClassificationId(trialBalanceId);
@@ -816,7 +858,7 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
         });
     }, [data, originalData]);
 
-    // Save mutation
+    // Save mutation – use refs so we always send the latest data (avoids stale closure)
     const saveMutation = useMutation({
         mutationFn: async () => {
             setIsSaving(true);
@@ -824,35 +866,35 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
                 throw new Error("Trial balance ID and Audit cycle ID are required");
             }
 
-            // Prepare accounts to update (only those with accountId from backend)
-            // Helper to normalize values for comparison
-            const normalize = (value: string | null | undefined): string | null => {
-                if (value === null || value === undefined) return null;
-                const trimmed = String(value).trim();
-                return trimmed === '' ? null : trimmed;
-            };
-            
-            const accountsToUpdate = data
-                .filter(row => row.accountId) // Only rows that exist in backend
+            const currentData = dataRef.current;
+            const currentOriginal = originalDataRef.current;
+
+            const accountsToUpdate = currentData
+                .filter((row): row is ExtendedTBRow & { accountId: string } => Boolean(row.accountId))
                 .map(row => {
-                    const original = originalData.find(orig => orig.accountId === row.accountId);
+                    const original = currentOriginal.find(orig => orig.accountId === row.accountId);
                     if (!original) return null;
 
-                    // Check if this row has changes (using normalized comparison)
+                    const n = normalizeGroup;
                     const hasRowChanges = (
-                        normalize(row.code) !== normalize(original.code) ||
-                        normalize(row.accountName) !== normalize(original.accountName) ||
+                        n(row.code) !== n(original.code) ||
+                        n(row.accountName) !== n(original.accountName) ||
                         row.currentYear !== original.currentYear ||
                         row.priorYear !== original.priorYear ||
-                        normalize(row.group1) !== normalize(original.group1) ||
-                        normalize(row.group2) !== normalize(original.group2) ||
-                        normalize(row.group3) !== normalize(original.group3) ||
-                        normalize(row.group4) !== normalize(original.group4)
+                        n(row.group1) !== n(original.group1) ||
+                        n(row.group2) !== n(original.group2) ||
+                        n(row.group3) !== n(original.group3) ||
+                        n(row.group4) !== n(original.group4)
                     );
 
                     if (!hasRowChanges) return null;
 
-                    // Build update object with only changed fields
+                    // Always send all four group fields so backend receives them and does not skip the row
+                    const g1 = n(row.group1);
+                    const g2 = n(row.group2);
+                    const g3 = n(row.group3);
+                    const g4 = n(row.group4);
+
                     const updateObj: {
                         trialBalanceAccountId: string;
                         currentYear?: number;
@@ -861,27 +903,17 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
                         group3?: string | null;
                         group4?: string | null;
                     } = {
-                        trialBalanceAccountId: row.accountId!,
+                        trialBalanceAccountId: row.accountId,
                     };
 
-                    // Include currentYear if it changed
                     if (row.currentYear !== original.currentYear) {
                         updateObj.currentYear = row.currentYear;
                     }
-
-                    // Include groups if they changed (normalize empty strings to null)
-                    if (row.group1 !== original.group1) {
-                        updateObj.group1 = (row.group1 && row.group1.trim()) || null;
-                    }
-                    if (row.group2 !== original.group2) {
-                        updateObj.group2 = (row.group2 && row.group2.trim()) || null;
-                    }
-                    if (row.group3 !== original.group3) {
-                        updateObj.group3 = (row.group3 && row.group3.trim()) || null;
-                    }
-                    if (row.group4 !== original.group4) {
-                        updateObj.group4 = (row.group4 && row.group4.trim()) || null;
-                    }
+                    // Always send all four group fields so the backend receives them (avoids "no fields to update" skip)
+                    updateObj.group1 = g1;
+                    updateObj.group2 = g2;
+                    updateObj.group3 = g3;
+                    updateObj.group4 = g4;
 
                     return updateObj;
                 })
@@ -898,16 +930,24 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
                 throw new Error("No changes to save");
             }
 
-            return apiPatch<any>(
+            return apiPatch<{ data?: { updated?: number }; success?: boolean }>(
                 endPoints.AUDIT.UPDATE_TRIAL_BALANCE_ACCOUNTS(auditCycleId, trialBalanceId),
-                { accounts: accountsToUpdate }
+                { trialBalanceId, accounts: accountsToUpdate }
             );
         },
-        onSuccess: async () => {
-            // Update original data to match current data
-            setOriginalData(JSON.parse(JSON.stringify(data)));
-            
-            // Refresh trial balance data
+        onSuccess: async (response) => {
+            const updated = response?.data?.updated ?? 0;
+            if (updated === 0) {
+                setAlertMessage({
+                    message: "Save completed but no rows were updated. Your changes are still in the form; try saving again or check the data.",
+                    variant: "warning"
+                });
+                return;
+            }
+
+            setHasUnsavedChanges(false);
+            setOriginalData(JSON.parse(JSON.stringify(dataRef.current)));
+
             await queryClient.invalidateQueries({ 
                 queryKey: ['trial-balance-with-accounts', auditCycleId, trialBalanceId] 
             });

@@ -5,6 +5,11 @@ import { endPoints } from "../../../../../config/endPoint";
 import type { ExtendedTBRow } from "../extended-tb/data";
 import { extractETBData } from "../utils/etbDataProcessor";
 
+/** Numeric-aware code comparison: 0002, 0008, 0010, 0050, 0051, 0052. */
+function compareCodeNumeric(a: unknown, b: unknown): number {
+    return String(a ?? '').localeCompare(String(b ?? ''), undefined, { numeric: true });
+}
+
 interface TrialBalanceWithAccountsResponse {
   data: {
     trialBalance: {
@@ -90,8 +95,13 @@ export const useETBData = (engagementId?: string) => {
     const accounts = trialBalanceWithAccountsData.data.accounts;
     const currentYear = trialBalanceWithAccountsData.data.trialBalance.year;
 
+    // Sort by Code only (numeric-aware): 0002, 0008, 0010, 0050, 0051, 0052, etc.
+    const sortedAccounts = [...accounts].sort((a: any, b: any) =>
+      compareCodeNumeric(a.code, b.code)
+    );
+
     // Map backend data to ExtendedTBRow format
-    const etbRows: ExtendedTBRow[] = accounts.map((account: any, index: number) => {
+    const etbRows: ExtendedTBRow[] = sortedAccounts.map((account: any, index: number) => {
       const parseAmount = (value: any): number => {
         if (value === null || value === undefined || value === '-') return 0;
         if (typeof value === 'number') return value;
