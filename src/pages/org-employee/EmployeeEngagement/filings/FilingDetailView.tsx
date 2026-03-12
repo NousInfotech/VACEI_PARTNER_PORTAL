@@ -17,8 +17,11 @@ import {
   X,
   Paperclip,
   RefreshCw,
-  FileCheck
+  FileCheck,
+  Archive
 } from "lucide-react";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 import { toast } from "sonner";
 import { Button } from "../../../../ui/Button";
 import { Input } from "../../../../ui/input";
@@ -54,6 +57,7 @@ function FilingDetailContent() {
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
   const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
   const [selectedDocFileIds, setSelectedDocFileIds] = useState<string[]>([]);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
 
   // Fetch Filing Data
   const { data: filing, isLoading: isLoadingFiling } = useQuery({
@@ -160,11 +164,34 @@ function FilingDetailContent() {
       fileIds: selectedFileIds 
     });
   };
-
   const handleFileAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
       addFilesMutation.mutate(files);
+    }
+  };
+
+  const handleDownloadAll = async () => {
+    if (!filing || filing.files.length === 0) return;
+    setIsDownloadingAll(true);
+    try {
+      const zip = new JSZip();
+      
+      const promises = filing.files.map(async (fv: any) => {
+        const response = await fetch(fv.file.url);
+        const blob = await response.blob();
+        zip.file(fv.file.file_name, blob);
+      });
+      
+      await Promise.all(promises);
+      const content = await zip.generateAsync({ type: "blob" });
+      saveAs(content, `${filing.name.replace(/\s+/g, '_')}_documents.zip`);
+      toast.success("Download started");
+    } catch (error) {
+      console.error("ZIP Error:", error);
+      toast.error("Failed to generate ZIP folder");
+    } finally {
+      setIsDownloadingAll(false);
     }
   };
 
@@ -398,7 +425,21 @@ function FilingDetailContent() {
           {/* Left Side: Files (40%) */}
           <div className="w-full lg:w-[40%] flex flex-col bg-white rounded-[32px] border border-gray-100 shadow-xl shadow-indigo-500/5 overflow-hidden">
             <div className="p-6 border-b border-gray-100 bg-white flex items-center justify-between shrink-0">
-              <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Documents ({f.files.length})</h4>
+              <div className="flex items-center gap-4">
+                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Documents ({f.files.length})</h4>
+                {f.files.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/5 gap-1.5"
+                    onClick={handleDownloadAll}
+                    disabled={isDownloadingAll}
+                  >
+                    {isDownloadingAll ? <RefreshCw size={12} className="animate-spin" /> : <Archive size={12} />}
+                    Download All
+                  </Button>
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 {!isLocked && isClientReview && (
                   <>
