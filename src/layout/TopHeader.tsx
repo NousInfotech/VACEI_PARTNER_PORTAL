@@ -1,11 +1,9 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { useMemo, useEffect } from "react";
+import { useEffect } from "react";
 import { PanelLeft, PanelLeftClose, Bell, LogOut, Settings, MessageSquare, Calendar, AlertCircle, CheckCheck } from "lucide-react";
 import { Button } from "../ui/Button";
 import { useAuth } from "../context/auth-context-core";
-import { Select } from "../ui/Select";
 import { Dropdown } from "../ui/Dropdown";
-import { AVAILABLE_SERVICES } from "../lib/types";
 import BackButton from "../pages/common/BackButton";
 import { useNotifications } from "../context/NotificationContext";
 
@@ -23,7 +21,7 @@ export default function TopHeader({
     role
 }: TopHeaderProps) {
     const navigate = useNavigate();
-    const { logout, organizationMember, setSelectedService, selectedServiceLabel } = useAuth();
+    const { logout } = useAuth();
     const { unreadCount, markAsRead, markAllAsRead, notifications: latestNotifications, fetchNotifications: fetchLatestNotifications, fetchUnreadCount } = useNotifications();
     const { pathname } = useLocation();
 
@@ -68,30 +66,6 @@ export default function TopHeader({
         }
     };
 
-    const services = useMemo(() => {
-        const allowedServices = organizationMember?.allowedServices || [];
-        const allowedCustomServiceCycles = organizationMember?.allowedCustomServiceCycles || [];
-
-        const standardItems = allowedServices.map(serviceId => {
-            const serviceInfo = AVAILABLE_SERVICES.find(s => s.id === serviceId);
-            return {
-                id: serviceId,
-                label: serviceInfo?.label || serviceId.replace(/_/g, " "),
-                onClick: () => setSelectedService(serviceId)
-            };
-        });
-
-        const customItems = allowedCustomServiceCycles.map(cycle => ({
-            id: cycle.id,
-            label: cycle.title,
-            onClick: () => setSelectedService(cycle.id)
-        }));
-
-        return [...standardItems, ...customItems];
-    }, [organizationMember?.allowedServices, organizationMember?.allowedCustomServiceCycles, setSelectedService]);
-
-    const currentServiceLabel = selectedServiceLabel;
-
     // Poll unread count periodically (fallback when SSE does not connect)
     useEffect(() => {
         const interval = setInterval(fetchUnreadCount, 30_000);
@@ -125,20 +99,6 @@ export default function TopHeader({
 
                 {pathname !== '/dashboard' && (
                     <BackButton className="h-10 px-3 rounded-xl" />
-                )}
-
-                {organizationMember && role !== 'Admin' && (
-                    <div className="flex items-center gap-2 ml-4">
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest whitespace-nowrap">Service:</p>
-                        <div className="relative group">
-                            <Select
-                                label={currentServiceLabel}
-                                items={services}
-                                className="w-auto"
-                                contentClassName="w-64"
-                            />
-                        </div>
-                    </div>
                 )}
             </div>
 

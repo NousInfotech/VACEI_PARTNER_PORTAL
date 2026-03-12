@@ -62,6 +62,7 @@ export interface ServiceRequestTemplate {
   version: number;
   isActive: boolean;
   createdBy: string;
+  organizationId?: string | null;
   createdAt: string;
   updatedAt: string;
   creator?: {
@@ -77,6 +78,7 @@ export interface CreateTemplateDto {
   type: TemplateType;
   formFields: FormField[];
   isActive?: boolean;
+  organizationId?: string | null;
 }
 
 export interface UpdateTemplateDto {

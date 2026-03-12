@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { 
+import {
   FileText,
   XCircle,
+  Activity
 } from "lucide-react";
 import { useAuth } from "../../../context/auth-context-core";
 import { apiGet, apiPatch } from "../../../config/base";
 import { endPoints } from "../../../config/endPoint";
-import PageHeader from "../../common/PageHeader";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +20,9 @@ import { Button } from "../../../ui/Button";
 import { Eye } from "lucide-react";
 import OrgAdminEngagement from "./OrgAdminEngagement";
 import OrgEmployeeEngagement from "./OrgEmployeeEngagement";
+import { PageHeader } from "../../common/PageHeader";
+import { Select } from "../../../ui/Select";
+import { AVAILABLE_SERVICES } from "../../../lib/types";
 
 interface OrgEngagement {
   id: string;
@@ -49,12 +52,40 @@ interface ServiceRequest {
 }
 
 export default function Engagement() {
-  const { user, organizationMember, selectedService } = useAuth();
+  const { user, organizationMember, selectedService, selectedServiceLabel, setSelectedService } = useAuth();
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
   const [rejectingEngagementId, setRejectingEngagementId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const hasToken = typeof window !== "undefined" && !!localStorage.getItem("token");
+
+  const serviceFilterItems = useMemo(() => {
+    const allowedServices = organizationMember?.allowedServices || [];
+    const allowedCustomServiceCycles = organizationMember?.allowedCustomServiceCycles || [];
+
+    const allItem = {
+      id: "all",
+      label: "All Services",
+      onClick: () => setSelectedService(null)
+    };
+
+    const standardItems = allowedServices.map(serviceId => {
+      const serviceInfo = AVAILABLE_SERVICES.find(s => s.id === serviceId);
+      return {
+        id: serviceId,
+        label: serviceInfo?.label || serviceId.replace(/_/g, " "),
+        onClick: () => setSelectedService(serviceId)
+      };
+    });
+
+    const customItems = allowedCustomServiceCycles.map(cycle => ({
+      id: cycle.id,
+      label: cycle.title,
+      onClick: () => setSelectedService(cycle.id)
+    }));
+
+    return [allItem, ...standardItems, ...customItems];
+  }, [organizationMember?.allowedServices, organizationMember?.allowedCustomServiceCycles, setSelectedService]);
 
   const { data, isLoading: loading, refetch } = useQuery({
     queryKey: ["employee-engagements", organizationMember?.organizationId, selectedService],
@@ -117,11 +148,26 @@ export default function Engagement() {
   };
 
   return (
-    <div className="mx-auto space-y-8 animate-in fade-in duration-500 pb-10">
-      {user?.role === 'ORG_ADMIN' && (
-        <PageHeader 
-          title="Engagements" 
-          subtitle="Manage and view all your organization's engagements" 
+  <div className="mx-auto space-y-8 animate-in fade-in duration-500 pb-10">
+      {(user?.role === 'ORG_ADMIN' || user?.role === 'ORG_EMPLOYEE') && (
+        <PageHeader
+          title="Engagements"
+          subtitle="Manage and track all active engagements and projects for your organization."
+          icon={Activity}
+          className="relative z-30"
+          actions={user?.role === 'ORG_EMPLOYEE' ? (
+            <div className="flex items-center gap-3">
+              <p className="text-xs font-semibold text-white/70 uppercase tracking-widest whitespace-nowrap">
+                Service
+              </p>
+              <Select
+                label={selectedServiceLabel || "All Services"}
+                items={serviceFilterItems}
+                className="w-auto"
+                contentClassName="w-64"
+              />
+            </div>
+          ) : null}
         />
       )}
 

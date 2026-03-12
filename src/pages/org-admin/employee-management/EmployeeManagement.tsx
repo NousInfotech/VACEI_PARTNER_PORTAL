@@ -3,6 +3,7 @@ import { Plus, Search, Mail, Edit, Loader2, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/ui/Button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/ui/Dialog";
+import { PageHeader } from "@/pages/common/PageHeader";
 import AssignServices from "./AssignServices";
 import axiosInstance from "@/config/axiosConfig";
 import { endPoints } from "@/config/endPoint";
@@ -119,16 +120,16 @@ export default function EmployeeManagement() {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Employee Management</h1>
-                    <p className="text-gray-500">Manage access and services for your team members.</p>
-                </div>
-                <Button onClick={() => navigate("/dashboard/employees/create")} className="gap-2">
-                    <Plus size={18} />
-                    Add Employee
-                </Button>
-            </div>
+            <PageHeader 
+                title="Employee Management"
+                description="Manage access and services for your team members."
+                actions={
+                    <Button onClick={() => navigate("/dashboard/employees/create")} variant="header" className="gap-2">
+                        <Plus size={18} />
+                        Add Employee
+                    </Button>
+                }
+            />
 
             {/* List */}
             <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">

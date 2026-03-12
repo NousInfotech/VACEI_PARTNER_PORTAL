@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { X, Users, ShieldCheck, Plus, Search, Building2 } from 'lucide-react';
 import { Button } from '../../../../../ui/Button';
 import NumericInput from '@/ui/NumericInput';
+import VolumeInput from '@/ui/VolumeInput';
 import { apiGet, apiPost, apiPut } from '../../../../../config/base';
 import { endPoints } from '../../../../../config/endPoint';
 import type { CompanyInvolvement, RepresentationRole } from '../../../../../types/company';
@@ -36,7 +37,7 @@ interface MiniCompany {
   address: string;
 }
 
-const ROLES: RepresentationRole[] = ['DIRECTOR', 'SHAREHOLDER', 'LEGAL_REPRESENTATIVE', 'SECRETARY'];
+const ROLES: RepresentationRole[] = ['DIRECTOR', 'SHAREHOLDER', 'LEGAL_REPRESENTATIVE', 'JUDICIAL_REPRESENTATIVE', 'SECRETARY'];
 
 const InvolvementModal: React.FC<InvolvementModalProps> = ({
   isOpen,
@@ -65,6 +66,10 @@ const InvolvementModal: React.FC<InvolvementModalProps> = ({
     classB: 0,
     classC: 0,
     ordinary: 0,
+    classAPaidUpPercentage: 0,
+    classBPaidUpPercentage: 0,
+    classCPaidUpPercentage: 0,
+    ordinaryPaidUpPercentage: 0,
     personName: '',
     personAddress: '',
     personNationality: '',
@@ -116,6 +121,10 @@ const InvolvementModal: React.FC<InvolvementModalProps> = ({
           classB: involvement.classB || 0,
           classC: involvement.classC || 0,
           ordinary: involvement.ordinary || 0,
+          classAPaidUpPercentage: involvement.classAPaidUpPercentage || 0,
+          classBPaidUpPercentage: involvement.classBPaidUpPercentage || 0,
+          classCPaidUpPercentage: involvement.classCPaidUpPercentage || 0,
+          ordinaryPaidUpPercentage: involvement.ordinaryPaidUpPercentage || 0,
           personName: involvement.person?.name || involvement.holderCompany?.name || '',
           personAddress: involvement.person?.address || involvement.holderCompany?.address || '',
           personNationality: involvement.person?.nationality || '',
@@ -159,6 +168,10 @@ const InvolvementModal: React.FC<InvolvementModalProps> = ({
       classB: 0,
       classC: 0,
       ordinary: 0,
+      classAPaidUpPercentage: 0,
+      classBPaidUpPercentage: 0,
+      classCPaidUpPercentage: 0,
+      ordinaryPaidUpPercentage: 0,
       personName: '',
       personAddress: '',
       personNationality: '',
@@ -236,6 +249,10 @@ const InvolvementModal: React.FC<InvolvementModalProps> = ({
           classB: formData.classB,
           classC: formData.classC,
           ordinary: formData.ordinary,
+          classAPaidUpPercentage: formData.classAPaidUpPercentage !== undefined ? Number(formData.classAPaidUpPercentage) : undefined,
+          classBPaidUpPercentage: formData.classBPaidUpPercentage !== undefined ? Number(formData.classBPaidUpPercentage) : undefined,
+          classCPaidUpPercentage: formData.classCPaidUpPercentage !== undefined ? Number(formData.classCPaidUpPercentage) : undefined,
+          ordinaryPaidUpPercentage: formData.ordinaryPaidUpPercentage !== undefined ? Number(formData.ordinaryPaidUpPercentage) : undefined,
         });
       } else if (involvement) {
         await apiPut(endPoints.INVOLVEMENT.UPDATE(involvement.id), {
@@ -244,6 +261,10 @@ const InvolvementModal: React.FC<InvolvementModalProps> = ({
           classB: formData.classB,
           classC: formData.classC,
           ordinary: formData.ordinary,
+          classAPaidUpPercentage: formData.classAPaidUpPercentage !== undefined ? Number(formData.classAPaidUpPercentage) : undefined,
+          classBPaidUpPercentage: formData.classBPaidUpPercentage !== undefined ? Number(formData.classBPaidUpPercentage) : undefined,
+          classCPaidUpPercentage: formData.classCPaidUpPercentage !== undefined ? Number(formData.classCPaidUpPercentage) : undefined,
+          ordinaryPaidUpPercentage: formData.ordinaryPaidUpPercentage !== undefined ? Number(formData.ordinaryPaidUpPercentage) : undefined,
         });
       }
 
@@ -674,6 +695,37 @@ const InvolvementModal: React.FC<InvolvementModalProps> = ({
                   {shareErrors.ordinary && (
                     <p className="text-[10px] text-red-500 font-medium leading-tight">{shareErrors.ordinary}</p>
                   )}
+                </div>
+              </div>
+
+              {/* Paid up Percentage logic */}
+              <div className="p-6 bg-gray-50/50 rounded-2xl border border-gray-100 space-y-6 mt-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-gray-900 border-b-2 border-primary pb-1 uppercase tracking-widest inline-block">Paid-Up Percentage</h4>
+                  <p className="text-[10px] text-gray-400 font-medium italic">Specify the amount paid up per class</p>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                  <VolumeInput
+                    label="Class A Paid-Up %"
+                    value={formData.classAPaidUpPercentage}
+                    onChange={(val) => setFormData({ ...formData, classAPaidUpPercentage: val })}
+                  />
+                  <VolumeInput
+                    label="Class B Paid-Up %"
+                    value={formData.classBPaidUpPercentage}
+                    onChange={(val) => setFormData({ ...formData, classBPaidUpPercentage: val })}
+                  />
+                  <VolumeInput
+                    label="Class C Paid-Up %"
+                    value={formData.classCPaidUpPercentage}
+                    onChange={(val) => setFormData({ ...formData, classCPaidUpPercentage: val })}
+                  />
+                  <VolumeInput
+                    label="Ordinary Paid-Up %"
+                    value={formData.ordinaryPaidUpPercentage}
+                    onChange={(val) => setFormData({ ...formData, ordinaryPaidUpPercentage: val })}
+                  />
                 </div>
               </div>
 

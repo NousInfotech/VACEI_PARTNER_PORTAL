@@ -30,9 +30,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     const [isLoading, setIsLoading] = useState(true);
 
-    const setSelectedService = useCallback((service: string) => {
+    const setSelectedService = useCallback((service: string | null) => {
         setSelectedServiceState(service);
-        localStorage.setItem("selectedService", service);
+        if (service) {
+            localStorage.setItem("selectedService", service);
+        } else {
+            localStorage.removeItem("selectedService");
+        }
     }, []);
 
     const selectedServiceLabel = useMemo(() => {

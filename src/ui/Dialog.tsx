@@ -2,6 +2,12 @@ import * as React from "react"
 import { createPortal } from "react-dom"
 import { cn } from "../lib/utils"
 
+interface DialogContextProps {
+    onOpenChange?: (open: boolean) => void;
+}
+
+const DialogContext = React.createContext<DialogContextProps>({});
+
 interface DialogProps {
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
@@ -12,13 +18,15 @@ const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
     if (!open) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
-            <div
-                className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity animate-in fade-in duration-300"
-                onClick={() => onOpenChange?.(false)}
-            />
-            {children}
-        </div>,
+        <DialogContext.Provider value={{ onOpenChange }}>
+            <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
+                <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity animate-in fade-in duration-300"
+                    onClick={() => onOpenChange?.(false)}
+                />
+                {children}
+            </div>
+        </DialogContext.Provider>,
         document.body
     );
 };
@@ -104,4 +112,35 @@ const DialogFooter = ({
 )
 DialogFooter.displayName = "DialogFooter"
 
-export { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription }
+const DialogClose = React.forwardRef<
+    HTMLButtonElement,
+    React.ButtonHTMLAttributes<HTMLButtonElement> & { asChild?: boolean }
+>(({ asChild, children, ...props }, ref) => {
+    const { onOpenChange } = React.useContext(DialogContext);
+
+    if (asChild && React.isValidElement(children)) {
+        return React.cloneElement(children as React.ReactElement<any>, {
+            onClick: (e: React.MouseEvent<HTMLButtonElement>) => {
+                (children.props as any).onClick?.(e);
+                onOpenChange?.(false);
+            }
+        });
+    }
+
+    return (
+        <button
+            ref={ref}
+            type="button"
+            onClick={(e) => {
+                props.onClick?.(e);
+                onOpenChange?.(false);
+            }}
+            {...props}
+        >
+            {children}
+        </button>
+    );
+});
+DialogClose.displayName = "DialogClose"
+
+export { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription, DialogClose }

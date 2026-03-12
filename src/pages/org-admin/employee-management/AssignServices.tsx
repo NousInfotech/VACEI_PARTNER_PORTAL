@@ -27,23 +27,24 @@ export default function AssignServices({ employee, onSuccess, onCancel }: Assign
     const { organizationMember } = useAuth();
     const availableServices = organizationMember?.organization?.availableServices || [];
     const filteredServices = AVAILABLE_SERVICES.filter(s => availableServices.includes(s.id));
-    const allowedCustomServiceIds = organizationMember?.allowedCustomServiceCycles?.map(c => c.id) || [];
 
     const { data: customServices = [], isLoading: isServicesLoading } = useQuery({
-        queryKey: ['activeCustomServices'],
+        queryKey: ['organizationCustomServices', organizationMember?.organizationId],
         queryFn: async () => {
-            const response = await axiosInstance.get(endPoints.CUSTOM_SERVICE.GET_ACTIVE);
+            if (!organizationMember?.organizationId) return [];
+            const response = await axiosInstance.get(endPoints.ORGANIZATION.GET_BY_ID(organizationMember.organizationId));
             if (response.data.success) {
-                return response.data.data.map((s: { id: string; title: string }) => ({
+                return (response.data.data.customServiceCycles || []).map((s: { id: string; title: string }) => ({
                     id: s.id,
                     label: s.title
                 }));
             }
             return [];
-        }
+        },
+        enabled: !!organizationMember?.organizationId
     });
 
-    const activeCustomServices = customServices.filter((s: { id: string; label: string }) => allowedCustomServiceIds.includes(s.id));
+    const activeCustomServices = customServices;
     const allAvailableServices = [...filteredServices, ...activeCustomServices];
 
     const toggleService = (serviceId: string) => {

@@ -22,6 +22,7 @@ import {
   type CreateCustomServiceDto,
   type UpdateCustomServiceDto,
 } from '../../../types/service-request-template';
+import { useAuth } from '../../../context/auth-context-core';
 
 interface TemplatesContextType {
   templates: ServiceRequestTemplate[];
@@ -56,22 +57,33 @@ const TemplatesContext = createContext<TemplatesContextType | undefined>(undefin
 export const TemplatesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const queryClient = useQueryClient();
 
+  const { organizationMember } = useAuth();
+  const organizationId = organizationMember?.organizationId;
+
   const { data: templates = [], isLoading, isError, refetch } = useQuery({
-    queryKey: ['service-request-templates'],
+    queryKey: ['service-request-templates', organizationId],
     queryFn: async () => {
+      if (!organizationId) return [];
       const response = await apiGet<{ data: ServiceRequestTemplate[] }>(endPoints.SERVICE_REQUEST_TEMPLATE.GET_ALL, {
         limit: 1000,
+        organizationId: organizationId,
       });
       return response.data;
     },
+    enabled: !!organizationId,
   });
 
   const { data: customServices = [], isLoading: isLoadingCustomServices } = useQuery({
-    queryKey: ['custom-services'],
+    queryKey: ['custom-services', organizationId],
     queryFn: async () => {
-      const response = await apiGet<{ data: CustomService[] }>(endPoints.CUSTOM_SERVICE.LIST, { limit: 1000 });
+      if (!organizationId) return [];
+      const response = await apiGet<{ data: CustomService[] }>(endPoints.CUSTOM_SERVICE.LIST, {
+        limit: 1000,
+        organizationId: organizationId,
+      });
       return response.data;
     },
+    enabled: !!organizationId,
   });
 
   const [search, setSearch] = React.useState('');
@@ -93,7 +105,10 @@ export const TemplatesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const createMutation = useMutation({
     mutationFn: async (data: CreateTemplateDto) => {
-      return apiPost<unknown>(endPoints.SERVICE_REQUEST_TEMPLATE.CREATE, data as unknown as Record<string, unknown>);
+      return apiPost<unknown>(endPoints.SERVICE_REQUEST_TEMPLATE.CREATE, {
+        ...data,
+        organizationId: organizationId,
+      } as unknown as Record<string, unknown>);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['service-request-templates'] });
@@ -172,16 +187,33 @@ export const TemplatesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     [customServices],
   );
 
+  const { user } = useAuth();
+
   const serviceOptions = useMemo(() => {
+    const memberAllowed = organizationMember?.allowedServices || [];
+    const orgAvailable = organizationMember?.organization?.availableServices || [];
+    
+    // Union of both lists to be safe, or fallback to orgAvailable if memberAllowed is empty
+    const allowedStandard = memberAllowed.length > 0 ? memberAllowed : orgAvailable;
+
+    const allowedCustomIds = organizationMember?.allowedCustomServiceCycles?.map((c) => c.id) || [];
+    const isAdmin = user?.role === 'ORG_ADMIN' || user?.role === 'ORG_EMPLOYEE';
+
     const staticOptions = Object.values(Services)
-      .filter((s) => s !== 'CUSTOM')
+      .filter((s) => s !== 'CUSTOM' && allowedStandard.includes(s))
       .map((s) => ({
         id: s,
         label: s.replace(/_/g, ' '),
       }));
 
     const dynamicOptions = customServices
-      .filter((cs) => cs.isActive)
+      .filter((cs) => {
+        if (!cs.isActive) return false;
+        // If it's an admin/employee and they have no specific custom allowed list, show all active
+        if (isAdmin && allowedCustomIds.length === 0) return true;
+        // Otherwise strictly follow the allowed list
+        return allowedCustomIds.includes(cs.id);
+      })
       .map((cs) => ({
         id: 'CUSTOM',
         label: cs.title,
@@ -189,7 +221,7 @@ export const TemplatesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }));
 
     return [...staticOptions, ...dynamicOptions];
-  }, [customServices]);
+  }, [customServices, organizationMember, user]);
 
   const inputTypeIcons: Record<InputType, LucideIcon> = useMemo(
     () => ({
