@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Building2, MapPin, Globe, FileText, PieChart, BarChart3, Hash, Lock, ChevronDown } from 'lucide-react';
+import { X, Building2, MapPin, Globe, FileText, PieChart, BarChart3, Hash, Lock, ChevronDown, Clock } from 'lucide-react';
 import { Button } from '../../../../../ui/Button'; 
 
 import { apiPut } from '../../../../../config/base';
 import { endPoints } from '../../../../../config/endPoint';
 import type { Company } from '../../../../../types/company';
-import NumericInput from '@/ui/NumericInput';
+import NumericInput from '../../../../../ui/NumericInput';
 
 const industries = [
   'Technology', 'Healthcare', 'Finance', 'Manufacturing', 'Retail',
@@ -35,6 +35,7 @@ const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
     issuedShares: company.issuedShares || 0,
     registrationNumber: company.registrationNumber || '',
     legalType: company.legalType || '',
+    companyStartedAt: company.companyStartedAt ? new Date(company.companyStartedAt).toISOString().split('T')[0] : '',
   });
 
   const [shareClasses, setShareClasses] = useState(() => {
@@ -91,6 +92,7 @@ const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
         issuedShares: company.issuedShares || 0,
         registrationNumber: company.registrationNumber || '',
         legalType: company.legalType || '',
+        companyStartedAt: company.companyStartedAt ? new Date(company.companyStartedAt).toISOString().split('T')[0] : '',
       });
       const existingA = company.shareClasses?.find(s => s.class === 'A' || s.class === 'CLASS_A');
       const existingB = company.shareClasses?.find(s => s.class === 'B' || s.class === 'CLASS_B');
@@ -161,6 +163,7 @@ const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
       await apiPut(endPoints.COMPANY.UPDATE(company.id), {
         ...formData,
         industry: Array.isArray(formData.industry) ? formData.industry : [formData.industry],
+        companyStartDate: formData.companyStartedAt ? new Date(formData.companyStartedAt).toISOString() : null,
         shareDetails,
       });
       onSuccess();
@@ -263,6 +266,18 @@ const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
                   {fieldErrors.legalType}
                 </p>
               )}
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                <Clock size={14} /> Incorporated At
+              </label>
+              <input
+                type="date"
+                value={formData.companyStartedAt}
+                onChange={(e) => setFormData({ ...formData, companyStartedAt: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-sm font-medium"
+              />
             </div>
 
             <div className="md:col-span-2 space-y-1.5">

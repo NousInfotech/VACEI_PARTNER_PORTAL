@@ -56,6 +56,8 @@ export interface Company {
   shareClasses?: CompanyShareClass[];
   involvements?: CompanyInvolvement[];
   quickBookStatus: boolean | null;
+  companyStartedAt?: string | null;
+  incorporationDate?: string;
 }
 
 export interface IncorporationCycle {

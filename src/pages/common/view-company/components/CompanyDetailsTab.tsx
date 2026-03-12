@@ -111,9 +111,11 @@ const CompanyDetailsTab: React.FC<CompanyDetailsTabProps> = ({ company }) => {
                 <ShadowCard className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl border-gray-100 border">
                     <Clock className="h-5 w-5 text-gray-600 mt-0.5" />
                     <div>
-                        <p className="text-sm text-gray-500 font-medium">Incorporation Date</p>
+                        <p className="text-sm text-gray-500 font-medium">Incorporated At</p>
                         <p className="text-gray-900 text-xl font-light">
-                            {company.createdAt ? new Date(company.createdAt).toLocaleDateString() : 'N/A'}
+                            {company.companyStartedAt || company.incorporationDate 
+                                ? new Date(company.companyStartedAt || company.incorporationDate!).toLocaleDateString() 
+                                : 'N/A'}
                         </p>
                     </div>
                 </ShadowCard>

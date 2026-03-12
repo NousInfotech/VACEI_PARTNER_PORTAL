@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Users, ShieldCheck, Plus, Search, Building2 } from 'lucide-react';
 import { Button } from '../../../../../ui/Button';
-import NumericInput from '@/ui/NumericInput';
-import VolumeInput from '@/ui/VolumeInput';
+import NumericInput from '../../../../../ui/NumericInput';
+import VolumeInput from '../../../../../ui/VolumeInput';
 import { apiGet, apiPost, apiPut } from '../../../../../config/base';
 import { endPoints } from '../../../../../config/endPoint';
 import type { CompanyInvolvement, RepresentationRole } from '../../../../../types/company';
