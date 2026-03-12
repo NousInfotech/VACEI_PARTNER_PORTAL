@@ -144,7 +144,9 @@ const KycSection: React.FC<KycSectionProps> = ({ companyId, isReadOnly }) => {
                         person: invKyc.involvement.person ? {
                             _id: invKyc.involvement.person.id,
                             name: invKyc.involvement.person.name,
-                            address: invKyc.involvement.person.address || ''
+                            address: invKyc.involvement.person.address || '',
+                            email: invKyc.involvement.person.email,
+                            nationality: (invKyc.involvement.person as any).nationality
                         } : {
                             _id: invKyc.involvement.holderCompany?.id || '',
                             name: invKyc.involvement.holderCompany?.name || '',

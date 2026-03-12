@@ -28,6 +28,8 @@ export interface CompanyInvolvement {
     name: string;
     address: string;
     nationality: string;
+    email?: string;
+    phone?: string;
   } | null;
   holderCompany?: {
     id: string;

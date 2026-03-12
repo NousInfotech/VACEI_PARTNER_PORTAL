@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, ShieldCheck, MapPin, Globe, Plus, Trash2, Edit2, Building2 } from 'lucide-react';
+import { Users, ShieldCheck, MapPin, Globe, Plus, Trash2, Edit2, Building2, Mail, Phone } from 'lucide-react';
 import { ShadowCard } from '../../../../../ui/ShadowCard';
 import { Button } from '../../../../../ui/Button';
 import PillTab from '../../../../common/PillTab';
@@ -189,6 +189,18 @@ const InvolvementsTab: React.FC<InvolvementsTabProps> = ({
                                                                         <span>{inv.person?.nationality}</span>
                                                                     </div>
                                                                 )}
+                                                                {inv.person?.email && (
+                                                                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                                        <Mail className="h-3 w-3" />
+                                                                        <span>{inv.person?.email}</span>
+                                                                    </div>
+                                                                )}
+                                                                {inv.person?.phone && (
+                                                                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                                        <Phone className="h-3 w-3" />
+                                                                        <span>{inv.person?.phone}</span>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                             {inv.holderCompany?.registrationNumber && (
                                                                 <div className="mt-1 text-[10px] text-gray-400 font-medium">
@@ -273,6 +285,18 @@ const InvolvementsTab: React.FC<InvolvementsTabProps> = ({
                                                             <div className="flex items-center gap-2 text-xs text-gray-500">
                                                                 <Globe className="h-3 w-3" />
                                                                 <span>{inv.person?.nationality}</span>
+                                                            </div>
+                                                        )}
+                                                        {inv.person?.email && (
+                                                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                                <Mail className="h-3 w-3" />
+                                                                <span>{inv.person?.email}</span>
+                                                            </div>
+                                                        )}
+                                                        {inv.person?.phone && (
+                                                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                                <Phone className="h-3 w-3" />
+                                                                <span>{inv.person?.phone}</span>
                                                             </div>
                                                         )}
                                                         {inv.holderCompany?.registrationNumber && (

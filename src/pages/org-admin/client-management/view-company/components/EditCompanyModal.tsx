@@ -26,16 +26,28 @@ const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
   onSuccess,
   company,
 }) => {
+  const formatDateForInput = (dateStr: string | null | undefined): string => {
+    if (!dateStr) return '';
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return '';
+      return date.toISOString().split('T')[0];
+    } catch (e) {
+      console.error('Date parsing error:', e);
+      return '';
+    }
+  };
+
   const [formData, setFormData] = useState({
     name: company.name || '',
     address: company.address || '',
-    industry: Array.isArray(company.industry) ? company.industry : [company.industry || ''],
+    industry: Array.isArray(company.industry) ? company.industry : (company.industry ? [company.industry] : ['']),
     summary: company.summary || '',
     authorizedShares: company.authorizedShares || 0,
     issuedShares: company.issuedShares || 0,
     registrationNumber: company.registrationNumber || '',
     legalType: company.legalType || '',
-    companyStartedAt: company.companyStartedAt ? new Date(company.companyStartedAt).toISOString().split('T')[0] : '',
+    companyStartedAt: formatDateForInput(company.companyStartedAt),
   });
 
   const [shareClasses, setShareClasses] = useState(() => {
@@ -86,13 +98,13 @@ const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
       setFormData({
         name: company.name || '',
         address: company.address || '',
-        industry: Array.isArray(company.industry) ? company.industry : [company.industry || ''],
+        industry: Array.isArray(company.industry) ? company.industry : (company.industry ? [company.industry] : ['']),
         summary: company.summary || '',
         authorizedShares: company.authorizedShares || 0,
         issuedShares: company.issuedShares || 0,
         registrationNumber: company.registrationNumber || '',
         legalType: company.legalType || '',
-        companyStartedAt: company.companyStartedAt ? new Date(company.companyStartedAt).toISOString().split('T')[0] : '',
+        companyStartedAt: formatDateForInput(company.companyStartedAt),
       });
       const existingA = company.shareClasses?.find(s => s.class === 'A' || s.class === 'CLASS_A');
       const existingB = company.shareClasses?.find(s => s.class === 'B' || s.class === 'CLASS_B');
@@ -270,7 +282,7 @@ const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
 
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                <Clock size={14} /> Incorporated At
+                <Clock size={14} /> Company Started At
               </label>
               <input
                 type="date"
