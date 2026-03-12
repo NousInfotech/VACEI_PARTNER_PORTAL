@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, ShieldCheck, MapPin, Globe, Plus, Trash2, Edit2, Building2 } from 'lucide-react';
+import { Users, ShieldCheck, MapPin, Globe, Plus, Trash2, Edit2, Building2, Mail, Phone } from 'lucide-react';
 import { ShadowCard } from '../../../../../ui/ShadowCard';
 import { Button } from '../../../../../ui/Button';
 import PillTab from '../../../../common/PillTab';
@@ -138,10 +138,38 @@ const InvolvementsTab: React.FC<InvolvementsTabProps> = ({
                                                             
                                                             <div className="mb-4 space-y-3">
                                                                 <div className="flex flex-wrap gap-2">
-                                                                    {(inv.classA || 0) > 0 && <span className="bg-blue-50 text-blue-700 border border-blue-200 rounded-lg px-3 py-1 text-sm font-medium">Class A: {(inv.classA || 0).toLocaleString()}</span>}
-                                                                    {(inv.classB || 0) > 0 && <span className="bg-blue-50 text-blue-700 border border-blue-200 rounded-lg px-3 py-1 text-sm font-medium">Class B: {(inv.classB || 0).toLocaleString()}</span>}
-                                                                    {(inv.classC || 0) > 0 && <span className="bg-blue-50 text-blue-700 border border-blue-200 rounded-lg px-3 py-1 text-sm font-medium">Class C: {(inv.classC || 0).toLocaleString()}</span>}
-                                                                    {(inv.ordinary || 0) > 0 && <span className="bg-blue-50 text-blue-700 border border-blue-200 rounded-lg px-3 py-1 text-sm font-medium">Ordinary: {(inv.ordinary || 0).toLocaleString()}</span>}
+                                                                    {(inv.classA || 0) > 0 && (
+                                                                        <span className="bg-blue-50 text-blue-700 border border-blue-200 rounded-lg px-3 py-1 text-sm font-medium flex flex-col items-center">
+                                                                            <span>Class A: {(inv.classA || 0).toLocaleString()}</span>
+                                                                            {inv.classAPaidUpPercentage != null && (
+                                                                                <span className="text-[13px] text-blue-500 font-medium border border-blue-200 rounded-lg px-3 py-1">{Number(inv.classAPaidUpPercentage)}% Paid</span>
+                                                                            )}
+                                                                        </span>
+                                                                    )}
+                                                                    {(inv.classB || 0) > 0 && (
+                                                                        <span className="bg-blue-50 text-blue-700 border border-blue-200 rounded-lg px-3 py-1 text-sm font-medium flex flex-col items-center">
+                                                                            <span>Class B: {(inv.classB || 0).toLocaleString()}</span>
+                                                                            {inv.classBPaidUpPercentage != null && (
+                                                                                <span className="text-[13px] text-blue-500 font-medium border border-blue-200 rounded-lg px-3 py-1">{Number(inv.classBPaidUpPercentage)}% Paid</span>
+                                                                            )}
+                                                                        </span>
+                                                                    )}
+                                                                    {(inv.classC || 0) > 0 && (
+                                                                        <span className="bg-blue-50 text-blue-700 border border-blue-200 rounded-lg px-3 py-1 text-sm font-medium flex flex-col items-center">
+                                                                            <span>Class C: {(inv.classC || 0).toLocaleString()}</span>
+                                                                            {inv.classCPaidUpPercentage != null && (
+                                                                                <span className="text-[13px] text-blue-500 font-medium border border-blue-200 rounded-lg px-3 py-1">{Number(inv.classCPaidUpPercentage)}% Paid</span>
+                                                                            )}
+                                                                        </span>
+                                                                    )}
+                                                                    {(inv.ordinary || 0) > 0 && (
+                                                                        <span className="bg-blue-50 text-blue-700 border border-blue-200 rounded-lg px-3 py-1 text-sm font-medium flex flex-col items-center">
+                                                                            <span>Ordinary: {(inv.ordinary || 0).toLocaleString()}</span>
+                                                                            {inv.ordinaryPaidUpPercentage != null && (
+                                                                                <span className="text-[13px] text-blue-500 font-medium border border-blue-200 rounded-lg px-3 py-1">{Number(inv.ordinaryPaidUpPercentage)}% Paid</span>
+                                                                            )}
+                                                                        </span>
+                                                                    )}
                                                                 </div>
 
                                                                 <div className="flex flex-wrap gap-2">
@@ -159,6 +187,18 @@ const InvolvementsTab: React.FC<InvolvementsTabProps> = ({
                                                                     <div className="flex items-center gap-2 text-xs text-gray-500">
                                                                         <Globe className="h-3 w-3" />
                                                                         <span>{inv.person?.nationality}</span>
+                                                                    </div>
+                                                                )}
+                                                                {inv.person?.email && (
+                                                                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                                        <Mail className="h-3 w-3" />
+                                                                        <span>{inv.person?.email}</span>
+                                                                    </div>
+                                                                )}
+                                                                {inv.person?.phone && (
+                                                                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                                        <Phone className="h-3 w-3" />
+                                                                        <span>{inv.person?.phone}</span>
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -245,6 +285,18 @@ const InvolvementsTab: React.FC<InvolvementsTabProps> = ({
                                                             <div className="flex items-center gap-2 text-xs text-gray-500">
                                                                 <Globe className="h-3 w-3" />
                                                                 <span>{inv.person?.nationality}</span>
+                                                            </div>
+                                                        )}
+                                                        {inv.person?.email && (
+                                                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                                <Mail className="h-3 w-3" />
+                                                                <span>{inv.person?.email}</span>
+                                                            </div>
+                                                        )}
+                                                        {inv.person?.phone && (
+                                                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                                <Phone className="h-3 w-3" />
+                                                                <span>{inv.person?.phone}</span>
                                                             </div>
                                                         )}
                                                         {inv.holderCompany?.registrationNumber && (

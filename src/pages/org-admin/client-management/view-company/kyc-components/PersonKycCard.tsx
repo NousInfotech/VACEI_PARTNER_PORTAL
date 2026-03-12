@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Globe, ChevronDown, ChevronUp, Trash2, Plus } from 'lucide-react';
+import { Globe, ChevronDown, ChevronUp, Trash2, Plus, Mail, Send, Check, Pencil } from 'lucide-react';
 import { Badge } from '@/ui/badge';
 import { Button } from '../../../../../ui/Button';
 import type { KycRequestFull } from './types';
 import DocumentRequestSingle from './SingleDocumentRequest';
 import DocumentRequestDouble from './DoubleDocumentRequest';
-import { apiPatch, apiDelete } from '../../../../../config/base';
+import { apiPatch, apiDelete, apiPost, apiPut } from '../../../../../config/base';
 import { endPoints } from '../../../../../config/endPoint';
 import InvolvementKycModal from './InvolvementKycModal';
 import AddRequestedDocumentModal from './AddRequestedDocumentModal';
@@ -28,6 +28,18 @@ const PersonKycCard: React.FC<PersonKycCardProps> = ({ personKyc, companyId, kyc
   const [isExpanded, setIsExpanded] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddDocModalOpen, setIsAddDocModalOpen] = useState(false);
+  
+  // Email management state
+  const [isEnteringEmail, setIsEnteringEmail] = useState(false);
+  const [emailInput, setEmailInput] = useState('');
+  const [currentEmail, setCurrentEmail] = useState<string | null | undefined>(personKyc.person?.email);
+  
+  // Sync currentEmail when the parent prop updates (after query invalidation)
+  React.useEffect(() => {
+    if (!isEnteringEmail) {
+      setCurrentEmail(personKyc.person?.email);
+    }
+  }, [personKyc.person?.email]);
 
   const [confirmConfig, setConfirmConfig] = useState<{
     isOpen: boolean;
@@ -83,6 +95,61 @@ const PersonKycCard: React.FC<PersonKycCardProps> = ({ personKyc, companyId, kyc
       toast.error('Failed', { description: error?.response?.data?.message || error?.message });
     }
   });
+
+  // Save person email via person update API
+  const saveEmailMutation = useMutation({
+    mutationFn: (email: string) => {
+      const personId = person?._id || person?.id;
+      if (!personId) throw new Error('Person ID not found');
+      return apiPut(endPoints.PERSON.UPDATE(personId), { email });
+    },
+    onSuccess: (_data, email) => {
+      setCurrentEmail(email);
+      setIsEnteringEmail(false);
+      setEmailInput('');
+      queryClient.invalidateQueries({ queryKey: ['kyc-cycle', companyId] });
+      toast.success('Email saved successfully.');
+    },
+    onError: (error: any) => {
+      toast.error('Failed to save email', {
+        description: error?.response?.data?.message || error?.message || 'Unexpected error'
+      });
+    }
+  });
+
+  // Send KYC email mutation
+  const sendKycEmailMutation = useMutation({
+    mutationFn: (email: string) =>
+      apiPost(endPoints.COMPANY.KYC(companyId) + '/send-email-kyc', {
+        email,
+        involvementKycId: workflowId,
+        expiresInHours: 72,
+      }),
+    onSuccess: () => {
+      toast.success('KYC email sent successfully!', {
+        description: `Email sent to ${currentEmail}`
+      });
+    },
+    onError: (error: any) => {
+      toast.error('Failed to send KYC email', {
+        description: error?.response?.data?.message || error?.message || 'Unexpected error'
+      });
+    }
+  });
+
+  const handleSaveEmail = () => {
+    const trimmed = emailInput.trim();
+    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      toast.error('Please enter a valid email address.');
+      return;
+    }
+    saveEmailMutation.mutate(trimmed);
+  };
+
+  const handleSendKycEmail = () => {
+    if (!currentEmail) return;
+    sendKycEmailMutation.mutate(currentEmail);
+  };
 
   const docRequestStatuses = ['DRAFT', 'ACTIVE', 'COMPLETED'];
   const docStatusBadgeClass = (status: string) => {
@@ -195,16 +262,80 @@ const PersonKycCard: React.FC<PersonKycCardProps> = ({ personKyc, companyId, kyc
           </div>
         </div>
 
-        {(person.nationality) && (
-          <div className="mt-4 flex flex-wrap gap-4 pt-4 border-t border-gray-50">
-            {person.nationality && (
-              <div className="flex items-center gap-2 text-gray-400">
-                <Globe className="h-4 w-4 shrink-0" />
-                <span className="text-[11px] font-bold uppercase tracking-wider">{person.nationality}</span>
-              </div>
+        <div className="mt-4 flex flex-wrap gap-4 pt-4 border-t border-gray-50 items-center">
+          {person.nationality && (
+            <div className="flex items-center gap-2 text-gray-400">
+              <Globe className="h-4 w-4 shrink-0" />
+              <span className="text-[11px] font-bold uppercase tracking-wider">{person.nationality}</span>
+            </div>
+          )}
+
+          {/* Email display / entry */}
+          {currentEmail && !isEnteringEmail ? (
+            // Has email: show mail icon + email label + pencil edit
+            <div className="flex items-center gap-2">
+              <Mail className="h-4 w-4 shrink-0 text-gray-400" />
+              <span className="text-[11px] font-semibold text-gray-600">{currentEmail}</span>
+              <button
+                onClick={() => { setEmailInput(currentEmail); setIsEnteringEmail(true); }}
+                className="text-gray-400 hover:text-primary transition-colors"
+                title="Edit email"
+              >
+                <Pencil size={11} />
+              </button>
+            </div>
+          ) : isEnteringEmail ? (
+            // Entering email mode: show input + save/cancel
+            <div className="flex items-center gap-1.5">
+              <Mail className="h-4 w-4 shrink-0 text-gray-400" />
+              <input
+                type="email"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEmail(); if (e.key === 'Escape') { setIsEnteringEmail(false); setEmailInput(''); } }}
+                placeholder="Enter email address"
+                className="text-xs px-2 py-1 border border-primary/40 rounded-lg outline-none focus:ring-2 focus:ring-primary/20 w-48"
+                autoFocus
+              />
+              <button
+                onClick={handleSaveEmail}
+                disabled={saveEmailMutation.isPending}
+                className="text-emerald-500 hover:text-emerald-700 transition-colors disabled:opacity-50"
+                title="Save email"
+              >
+                <Check size={14} />
+              </button>
+              <button
+                onClick={() => { setIsEnteringEmail(false); setEmailInput(''); }}
+                className="text-gray-400 hover:text-gray-600 text-xs font-semibold"
+                title="Cancel"
+              >
+                ✕
+              </button>
+            </div>
+          ) : (
+            // No email: show only the Enter Email button
+            <button
+              onClick={() => setIsEnteringEmail(true)}
+              className="text-[11px] font-semibold text-primary/70 hover:text-primary border border-dashed border-primary/30 hover:border-primary/60 rounded-lg px-2.5 py-0.5 transition-all hover:bg-primary/5"
+            >
+                + Enter Email
+              </button>
             )}
-          </div>
-        )}
+
+          {/* Send KYC Email button — shown when there's an email */}
+          {currentEmail && !isEnteringEmail && (
+            <button
+              onClick={handleSendKycEmail}
+              disabled={sendKycEmailMutation.isPending || !!isReadOnly}
+              className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-100 rounded-lg px-3 py-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Send KYC email to this person"
+            >
+              <Send size={11} />
+              {sendKycEmailMutation.isPending ? 'Sending…' : 'Send KYC Email'}
+            </button>
+          )}
+        </div>
 
         {totalDocuments > 0 && (
           <div className="mt-4 space-y-1">

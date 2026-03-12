@@ -6,7 +6,7 @@ export interface AuthContextType {
     organizationMember: OrganizationMember | null;
     selectedService: string | null;
     selectedServiceLabel: string;
-    setSelectedService: (service: string) => void;
+    setSelectedService: (service: string | null) => void;
     isAuthenticated: boolean;
     login: (email: string, password: string) => Promise<{ success: boolean; message: string; user?: User; token?: string; mfaRequired?: boolean; mfaMethod?: 'email' | 'totp' | 'webauthn' }>;
     verifyMfa: (email: string, options: { otp?: string; webauthnResponse?: unknown; method?: 'email' | 'totp' | 'webauthn' }) => Promise<{ success: boolean; message: string }>;

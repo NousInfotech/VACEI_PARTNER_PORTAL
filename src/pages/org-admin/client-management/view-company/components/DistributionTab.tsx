@@ -10,8 +10,8 @@ import {
 import { 
   PieChart as PieChartIcon, 
 } from "lucide-react";
-import EmptyState from "@/ui/EmptyState";
-import PillTab from "@/pages/common/PillTab";
+import EmptyState from "../../../../../ui/EmptyState";
+import PillTab from "../../../../common/PillTab";
 import { ShadowCard } from "../../../../../ui/ShadowCard";
 import type { Company } from "../../../../../types/company";
 

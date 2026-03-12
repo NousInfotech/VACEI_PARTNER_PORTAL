@@ -111,7 +111,7 @@ const ViewServiceRequestContent: React.FC = () => {
       setSuccessModal({
         isOpen: true,
         title: 'Success!',
-        message: `The request has been ${newStatus.toLowerCase().replace(/_/g, ' ')} successfully.`,
+        message: `The request has been ${(newStatus || '').toLowerCase().replace(/_/g, ' ')} successfully.`,
         engagementId: undefined, // Status update doesn't create engagement
       });
       
@@ -318,7 +318,7 @@ const ViewServiceRequestContent: React.FC = () => {
     return (
       <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${getStatusStyle(request.status)}`}>
         {getStatusIcon(request.status)}
-        {request.status.replace(/_/g, ' ')} Submission
+        {(request.status || '').replace(/_/g, ' ')} Submission
       </span>
     );
   };
@@ -371,7 +371,7 @@ const ViewServiceRequestContent: React.FC = () => {
                             <span className="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Status</span>
                             <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider border ${getStatusStyle(request.status)}`}>
                               {getStatusIcon(request.status)}
-                              {request.status.replace(/_/g, ' ')}
+                              {(request.status || '').replace(/_/g, ' ')}
                             </span>
                           </div>
 
@@ -386,7 +386,7 @@ const ViewServiceRequestContent: React.FC = () => {
                           <div className="flex justify-between items-center">
                             <span className="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Service</span>
                             <span className="text-xs font-bold text-primary bg-primary/5 px-2.5 py-1 rounded-lg">
-                              {request.service.replace(/_/g, ' ')}
+                              {(request.service || '').replace(/_/g, ' ')}
                             </span>
                           </div>
 

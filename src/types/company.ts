@@ -1,6 +1,6 @@
 export type CompanyType = 'PRIMARY' | 'NON_PRIMARY';
 export type ShareClass = 'CLASS_A' | 'CLASS_B' | 'CLASS_C' | 'ORDINARY' | 'A' | 'B' | 'C' | string;
-export type RepresentationRole = 'DIRECTOR' | 'SHAREHOLDER' | 'LEGAL_REPRESENTATIVE' | 'SECRETARY';
+export type RepresentationRole = 'DIRECTOR' | 'SHAREHOLDER' | 'LEGAL_REPRESENTATIVE' | 'JUDICIAL_REPRESENTATIVE' | 'SECRETARY';
 export type IncorporationStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'REJECTED';
 export type KYCStatus = 'PENDING' | 'IN_REVIEW' | 'VERIFIED' | 'REJECTED';
 
@@ -8,6 +8,7 @@ export interface CompanyShareClass {
   id: string;
   class: ShareClass;
   issued: number;
+  perShareValue?: number;
 }
 
 export interface CompanyInvolvement {
@@ -18,11 +19,17 @@ export interface CompanyInvolvement {
   classB: number;
   classC: number;
   ordinary: number;
+  classAPaidUpPercentage?: number;
+  classBPaidUpPercentage?: number;
+  classCPaidUpPercentage?: number;
+  ordinaryPaidUpPercentage?: number;
   person?: {
     id: string;
     name: string;
     address: string;
     nationality: string;
+    email?: string;
+    phone?: string;
   } | null;
   holderCompany?: {
     id: string;
@@ -51,6 +58,8 @@ export interface Company {
   shareClasses?: CompanyShareClass[];
   involvements?: CompanyInvolvement[];
   quickBookStatus: boolean | null;
+  companyStartedAt?: string | null;
+  incorporationDate?: string;
 }
 
 export interface IncorporationCycle {

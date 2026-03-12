@@ -24,6 +24,7 @@ import ViewTemplate from './pages/org-admin/services/servicesRequestTemplates/Vi
 import TemplatePreview from './pages/org-admin/services/servicesRequestTemplates/TemplatePreview'
 import ServiceRequestManagement from './pages/org-admin/services/servicesRequestManagement/ServiceRequestManagement'
 import ViewServiceRequest from './pages/org-admin/services/servicesRequestManagement/ViewServiceRequest'
+import AcceptingServices from '@/pages/org-admin/services/AcceptingServices'
 
 import { NotificationProvider } from './context/NotificationContext'
 
@@ -70,6 +71,7 @@ const App = () => {
             <Route path="/dashboard/service-request-templates/:id/view" element={<ViewTemplate />} />
             <Route path="/dashboard/service-request-management" element={<ServiceRequestManagement />} />
             <Route path="/dashboard/service-request-management/:id" element={<ViewServiceRequest />} />
+            <Route path="/dashboard/accepting-services" element={<AcceptingServices />} />
             <Route path="*" element={<NotFound />} />
           </Route>
           <Route path="/engagement-view/:id" element={<EngagementFullView />} />

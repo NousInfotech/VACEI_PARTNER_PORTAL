@@ -100,7 +100,12 @@ const CompanyDetailsTab: React.FC<CompanyDetailsTabProps> = ({ company, isReadOn
                                             ? `Class ${share.class}` 
                                             : share.class.charAt(0).toUpperCase() + share.class.slice(1).toLowerCase())} :
                                 </p>
-                                <p className="text-[14px] font-medium tracking-wide">{share.issued.toLocaleString()}</p>
+                                <div className="flex flex-col items-end">
+                                    <p className="text-[14px] font-medium tracking-wide">{share.issued.toLocaleString()}</p>
+                                    {share.perShareValue != null && Number(share.perShareValue) > 0 && (
+                                        <p className="text-[15px] text-gray-400 font-medium border border-gray-400 rounded-lg px-3 py-1">€{Number(share.perShareValue).toFixed(2)} / share</p>
+                                    )}
+                                </div>
                             </ShadowCard> 
                         ))}
                         {/* Calculated Remaining Ordinary Shares if not explicitly provided */}
@@ -109,9 +114,14 @@ const CompanyDetailsTab: React.FC<CompanyDetailsTabProps> = ({ company, isReadOn
                                 <p className="text-[14px] font-medium uppercase tracking-widest group-hover:text-primary">
                                     Ordinary
                                 </p>
-                                <p className="text-[14px] font-medium tracking-wide">
-                                    {((company.issuedShares || 0) - company.shareClasses.reduce((acc, s) => acc + s.issued, 0)).toLocaleString()}
-                                </p>
+                                <div className="flex flex-col items-end">
+                                    <p className="text-[14px] font-medium tracking-wide">
+                                        {((company.issuedShares || 0) - company.shareClasses.reduce((acc, s) => acc + s.issued, 0)).toLocaleString()}
+                                    </p>
+                                    {company.shareClasses.find(s => s.class === 'ORDINARY')?.perShareValue != null && Number(company.shareClasses.find(s => s.class === 'ORDINARY')?.perShareValue) > 0 && (
+                                        <p className="text-[15px] text-gray-400 font-medium">€{Number(company.shareClasses.find(s => s.class === 'ORDINARY')?.perShareValue).toFixed(2)} / share</p>
+                                    )}
+                                </div>
                             </ShadowCard>
                         )}
                     </div>
@@ -141,9 +151,9 @@ const CompanyDetailsTab: React.FC<CompanyDetailsTabProps> = ({ company, isReadOn
                 <ShadowCard className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl border-gray-100 border">
                     <Clock className="h-5 w-5 text-gray-600 mt-0.5" />
                     <div>
-                        <p className="text-sm text-gray-500 font-medium">Incorporation Date</p>
+                        <p className="text-sm text-gray-500 font-medium">Incorporated At</p>
                         <p className="text-gray-900 text-xl font-light">
-                            {company.createdAt ? new Date(company.createdAt).toLocaleDateString() : 'N/A'}
+                            {company.companyStartedAt ? new Date(company.companyStartedAt).toLocaleDateString() : 'N/A'}
                         </p>
                     </div>
                 </ShadowCard>

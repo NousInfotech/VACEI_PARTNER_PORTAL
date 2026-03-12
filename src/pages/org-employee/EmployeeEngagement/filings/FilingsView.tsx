@@ -10,6 +10,13 @@ import { Button } from "../../../../ui/Button";
 import { Skeleton } from "../../../../ui/Skeleton";
 import { filingService, FilingStatus, type FilingItem } from "../../../../api/filingService";
 import FilingUploadModal from "./components/FilingUploadModal";
+import { 
+  Table, 
+  TableBody, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "../../../../ui/Table";
 import FilingItemRow from "./components/FilingItemRow";
 import { useAuth } from "../../../../context/auth-context-core";
 import { ActionConfirmModal } from "../components/ActionConfirmModal";
@@ -148,11 +155,13 @@ export default function FilingsView({ engagementId }: FilingsViewProps) {
       />
 
       {/* Filings List */}
-      <div className="grid grid-cols-1 gap-4">
+      <div className="bg-white rounded-[32px] border border-gray-100 shadow-xl shadow-indigo-500/5 overflow-hidden">
         {isLoading ? (
-          [1, 2, 3].map(i => <Skeleton key={i} className="h-24 w-full rounded-3xl" />)
+          <div className="p-8 space-y-4">
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full rounded-2xl" />)}
+          </div>
         ) : filings.length === 0 ? (
-          <div className="bg-white rounded-[40px] border border-dashed border-gray-200 p-20 flex flex-col items-center justify-center text-center">
+          <div className="p-20 flex flex-col items-center justify-center text-center">
             <div className="h-24 w-24 rounded-[32px] bg-gray-50 flex items-center justify-center text-gray-200 mb-6">
               <FileText size={48} />
             </div>
@@ -169,27 +178,42 @@ export default function FilingsView({ engagementId }: FilingsViewProps) {
             </Button>
           </div>
         ) : (
-          filings.map((filing: FilingItem) => (
-            <FilingItemRow 
-              key={filing.id}
-              filing={filing}
-              currentUserId={user?.id}
-              onUpdateStatus={(id, status) => updateStatusMutation.mutate({ filingId: id, status })}
-              onToggleSignOff={(id, currentStatus) => {
-                setSignOffModalState({
-                  isOpen: true,
-                  filingId: id,
-                  isSigningOff: !currentStatus
-                });
-              }}
-              onDelete={(id) => {
-                if (confirm("Are you sure you want to delete this filing?")) {
-                  deleteMutation.mutate(id);
-                }
-              }}
-              onOpenDetails={handleOpenDetails}
-            />
-          ))
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-gray-50/50">
+                <TableRow>
+                  <TableHead className="py-5 px-6 text-[11px] font-black uppercase tracking-widest text-gray-400">File & Name</TableHead>
+                  <TableHead className="py-5 text-[11px] font-black uppercase tracking-widest text-gray-400">Sign-offs</TableHead>
+                  <TableHead className="py-5 text-[11px] font-black uppercase tracking-widest text-gray-400">Status</TableHead>
+                  <TableHead className="py-5 text-[11px] font-black uppercase tracking-widest text-gray-400">Created At</TableHead>
+                  <TableHead className="py-5 px-6 text-right text-[11px] font-black uppercase tracking-widest text-gray-400">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filings.map((filing: FilingItem) => (
+                  <FilingItemRow 
+                    key={filing.id}
+                    filing={filing}
+                    currentUserId={user?.id}
+                    onUpdateStatus={(id, status) => updateStatusMutation.mutate({ filingId: id, status })}
+                    onToggleSignOff={(id, currentStatus) => {
+                      setSignOffModalState({
+                        isOpen: true,
+                        filingId: id,
+                        isSigningOff: !currentStatus
+                      });
+                    }}
+                    onDelete={(id) => {
+                      if (confirm("Are you sure you want to delete this filing?")) {
+                        deleteMutation.mutate(id);
+                      }
+                    }}
+                    onOpenDetails={handleOpenDetails}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </div>
     </div>

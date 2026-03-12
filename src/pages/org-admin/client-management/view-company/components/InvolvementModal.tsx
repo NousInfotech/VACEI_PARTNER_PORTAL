@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Users, ShieldCheck, Plus, Search, Building2 } from 'lucide-react';
 import { Button } from '../../../../../ui/Button';
-import NumericInput from '@/ui/NumericInput';
+import NumericInput from '../../../../../ui/NumericInput';
+import VolumeInput from '../../../../../ui/VolumeInput';
 import { apiGet, apiPost, apiPut } from '../../../../../config/base';
 import { endPoints } from '../../../../../config/endPoint';
 import type { CompanyInvolvement, RepresentationRole } from '../../../../../types/company';
@@ -27,6 +28,8 @@ interface Person {
   name: string;
   address: string;
   nationality: string;
+  email?: string;
+  phone?: string;
 }
 
 interface MiniCompany {
@@ -36,7 +39,7 @@ interface MiniCompany {
   address: string;
 }
 
-const ROLES: RepresentationRole[] = ['DIRECTOR', 'SHAREHOLDER', 'LEGAL_REPRESENTATIVE', 'SECRETARY'];
+const ROLES: RepresentationRole[] = ['DIRECTOR', 'SHAREHOLDER', 'LEGAL_REPRESENTATIVE', 'JUDICIAL_REPRESENTATIVE', 'SECRETARY'];
 
 const InvolvementModal: React.FC<InvolvementModalProps> = ({
   isOpen,
@@ -65,13 +68,20 @@ const InvolvementModal: React.FC<InvolvementModalProps> = ({
     classB: 0,
     classC: 0,
     ordinary: 0,
+    classAPaidUpPercentage: 0,
+    classBPaidUpPercentage: 0,
+    classCPaidUpPercentage: 0,
+    ordinaryPaidUpPercentage: 0,
     personName: '',
     personAddress: '',
     personNationality: '',
+    personEmail: '',
+    personPhone: '',
     companyName: '',
     companyRegNumber: '',
     companyAddress: '',
     companyLegalType: 'LTD' as 'LTD' | 'PLC',
+    companyStartedAt: '',
   });
 
   // Helper: get the company's cap for a share class
@@ -116,13 +126,20 @@ const InvolvementModal: React.FC<InvolvementModalProps> = ({
           classB: involvement.classB || 0,
           classC: involvement.classC || 0,
           ordinary: involvement.ordinary || 0,
+          classAPaidUpPercentage: involvement.classAPaidUpPercentage || 0,
+          classBPaidUpPercentage: involvement.classBPaidUpPercentage || 0,
+          classCPaidUpPercentage: involvement.classCPaidUpPercentage || 0,
+          ordinaryPaidUpPercentage: involvement.ordinaryPaidUpPercentage || 0,
           personName: involvement.person?.name || involvement.holderCompany?.name || '',
           personAddress: involvement.person?.address || involvement.holderCompany?.address || '',
           personNationality: involvement.person?.nationality || '',
+          personEmail: involvement.person?.email || '',
+          personPhone: involvement.person?.phone || '',
           companyName: involvement.holderCompany?.name || '',
           companyRegNumber: involvement.holderCompany?.registrationNumber || '',
           companyAddress: involvement.holderCompany?.address || '',
           companyLegalType: (involvement.holderCompany as any)?.legalType || 'LTD',
+          companyStartedAt: (involvement.holderCompany as any)?.companyStartDate || '',
         });
         setPartyType(involvement.partyType || 'PERSON');
         setSelectedPersonId(involvement.person?.id || '');
@@ -159,13 +176,20 @@ const InvolvementModal: React.FC<InvolvementModalProps> = ({
       classB: 0,
       classC: 0,
       ordinary: 0,
+      classAPaidUpPercentage: 0,
+      classBPaidUpPercentage: 0,
+      classCPaidUpPercentage: 0,
+      ordinaryPaidUpPercentage: 0,
       personName: '',
       personAddress: '',
       personNationality: '',
+      personEmail: '',
+      personPhone: '',
       companyName: '',
       companyRegNumber: '',
       companyAddress: '',
       companyLegalType: 'LTD',
+      companyStartedAt: '',
     });
     setSelectedPersonId('');
     setSelectedHolderCompanyId('');
@@ -190,6 +214,10 @@ const InvolvementModal: React.FC<InvolvementModalProps> = ({
       alert('Please select at least one role');
       return;
     }
+    if (formData.personEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.personEmail)) {
+      alert('Please enter a valid email address');
+      return;
+    }
     if (hasShareErrors) return;
 
     setIsSubmitting(true);
@@ -203,6 +231,8 @@ const InvolvementModal: React.FC<InvolvementModalProps> = ({
           name: formData.personName,
           address: formData.personAddress,
           nationality: formData.personNationality,
+          email: formData.personEmail || undefined,
+          phone: formData.personPhone || undefined,
         });
         personId = personResponse.data.id;
       }
@@ -215,6 +245,7 @@ const InvolvementModal: React.FC<InvolvementModalProps> = ({
           companyType: 'NON_PRIMARY',
           legalType: formData.companyLegalType,
           incorporationStatus: true,
+          companyStartDate: formData.companyStartedAt ? new Date(formData.companyStartedAt).toISOString() : null,
         });
         holderCompanyId = companyResponse.data.id;
       }
@@ -236,14 +267,42 @@ const InvolvementModal: React.FC<InvolvementModalProps> = ({
           classB: formData.classB,
           classC: formData.classC,
           ordinary: formData.ordinary,
+          classAPaidUpPercentage: formData.classAPaidUpPercentage !== undefined ? Number(formData.classAPaidUpPercentage) : undefined,
+          classBPaidUpPercentage: formData.classBPaidUpPercentage !== undefined ? Number(formData.classBPaidUpPercentage) : undefined,
+          classCPaidUpPercentage: formData.classCPaidUpPercentage !== undefined ? Number(formData.classCPaidUpPercentage) : undefined,
+          ordinaryPaidUpPercentage: formData.ordinaryPaidUpPercentage !== undefined ? Number(formData.ordinaryPaidUpPercentage) : undefined,
         });
       } else if (involvement) {
+        // First update the underlying entity if it's an edit
+        if (partyType === 'PERSON' && involvement.person?.id) {
+          await apiPut(endPoints.PERSON.UPDATE(involvement.person.id), {
+            name: formData.personName,
+            address: formData.personAddress,
+            nationality: formData.personNationality,
+            email: formData.personEmail || undefined,
+            phone: formData.personPhone || undefined,
+          });
+        } else if (partyType === 'COMPANY' && involvement.holderCompany?.id) {
+          await apiPut(endPoints.COMPANY.UPDATE(involvement.holderCompany.id), {
+            name: formData.companyName,
+            registrationNumber: formData.companyRegNumber,
+            address: formData.companyAddress,
+            legalType: formData.companyLegalType,
+            companyStartDate: formData.companyStartedAt ? new Date(formData.companyStartedAt).toISOString() : null,
+          });
+        }
+
+        // Then update the involvement itself
         await apiPut(endPoints.INVOLVEMENT.UPDATE(involvement.id), {
           role: formData.role,
           classA: formData.classA,
           classB: formData.classB,
           classC: formData.classC,
           ordinary: formData.ordinary,
+          classAPaidUpPercentage: formData.classAPaidUpPercentage !== undefined ? Number(formData.classAPaidUpPercentage) : undefined,
+          classBPaidUpPercentage: formData.classBPaidUpPercentage !== undefined ? Number(formData.classBPaidUpPercentage) : undefined,
+          classCPaidUpPercentage: formData.classCPaidUpPercentage !== undefined ? Number(formData.classCPaidUpPercentage) : undefined,
+          ordinaryPaidUpPercentage: formData.ordinaryPaidUpPercentage !== undefined ? Number(formData.ordinaryPaidUpPercentage) : undefined,
         });
       }
 
@@ -292,7 +351,12 @@ const InvolvementModal: React.FC<InvolvementModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
+        <form 
+          id="involvement-form"
+          onSubmit={handleSubmit} 
+          className="p-0 flex flex-col flex-1 overflow-hidden"
+        >
+          <div className="p-8 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
           {/* Party Type Selection (only for Add mode) */}
           {mode === 'add' && (
             <div className="space-y-3">
@@ -408,6 +472,30 @@ const InvolvementModal: React.FC<InvolvementModalProps> = ({
                           required={showPersonForm}
                         />
                       </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1">
+                          Email Address <span className="text-[9px] text-gray-300 font-medium normal-case">(Optional)</span>
+                        </label>
+                        <input
+                          type="email"
+                          value={formData.personEmail}
+                          onChange={(e) => setFormData({ ...formData, personEmail: e.target.value })}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none text-sm font-medium"
+                          placeholder="email@example.com"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1">
+                          Phone Number <span className="text-[9px] text-gray-300 font-medium normal-case">(Optional)</span>
+                        </label>
+                        <input
+                          type="tel"
+                          value={formData.personPhone}
+                          onChange={(e) => setFormData({ ...formData, personPhone: e.target.value })}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none text-sm font-medium"
+                          placeholder="+X XXX XXX XXXX"
+                        />
+                      </div>
                     </div>
                   </div>
                 )
@@ -508,6 +596,15 @@ const InvolvementModal: React.FC<InvolvementModalProps> = ({
                           <option value="PLC">PLC</option>
                         </select>
                       </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Incorporation Date</label>
+                        <input
+                          type="date"
+                          value={formData.companyStartedAt ? formData.companyStartedAt.split('T')[0] : ''}
+                          onChange={(e) => setFormData({ ...formData, companyStartedAt: e.target.value })}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none text-sm font-medium cursor-pointer"
+                        />
+                      </div>
                     </div>
                   </div>
                 )
@@ -525,49 +622,115 @@ const InvolvementModal: React.FC<InvolvementModalProps> = ({
                 <h4 className="text-xs font-bold text-gray-700 uppercase tracking-widest">
                   {involvement.holderCompany ? 'Company' : 'Individual'} Details
                 </h4>
-                <span className="ml-auto text-[9px] text-gray-400 font-medium italic">Read-only</span>
               </div>
 
               {involvement.holderCompany ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="md:col-span-2 space-y-1">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Company Name</label>
-                    <div className="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700">
-                      {involvement.holderCompany.name || '—'}
-                    </div>
+                    <input
+                      type="text"
+                      value={formData.companyName}
+                      onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 outline-none focus:ring-1 focus:ring-primary/30"
+                      required
+                    />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Registration Number</label>
-                    <div className="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700">
-                      {involvement.holderCompany.registrationNumber || '—'}
-                    </div>
+                    <input
+                      type="text"
+                      value={formData.companyRegNumber}
+                      onChange={(e) => setFormData({ ...formData, companyRegNumber: e.target.value })}
+                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 outline-none focus:ring-1 focus:ring-primary/30"
+                      required
+                    />
                   </div>
                   <div className="space-y-1">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Legal Type</label>
+                    <select
+                      value={formData.companyLegalType}
+                      onChange={(e) => setFormData({ ...formData, companyLegalType: e.target.value as 'LTD' | 'PLC' })}
+                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 outline-none focus:ring-1 focus:ring-primary/30 appearance-none"
+                      required
+                    >
+                      <option value="LTD">LTD</option>
+                      <option value="PLC">PLC</option>
+                    </select>
+                  </div>
+                  <div className="md:col-span-2 space-y-1">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Address</label>
-                    <div className="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700">
-                      {involvement.holderCompany.address || '—'}
-                    </div>
+                    <input
+                      type="text"
+                      value={formData.companyAddress}
+                      onChange={(e) => setFormData({ ...formData, companyAddress: e.target.value })}
+                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 outline-none focus:ring-1 focus:ring-primary/30"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Incorporation Date</label>
+                    <input
+                      type="date"
+                      value={formData.companyStartedAt ? formData.companyStartedAt.split('T')[0] : ''}
+                      onChange={(e) => setFormData({ ...formData, companyStartedAt: e.target.value })}
+                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 outline-none focus:ring-1 focus:ring-primary/30 appearance-none cursor-pointer"
+                    />
                   </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="md:col-span-2 space-y-1">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Full Name</label>
-                    <div className="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700">
-                      {involvement.person?.name || '—'}
-                    </div>
+                    <input
+                      type="text"
+                      value={formData.personName}
+                      onChange={(e) => setFormData({ ...formData, personName: e.target.value })}
+                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 outline-none focus:ring-1 focus:ring-primary/30"
+                      required
+                    />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Nationality</label>
-                    <div className="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700">
-                      {involvement.person?.nationality || '—'}
-                    </div>
+                    <input
+                      type="text"
+                      value={formData.personNationality}
+                      onChange={(e) => setFormData({ ...formData, personNationality: e.target.value })}
+                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 outline-none focus:ring-1 focus:ring-primary/30"
+                      required
+                    />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Address</label>
-                    <div className="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700">
-                      {involvement.person?.address || '—'}
-                    </div>
+                    <input
+                      type="text"
+                      value={formData.personAddress}
+                      onChange={(e) => setFormData({ ...formData, personAddress: e.target.value })}
+                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 outline-none focus:ring-1 focus:ring-primary/30"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1">
+                      Email Address <span className="text-[9px] text-gray-300 font-medium normal-case">(Optional)</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={formData.personEmail}
+                      onChange={(e) => setFormData({ ...formData, personEmail: e.target.value })}
+                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 outline-none focus:ring-1 focus:ring-primary/30"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1">
+                      Phone Number <span className="text-[9px] text-gray-300 font-medium normal-case">(Optional)</span>
+                    </label>
+                    <input
+                      type="tel"
+                      value={formData.personPhone}
+                      onChange={(e) => setFormData({ ...formData, personPhone: e.target.value })}
+                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 outline-none focus:ring-1 focus:ring-primary/30"
+                    />
                   </div>
                 </div>
               )}
@@ -677,6 +840,37 @@ const InvolvementModal: React.FC<InvolvementModalProps> = ({
                 </div>
               </div>
 
+              {/* Paid up Percentage logic */}
+              <div className="p-6 bg-gray-50/50 rounded-2xl border border-gray-100 space-y-6 mt-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-gray-900 border-b-2 border-primary pb-1 uppercase tracking-widest inline-block">Paid-Up Percentage</h4>
+                  <p className="text-[10px] text-gray-400 font-medium italic">Specify the amount paid up per class</p>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                  <VolumeInput
+                    label="Class A Paid-Up %"
+                    value={formData.classAPaidUpPercentage}
+                    onChange={(val) => setFormData({ ...formData, classAPaidUpPercentage: val })}
+                  />
+                  <VolumeInput
+                    label="Class B Paid-Up %"
+                    value={formData.classBPaidUpPercentage}
+                    onChange={(val) => setFormData({ ...formData, classBPaidUpPercentage: val })}
+                  />
+                  <VolumeInput
+                    label="Class C Paid-Up %"
+                    value={formData.classCPaidUpPercentage}
+                    onChange={(val) => setFormData({ ...formData, classCPaidUpPercentage: val })}
+                  />
+                  <VolumeInput
+                    label="Ordinary Paid-Up %"
+                    value={formData.ordinaryPaidUpPercentage}
+                    onChange={(val) => setFormData({ ...formData, ordinaryPaidUpPercentage: val })}
+                  />
+                </div>
+              </div>
+
               {/* Total summary */}
               <div className="flex items-center gap-2 pt-1">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total allocated:</span>
@@ -686,46 +880,48 @@ const InvolvementModal: React.FC<InvolvementModalProps> = ({
               </div>
             </div>
           )}
+        </div>
 
-          {submitError && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-medium">
-              ⚠️ {submitError}
-            </div>
-          )}
-        </form>
+        {submitError && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-medium mx-8 mb-4">
+            ⚠️ {submitError}
+          </div>
+        )}
 
         <div className="px-8 py-6 bg-gray-50/30 border-t border-gray-50 flex items-center justify-end gap-3">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="px-6 py-2 rounded-xl border-gray-200 text-gray-500 hover:bg-white"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={
-              isSubmitting ||
-              hasShareErrors ||
-              (mode === 'add' && (
-                (partyType === 'PERSON' && !selectedPersonId && !showPersonForm) ||
-                (partyType === 'COMPANY' && !selectedHolderCompanyId && !showCompanyForm)
-              ))
-            }
-            className={`px-8 py-2 rounded-xl text-white shadow-lg transition-all disabled:opacity-50 ${mode === 'add' ? 'bg-green-600 shadow-green-600/20 hover:bg-green-700' : 'bg-primary shadow-primary/20 hover:bg-primary/90'}`}
-          >
-            {isSubmitting 
-              ? 'Saving...' 
-              : mode === 'edit' 
-                ? 'Save Changes' 
-                : partyType === 'PERSON' 
-                  ? 'Add Member' 
-                  : 'Add Company'}
-          </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="px-6 py-2 rounded-xl border-gray-200 text-gray-500 hover:bg-white"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={
+                  isSubmitting ||
+                  hasShareErrors ||
+                  (mode === 'add' && (
+                    (partyType === 'PERSON' && !selectedPersonId && !showPersonForm) ||
+                    (partyType === 'COMPANY' && !selectedHolderCompanyId && !showCompanyForm)
+                  ))
+                }
+                className={`px-8 py-2 rounded-xl text-white shadow-lg transition-all disabled:opacity-50 ${mode === 'add' ? 'bg-green-600 shadow-green-600/20 hover:bg-green-700' : 'bg-primary shadow-primary/20 hover:bg-primary/90'}`}
+              >
+                {isSubmitting 
+                  ? 'Saving...' 
+                  : mode === 'edit' 
+                    ? 'Save Changes' 
+                    : partyType === 'PERSON' 
+                      ? 'Add Member' 
+                      : 'Add Company'}
+              </Button>
+            </div>
+          </form>
         </div>
       </div>
-    </div>
-  );
+    );
 };
 
 export default InvolvementModal;

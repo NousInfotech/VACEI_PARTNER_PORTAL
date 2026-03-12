@@ -141,6 +141,8 @@ export const endPoints = {
     GET_ALL: '/service-requests',
     GET_BY_ID: (id: string) => `/service-requests/${id}`,
     UPDATE_STATUS: (id: string) => `/service-requests/${id}/status`,
+    LIST_AVAILABLE_FOR_ORG: '/service-requests/available-for-org',
+    ACCEPT: (id: string) => `/service-requests/${id}/accept`,
   },
   DOCUMENT_REQUESTS: {
     BASE: '/document-requests',
@@ -324,7 +326,8 @@ export const endPoints = {
       `/companies/${companyId}/accounting/quickbooks/sync/chart-accounts`,
     SYNC_COMPANY_DATA: (companyId: string) =>
       `/companies/${companyId}/accounting/quickbooks/sync/company-data`,
-    CONNECT_URL: (companyId: string, clientId: string) => `/companies/${companyId}/accounting/quickbooks/connect?clientId=${clientId}`,
+    CONNECT_URL: (companyId: string, clientId: string) =>
+      `/companies/${companyId}/accounting/quickbooks/connect?clientId=${clientId}&returnUrl=1`,
     REVOKE: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/revoke`,
   },
   INCORPORATION: {

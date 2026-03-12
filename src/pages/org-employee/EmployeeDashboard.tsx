@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Users,
@@ -13,6 +14,8 @@ import { Skeleton } from "../../ui/Skeleton";
 import { useAuth } from "../../context/auth-context-core";
 import { useOrganizationAnalytics } from "../../hooks/useOrganizationAnalytics";
 import { cn } from "../../lib/utils";
+import { Select } from "../../ui/Select";
+import { AVAILABLE_SERVICES } from "../../lib/types";
 import EmployeeCompliance from "./EmployeeCompliance";
 import Engagement from "./EmployeeEngagement/Engagement";
 import Messages from "../messages/Messages";
@@ -30,8 +33,8 @@ interface EmployeeDashboardProps {
 }
 
 export default function EmployeeDashboard({ activeSection = "Dashboard" }: EmployeeDashboardProps) {
-  const { selectedServiceLabel } = useAuth();
-  const { data: analytics, isLoading: analyticsLoading } = useOrganizationAnalytics();
+  const { selectedServiceLabel, organizationMember, setSelectedService } = useAuth();
+  const { data: analytics, isLoading: analyticsLoading } = useOrganizationAnalytics({ service: null });
   const loading = analyticsLoading;
   const navigate = useNavigate();
 
@@ -66,23 +69,75 @@ export default function EmployeeDashboard({ activeSection = "Dashboard" }: Emplo
     }
   ];
 
+  const serviceFilterItems = useMemo(() => {
+    const allowedServices = organizationMember?.allowedServices || [];
+    const allowedCustomServiceCycles = organizationMember?.allowedCustomServiceCycles || [];
+
+    const allItem = {
+      id: "all",
+      label: "All Services",
+      onClick: () => setSelectedService(null)
+    };
+
+    const standardItems = allowedServices.map(serviceId => {
+      const serviceInfo = AVAILABLE_SERVICES.find(s => s.id === serviceId);
+      return {
+        id: serviceId,
+        label: serviceInfo?.label || serviceId.replace(/_/g, " "),
+        onClick: () => setSelectedService(serviceId)
+      };
+    });
+
+    const customItems = allowedCustomServiceCycles.map(cycle => ({
+      id: cycle.id,
+      label: cycle.title,
+      onClick: () => setSelectedService(cycle.id)
+    }));
+
+    return [allItem, ...standardItems, ...customItems];
+  }, [organizationMember?.allowedServices, organizationMember?.allowedCustomServiceCycles, setSelectedService]);
+
+  const isTemplateSection = ["Templates", "Create Template", "Edit Template", "View Template"].includes(activeSection);
+
+  const headerTitle =
+    activeSection === "Dashboard"
+      ? "Dashboard overview"
+      : isTemplateSection
+        ? "Templates overview"
+        : activeSection;
+
+  const headerSubtitle =
+    activeSection === "Dashboard"
+      ? "High-level view of all engagements, companies, and tasks in your organization."
+      : isTemplateSection
+        ? "Manage and configure templates across all services."
+        : `Manage your ${activeSection.toLowerCase()} and clients.`;
+
   return (
     <div className="mx-auto space-y-8">
       {/* Header Section */}
-      <PageHeader
-        title={`${selectedServiceLabel} ${activeSection}`}
-        subtitle={`Manage your ${selectedServiceLabel.toLowerCase()} ${activeSection.toLowerCase()} and clients`}
-        actions={
-          <div className="flex items-center gap-3">
-            {/* <Button variant="header" className="rounded-xl">
-              <Filter className="h-4 w-4 mr-2" /> Filter
-            </Button> */}
-            {/* <Button variant="header" className="rounded-xl">
-              <Plus className="h-4 w-4 mr-2" /> New Request
-            </Button> */}
-          </div>
-        }
-      />
+      {activeSection !== "Engagements" && (
+        <PageHeader
+          title={headerTitle}
+          subtitle={headerSubtitle}
+          className="relative z-30"
+          actions={
+            activeSection === "Engagements" && organizationMember ? (
+              <div className="flex items-center gap-3">
+                <p className="text-xs font-semibold text-white/70 uppercase tracking-widest whitespace-nowrap">
+                  Service
+                </p>
+                <Select
+                  label={selectedServiceLabel || "All Services"}
+                  items={serviceFilterItems}
+                  className="w-auto"
+                  contentClassName="w-64"
+                />
+              </div>
+            ) : null
+          }
+        />
+      )}
 
       {activeSection === "Dashboard" ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Building2, MapPin, Globe, FileText, PieChart, BarChart3, Hash, Lock, ChevronDown } from 'lucide-react';
+import { X, Building2, MapPin, Globe, FileText, PieChart, BarChart3, Hash, Lock, ChevronDown, Clock } from 'lucide-react';
 import { Button } from '../../../../../ui/Button'; 
 
 import { apiPut } from '../../../../../config/base';
 import { endPoints } from '../../../../../config/endPoint';
 import type { Company } from '../../../../../types/company';
-import NumericInput from '@/ui/NumericInput';
+import NumericInput from '../../../../../ui/NumericInput';
 
 const industries = [
   'Technology', 'Healthcare', 'Finance', 'Manufacturing', 'Retail',
@@ -26,21 +26,41 @@ const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
   onSuccess,
   company,
 }) => {
+  const formatDateForInput = (dateStr: string | null | undefined): string => {
+    if (!dateStr) return '';
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return '';
+      return date.toISOString().split('T')[0];
+    } catch (e) {
+      console.error('Date parsing error:', e);
+      return '';
+    }
+  };
+
   const [formData, setFormData] = useState({
     name: company.name || '',
     address: company.address || '',
-    industry: Array.isArray(company.industry) ? company.industry : [company.industry || ''],
+    industry: Array.isArray(company.industry) ? company.industry : (company.industry ? [company.industry] : ['']),
     summary: company.summary || '',
     authorizedShares: company.authorizedShares || 0,
     issuedShares: company.issuedShares || 0,
     registrationNumber: company.registrationNumber || '',
     legalType: company.legalType || '',
+    companyStartedAt: formatDateForInput(company.companyStartedAt),
   });
 
-  const [shareClasses, setShareClasses] = useState({
-    A: company.shareClasses?.find(s => s.class === 'A' || s.class === 'CLASS_A')?.issued || 0,
-    B: company.shareClasses?.find(s => s.class === 'B' || s.class === 'CLASS_B')?.issued || 0,
-    C: company.shareClasses?.find(s => s.class === 'C' || s.class === 'CLASS_C')?.issued || 0,
+  const [shareClasses, setShareClasses] = useState(() => {
+    const existingA = company.shareClasses?.find(s => s.class === 'A' || s.class === 'CLASS_A');
+    const existingB = company.shareClasses?.find(s => s.class === 'B' || s.class === 'CLASS_B');
+    const existingC = company.shareClasses?.find(s => s.class === 'C' || s.class === 'CLASS_C');
+    const existingOrd = company.shareClasses?.find(s => s.class === 'ORDINARY');
+    return {
+      A: { issued: existingA?.issued || 0, perShareValue: existingA?.perShareValue ? Number(existingA.perShareValue) : 0 },
+      B: { issued: existingB?.issued || 0, perShareValue: existingB?.perShareValue ? Number(existingB.perShareValue) : 0 },
+      C: { issued: existingC?.issued || 0, perShareValue: existingC?.perShareValue ? Number(existingC.perShareValue) : 0 },
+      ORDINARY: { perShareValue: existingOrd?.perShareValue ? Number(existingOrd.perShareValue) : 0 },
+    };
   });
 
   const existingIndustry = Array.isArray(company.industry) ? (company.industry[0] || '') : (company.industry || '');
@@ -52,7 +72,7 @@ const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
 
   // Auto-calculate Ordinary = Issued - (A + B + C)
   const ordinaryShares = useMemo(() => {
-    const named = shareClasses.A + shareClasses.B + shareClasses.C;
+    const named = shareClasses.A.issued + shareClasses.B.issued + shareClasses.C.issued;
     const result = formData.issuedShares - named;
     return result >= 0 ? result : 0;
   }, [formData.issuedShares, shareClasses]);
@@ -60,7 +80,7 @@ const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
   // Real-time validation errors
   const shareErrors = useMemo(() => {
     const errors: Record<string, string> = {};
-    const namedSum = shareClasses.A + shareClasses.B + shareClasses.C;
+    const namedSum = shareClasses.A.issued + shareClasses.B.issued + shareClasses.C.issued;
 
     if (formData.issuedShares > formData.authorizedShares && formData.authorizedShares > 0) {
       errors.issuedShares = `Issued shares (${formData.issuedShares}) cannot exceed authorized shares (${formData.authorizedShares})`;
@@ -78,17 +98,23 @@ const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
       setFormData({
         name: company.name || '',
         address: company.address || '',
-        industry: Array.isArray(company.industry) ? company.industry : [company.industry || ''],
+        industry: Array.isArray(company.industry) ? company.industry : (company.industry ? [company.industry] : ['']),
         summary: company.summary || '',
         authorizedShares: company.authorizedShares || 0,
         issuedShares: company.issuedShares || 0,
         registrationNumber: company.registrationNumber || '',
         legalType: company.legalType || '',
+        companyStartedAt: formatDateForInput(company.companyStartedAt),
       });
+      const existingA = company.shareClasses?.find(s => s.class === 'A' || s.class === 'CLASS_A');
+      const existingB = company.shareClasses?.find(s => s.class === 'B' || s.class === 'CLASS_B');
+      const existingC = company.shareClasses?.find(s => s.class === 'C' || s.class === 'CLASS_C');
+      const existingOrd = company.shareClasses?.find(s => s.class === 'ORDINARY');
       setShareClasses({
-        A: company.shareClasses?.find(s => s.class === 'A' || s.class === 'CLASS_A')?.issued || 0,
-        B: company.shareClasses?.find(s => s.class === 'B' || s.class === 'CLASS_B')?.issued || 0,
-        C: company.shareClasses?.find(s => s.class === 'C' || s.class === 'CLASS_C')?.issued || 0,
+        A: { issued: existingA?.issued || 0, perShareValue: existingA?.perShareValue ? Number(existingA.perShareValue) : 0 },
+        B: { issued: existingB?.issued || 0, perShareValue: existingB?.perShareValue ? Number(existingB.perShareValue) : 0 },
+        C: { issued: existingC?.issued || 0, perShareValue: existingC?.perShareValue ? Number(existingC.perShareValue) : 0 },
+        ORDINARY: { perShareValue: existingOrd?.perShareValue ? Number(existingOrd.perShareValue) : 0 },
       });
       const ind = Array.isArray(company.industry) ? (company.industry[0] || '') : (company.industry || '');
       setIndustrySelection(industries.includes(ind) ? ind : (ind ? 'Other' : ''));
@@ -140,15 +166,16 @@ const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
     setIsSubmitting(true);
     try {
       const shareDetails = [
-        { class: 'A', issued: shareClasses.A },
-        { class: 'B', issued: shareClasses.B },
-        { class: 'C', issued: shareClasses.C },
-        { class: 'ORDINARY', issued: ordinaryShares },
-      ].filter(s => s.issued > 0);
+        { class: 'A', issued: shareClasses.A.issued, perShareValue: shareClasses.A.perShareValue > 0 ? shareClasses.A.perShareValue : null },
+        { class: 'B', issued: shareClasses.B.issued, perShareValue: shareClasses.B.perShareValue > 0 ? shareClasses.B.perShareValue : null },
+        { class: 'C', issued: shareClasses.C.issued, perShareValue: shareClasses.C.perShareValue > 0 ? shareClasses.C.perShareValue : null },
+        { class: 'ORDINARY', issued: ordinaryShares, perShareValue: shareClasses.ORDINARY.perShareValue > 0 ? shareClasses.ORDINARY.perShareValue : null },
+      ].filter(s => s.issued > 0 || (s.class === 'ORDINARY' && ordinaryShares > 0));
 
       await apiPut(endPoints.COMPANY.UPDATE(company.id), {
         ...formData,
         industry: Array.isArray(formData.industry) ? formData.industry : [formData.industry],
+        companyStartDate: formData.companyStartedAt ? new Date(formData.companyStartedAt).toISOString() : null,
         shareDetails,
       });
       onSuccess();
@@ -253,6 +280,18 @@ const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
               )}
             </div>
 
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                <Clock size={14} /> Company Started At
+              </label>
+              <input
+                type="date"
+                value={formData.companyStartedAt}
+                onChange={(e) => setFormData({ ...formData, companyStartedAt: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-sm font-medium"
+              />
+            </div>
+
             <div className="md:col-span-2 space-y-1.5">
               <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
                 <MapPin size={14} /> Address
@@ -349,40 +388,68 @@ const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
                 <p className="text-[10px] text-gray-400 font-medium italic">Ordinary = Issued − (A + B + C)</p>
               </div>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Class A</label>
                   <NumericInput
-                    value={shareClasses.A}
-                    onChange={(val) => setShareClasses({ ...shareClasses, A: val })}
+                    value={shareClasses.A.issued}
+                    onChange={(val) => setShareClasses({ ...shareClasses, A: { ...shareClasses.A, issued: val } })}
                     step={1}
                     min={0}
                   />
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mt-3 mb-1">Per Share Value</label>
+                  <NumericInput
+                    value={shareClasses.A.perShareValue}
+                    onChange={(val) => setShareClasses({ ...shareClasses, A: { ...shareClasses.A, perShareValue: val } })}
+                    step={0.01}
+                    min={0}
+                  />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Class B</label>
                   <NumericInput
-                    value={shareClasses.B}
-                    onChange={(val) => setShareClasses({ ...shareClasses, B: val })}
+                    value={shareClasses.B.issued}
+                    onChange={(val) => setShareClasses({ ...shareClasses, B: { ...shareClasses.B, issued: val } })}
                     step={1}
                     min={0}
                   />
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mt-3 mb-1">Per Share Value</label>
+                  <NumericInput
+                    value={shareClasses.B.perShareValue}
+                    onChange={(val) => setShareClasses({ ...shareClasses, B: { ...shareClasses.B, perShareValue: val } })}
+                    step={0.01}
+                    min={0}
+                  />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Class C</label>
                   <NumericInput
-                    value={shareClasses.C}
-                    onChange={(val) => setShareClasses({ ...shareClasses, C: val })}
+                    value={shareClasses.C.issued}
+                    onChange={(val) => setShareClasses({ ...shareClasses, C: { ...shareClasses.C, issued: val } })}
                     step={1}
                     min={0}
                   />
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mt-3 mb-1">Per Share Value</label>
+                  <NumericInput
+                    value={shareClasses.C.perShareValue}
+                    onChange={(val) => setShareClasses({ ...shareClasses, C: { ...shareClasses.C, perShareValue: val } })}
+                    step={0.01}
+                    min={0}
+                  />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-1">
                     Ordinary <Lock size={10} className="text-gray-400" />
                   </label>
-                  <div className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-sm font-bold text-gray-600 cursor-not-allowed select-none">
+                  <div className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-sm font-bold text-gray-600 cursor-not-allowed select-none mb-3">
                     {ordinaryShares.toLocaleString()}
                   </div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mt-2 mb-1">Per Share Value</label>
+                  <NumericInput
+                    value={shareClasses.ORDINARY.perShareValue}
+                    onChange={(val) => setShareClasses({ ...shareClasses, ORDINARY: { ...shareClasses.ORDINARY, perShareValue: val } })}
+                    step={0.01}
+                    min={0}
+                  />
                 </div>
               </div>
               {shareErrors.shareClasses && (
