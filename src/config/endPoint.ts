@@ -324,7 +324,8 @@ export const endPoints = {
       `/companies/${companyId}/accounting/quickbooks/sync/chart-accounts`,
     SYNC_COMPANY_DATA: (companyId: string) =>
       `/companies/${companyId}/accounting/quickbooks/sync/company-data`,
-    CONNECT_URL: (companyId: string, clientId: string) => `/companies/${companyId}/accounting/quickbooks/connect?clientId=${clientId}`,
+    CONNECT_URL: (companyId: string, clientId: string) =>
+      `/companies/${companyId}/accounting/quickbooks/connect?clientId=${clientId}&returnUrl=1`,
     REVOKE: (companyId: string) => `/companies/${companyId}/accounting/quickbooks/revoke`,
   },
   INCORPORATION: {
