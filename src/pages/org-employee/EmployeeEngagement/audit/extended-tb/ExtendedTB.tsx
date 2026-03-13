@@ -452,6 +452,7 @@ export default function ExtendedTB({ isSectionsView = false, engagementId }: Ext
                     group3: (account.group3 && account.group3.trim()) || null,
                     group4: (account.group4 && account.group4.trim()) || null,
                     accountId: account.id, // Backend account ID for updates
+                    isPriorYearOnly: !!account.isPriorYearOnly,
                     actions: [], // Can be populated from audit entries if needed
                     linkedFiles: [] // Can be populated from evidence if needed
                 };

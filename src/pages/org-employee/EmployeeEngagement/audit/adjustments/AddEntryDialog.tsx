@@ -23,7 +23,9 @@ export default function AddEntryDialog({ isOpen, onClose, onAdd, accounts = [], 
 
     const filteredAccounts = useMemo(() => {
         if (accounts.length === 0) return [];
-        return accounts.filter(account =>
+        // Only show current-year accounts (prior-year-only cannot be used for adjustments/reclassifications)
+        const currentYearAccounts = accounts.filter((a) => !a.isPriorYearOnly);
+        return currentYearAccounts.filter(account =>
             account.accountName.toLowerCase().includes(searchQuery.toLowerCase()) ||
             account.code.toLowerCase().includes(searchQuery.toLowerCase())
         );
