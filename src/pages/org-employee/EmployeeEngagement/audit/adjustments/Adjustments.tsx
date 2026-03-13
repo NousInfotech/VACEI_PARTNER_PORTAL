@@ -68,20 +68,23 @@ export default function Adjustments({ engagementId }: AdjustmentsProps) {
                 ? data.description.trim()
                 : `Adjustment ${data.adjustmentNo}`;
 
-            // Validate that debits equal credits
-            const totalDebits = data.entries
-                .filter(e => e.type === 'Debit')
-                .reduce((sum, e) => sum + (e.amount || 0), 0);
-            const totalCredits = data.entries
-                .filter(e => e.type === 'Credit')
-                .reduce((sum, e) => sum + (e.amount || 0), 0);
+            // Only include entries for current-year accounts (prior-year-only rows cannot be used for adjustments on current TB)
+            const currentYearEntries = data.entries.filter((e) => !e.isPriorYearOnly);
+            if (currentYearEntries.length === 0) {
+                throw new Error('Cannot create adjustment: all selected accounts are prior-year-only and cannot be used for the current trial balance. Please select accounts that have a current-year balance.');
+            }
 
-            if (data.status === 'POSTED' && Math.abs(totalDebits - totalCredits) > 0.01) {
-                throw new Error("Debits and credits must balance before posting");
+            // Validate that debits equal credits (on the lines we will actually send)
+            if (data.status === 'POSTED') {
+                const totalDebits = currentYearEntries.filter(e => e.type === 'Debit').reduce((sum, e) => sum + (e.amount || 0), 0);
+                const totalCredits = currentYearEntries.filter(e => e.type === 'Credit').reduce((sum, e) => sum + (e.amount || 0), 0);
+                if (Math.abs(totalDebits - totalCredits) > 0.01) {
+                    throw new Error("Debits and credits must balance before posting");
+                }
             }
 
             // Map entries to lines format - validate each entry
-            const lines = data.entries.map((entry, index) => {
+            const lines = currentYearEntries.map((entry, index) => {
                 if (!entry.accountId) {
                     throw new Error(`Entry ${index + 1}: Account ID is required`);
                 }
@@ -156,15 +159,20 @@ export default function Adjustments({ engagementId }: AdjustmentsProps) {
                 ? data.description.trim()
                 : `Adjustment ${data.adjustmentNo}`;
 
+            const currentYearEntries = data.entries.filter((e) => !e.isPriorYearOnly);
+            if (currentYearEntries.length === 0) {
+                throw new Error('Cannot update: all selected accounts are prior-year-only and cannot be used for the current trial balance.');
+            }
+
             if (data.status === 'POSTED') {
-                const totalDebits = data.entries.filter(e => e.type === 'Debit').reduce((sum, e) => sum + (e.amount || 0), 0);
-                const totalCredits = data.entries.filter(e => e.type === 'Credit').reduce((sum, e) => sum + (e.amount || 0), 0);
+                const totalDebits = currentYearEntries.filter(e => e.type === 'Debit').reduce((sum, e) => sum + (e.amount || 0), 0);
+                const totalCredits = currentYearEntries.filter(e => e.type === 'Credit').reduce((sum, e) => sum + (e.amount || 0), 0);
                 if (Math.abs(totalDebits - totalCredits) > 0.01) {
                     throw new Error("Debits and credits must balance before posting");
                 }
             }
 
-            const lines = data.entries.map((entry, index) => {
+            const lines = currentYearEntries.map((entry, index) => {
                 if (!entry.accountId) throw new Error(`Entry ${index + 1}: Account ID is required`);
                 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
                 const accountIdStr = String(entry.accountId);

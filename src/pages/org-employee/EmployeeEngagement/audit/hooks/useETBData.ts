@@ -23,8 +23,8 @@ interface TrialBalanceWithAccountsResponse {
       id: string;
       code: string;
       accountName: string;
-      currentYear: number | '-';
-      priorYear: number | '-';
+      currentYear: number;
+      priorYear: number;
       adjustmentAmount: number;
       reclassificationAmount: number;
       finalBalance: number;
@@ -139,6 +139,7 @@ export const useETBData = (engagementId?: string) => {
         group3: account.group3 || null,
         group4: account.group4 || null,
         accountId: account.id,
+        isPriorYearOnly: !!account.isPriorYearOnly,
         actions: [],
         linkedFiles: []
       };

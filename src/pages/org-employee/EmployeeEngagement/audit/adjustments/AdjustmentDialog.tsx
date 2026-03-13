@@ -23,6 +23,8 @@ export interface AdjustmentEntry {
     type: 'Debit' | 'Credit';
     amount: number;
     details: string;
+    /** True if row is prior-year-only; such entries are filtered out when creating adjustment (backend rejects them) */
+    isPriorYearOnly?: boolean;
 }
 
 interface AdjustmentDialogProps {
@@ -106,7 +108,8 @@ export default function AdjustmentDialog({ isOpen, onClose, onSave, initialData,
             accountName: account.accountName,
             type,
             amount,
-            details: ""
+            details: "",
+            isPriorYearOnly: account.isPriorYearOnly,
         };
         setEntries([...entries, newEntry]);
     };

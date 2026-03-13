@@ -13,6 +13,8 @@ export interface ExtendedTBRow {
     group3: string | null;
     group4: string | null;
     accountId?: string; // Backend account ID for updates
+    /** True for rows that exist only in prior year; cannot be used for adjustments/reclassifications on current TB */
+    isPriorYearOnly?: boolean;
     actions: string[];
     linkedFiles?: string[];
 }
